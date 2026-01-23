@@ -2,9 +2,12 @@
 	"name": "medtech-monorepo",
 	"version": "1.0.0",
 	"private": true,
-	"workspaces": [
-		"merchant",
-		"experience_1",
-		"utils"
-	]
+	"workspaces": {
+		"packages": [
+			"merchant",
+			"experience_1",
+			"utils"
+		],
+		"nohoist": []
+	}
 }
