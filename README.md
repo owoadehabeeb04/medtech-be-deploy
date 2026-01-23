@@ -5,30 +5,6 @@ Contains isolated domains (merchant backend, experience_1 backend or service, sh
 
 ## Project Structure
 
-MedTech_template/ ← monorepo root
-├── merchant/ ← Merchant domain (e.g. backend for payments, orders, provider logic)
-│ ├── src/
-│ ├── tsconfig.json
-│ ├── package.json
-│ ├── nodemon.json (optional)
-│ └── .env.example
-├── experience_1/ ← Experience 1 domain (e.g. patient-facing app, dashboard, or separate service)
-│ ├── src/
-│ ├── tsconfig.json
-│ ├── package.json
-│ └── .env.example
-├── utils/ ← Shared utilities, helpers, types, constants
-│ ├── src/
-│ │ ├── index.ts
-│ │ └── ... (add.ts, validators, date-utils, etc.)
-│ ├── tsconfig.json
-│ └── package.json
-├── .gitignore
-├── tsconfig.base.json ← Shared TypeScript compiler options
-├── package.json ← Root workspace config
-├── pnpm-workspace.yaml ← (if using pnpm — recommended)
-└── README.md
-
 ## Install
 
 At root: npm install
