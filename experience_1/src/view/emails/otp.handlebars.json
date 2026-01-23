@@ -1,0 +1,10 @@
+{
+	"isOTP": true,
+	"otpDigits": ["5", "2", "5", "0", "9"],
+	"browserName": "Chrome",
+	"deviceOS": "macOS",
+	"requestDate": "12/02/2024",
+	"ipAddress": "192.135.152",
+	"supportEmail": "support@quickmedic.com",
+	"currentYear": "2024"
+}
