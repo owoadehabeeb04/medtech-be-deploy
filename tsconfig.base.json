@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"target": "es6",
+		"module": "commonjs",
+		"strict": true,
+		"baseUrl": ".",
+		"paths": {
+			"@medtech/utils": ["utils/src/index.ts"],
+			"@medtech/utils/*": ["utils/src/*"]
+		},
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"strictNullChecks": false,
+		"resolveJsonModule": true,
+		"experimentalDecorators": true,
+		"noImplicitAny": true,
+		"forceConsistentCasingInFileNames": true
+	}
+}

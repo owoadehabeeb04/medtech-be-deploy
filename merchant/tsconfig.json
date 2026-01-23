@@ -1,0 +1,10 @@
+{
+	"extends": "../tsconfig.base.json", // or "../tsconfig.base.json" depending on depth
+	"compilerOptions": {
+		"outDir": "./dist",
+		"declaration": true, // useful if others consume your .d.ts
+		"declarationMap": true
+	},
+	"include": ["src/**/*"],
+	"references": [{ "path": "../utils" }]
+}
