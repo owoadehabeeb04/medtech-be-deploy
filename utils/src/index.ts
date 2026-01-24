@@ -1,5 +1,11 @@
 import * as handlebars from "handlebars";
 import moment from "moment";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import Joi from "joi";
+import { v4 as uuidv4 } from "uuid";
+import multer from "multer";
+import * as path from "path";
 const fs = require("fs");
 
 export function add(a: number, b: number): number {
@@ -40,9 +46,7 @@ export const formatPhoneCode = (dialCode: string, phone: string): string => {
 };
 
 export function formatPhoneTenDigits(phoneNumber: string) {
-	// Extract the last ten digits using substring
 	const lastTenDigits = phoneNumber.substring(Math.max(0, phoneNumber.length - 10));
-
 	return lastTenDigits;
 }
 
@@ -68,7 +72,6 @@ export const pagination = (data: Object[], limit: number, page: number, total: n
 	const prevPage = data.length > 0 && page > 1 ? page - 1 : null;
 
 	let to = !nextPage ? total : page * data.length;
-	//let from = (!nextPage ? ((to - data.length) + 1) : (to - limit) + 1);
 	let from = to - data.length + 1;
 
 	return { data, total, limit, page, totalPages, nextPage, prevPage, to, from };
@@ -77,9 +80,6 @@ export const pagination = (data: Object[], limit: number, page: number, total: n
 export const sEI = (init_code: string, code: string): string => {
 	return `${init_code}${code}`;
 };
-
-
-/* generate random number */
 export const genRandomNumber = (length: number) => {
 	return Math.random().toString().substring(2).substring(0, length);
 };
@@ -137,9 +137,7 @@ export const sortByKey = async (array: any[], key: string) => {
 };
 
 export const toBase64 = (path: string) => {
-	// read binary data from file
 	const bitmap = fs.readFileSync(path);
-	// convert the binary data to base64 encoded string
 	return bitmap.toString("base64");
 };
 
@@ -155,11 +153,10 @@ export const isAlpha = (str: string) => {
 export const separateAlphaNumeric = (str: string) => {
 	const match = str.match(/^([a-zA-Z]+)(\d+)/);
 	if (match) {
-		const alpha = match[1]; // Extract the alphabetic part
-		const numeric = match[2]; // Extract the numeric part
+		const alpha = match[1];
+		const numeric = match[2];
 		return { alpha, numeric };
 	} else {
-		// If no match is found, return empty strings
 		return { alpha: "", numeric: "" };
 	}
 };
@@ -172,9 +169,7 @@ export const renderTemplate = (templatePath: string, data: any): string => {
 
 export const base64ToBuffer = async (base64: string): Promise<Buffer> => {
 	try {
-		//decode base64 string
 		const buffer = Buffer.from(base64, "base64");
-
 		if (!buffer.length) {
 			throw new Error("Invalid base64 data");
 		}
@@ -211,21 +206,15 @@ export const split_name = (name: string) => {
 
 export function isTimestampValid(timestamp: string) {
 	const receivedMoment = moment(timestamp);
-
-	// Check if timestamp is valid (optional)
 	if (!receivedMoment.isValid()) {
 		return false;
 	}
-
 	return true;
 }
 
 export const maskPhone = (str: string, visibleStart = 3, visibleEnd = 4): string => {
 	if (!str) return str;
-
 	const length = str.length;
-
-	// If the phone number is too short, return as-is
 	if (length <= visibleStart + visibleEnd) {
 		return str;
 	}
@@ -254,20 +243,44 @@ export const checkArrayData = (obj: Object) => obj && Array.isArray(obj) && obj.
 
 export const checkArray = (obj: Object) => obj && Array.isArray(obj);
 
-
-// export const validateSchema = (schema: Schema, payload: unknown, next: NextFunction) => {
-// 	const { error, value } = schema.validate(payload);
-// 	if (error) {
-// 		console.log(error);
-// 		return next(CustomError.manageApplicationErrors(error));
-// 	}
-// 	return value;
-// };
-
-
-export const errorCode = (err_constant: string, code: string): string => {
-	return `${sEI(err_constant, code)}`;
+export const errorCode = {
+	BAD_REQUEST: 400,
+	UNAUTHORIZED: 401,
+	FORBIDDEN: 403,
+	NOT_FOUND: 404,
+	INTERNAL_SERVER_ERROR: 500,
 };
+
+export default class CustomError extends Error {
+	statusCode: number;
+
+	constructor(message: string, statusCode: number = 500) {
+		super(message);
+		this.statusCode = statusCode;
+		this.name = this.constructor.name;
+		Error.captureStackTrace(this, this.constructor);
+	}
+
+	static manageApplicationErrors(error: any) {
+		if (error instanceof CustomError) {
+			return error;
+		}
+		// Check if error has statusCode property, use it; otherwise default to 500
+		const statusCode = error.statusCode || 500;
+		return new CustomError(error.message || "Internal Server Error", statusCode);
+	}
+}
+
+export class HttpException extends Error {
+	statusCode: number;
+	message: string;
+
+	constructor(statusCode: number, message: string) {
+		super(message);
+		this.statusCode = statusCode;
+		this.message = message;
+	}
+}
 
 export const getMomentStartAndEndDate = (date: "today" | "yesterday" | "last_7_days" | "this_month" | "last_month") => {
 	let startDate: moment.Moment;
@@ -307,7 +320,6 @@ export const cleanString = (str: string) => {
 };
 
 export const allowHyphen = (str: string) => {
-	// allow letters, numbers, and hyphen
 	return str.replace(/[^a-zA-Z0-9-]/g, "");
 };
 
@@ -316,56 +328,168 @@ export function encodeHTMLEntities(str: string) {
 		return "&#" + c.charCodeAt(0) + ";";
 	});
 }
-
-/**
- * Cleans request body by removing non-alphanumeric characters
- * from string fields, except for exempted keys.
- *
- * @param body - The request body (e.g., req.body)
- * @param exemptKeys - Keys to skip cleaning
- * @returns A cleaned copy of the body
- */
-
-export function sanitizeBody<T extends Record<string, any>>(body: T, exemptKeys: (keyof T)[] = []): T {
+export function sanitizeBody<T extends Record<string, any>>(body: T): T {
 	const cleanedBody = {} as T;
-
 	for (const key in body) {
 		if (!Object.prototype.hasOwnProperty.call(body, key)) continue;
-
-		// Skip cleaning for exempted keys
-		if (exemptKeys.includes(key as keyof T)) {
-			cleanedBody[key] = body[key];
-			continue;
-		}
-
-		// Clean only string values
 		if (typeof body[key] === "string") {
-			cleanedBody[key] = (body[key] as string).replace(/[^a-zA-Z0-9]/g, "") as any;
+			// Trim whitespace and remove dangerous HTML characters only
+			cleanedBody[key] = (body[key] as string)
+				.trim()
+				.replace(/[<>"']/g, "") as any;
+		} else if (typeof body[key] === "object" && body[key] !== null && !Array.isArray(body[key])) {
+			// Recursively sanitize nested objects
+			cleanedBody[key] = sanitizeBody(body[key]);
 		} else {
 			cleanedBody[key] = body[key];
 		}
 	}
-
 	return cleanedBody;
 }
 
-/**
- * Remove the given keys from an object **if they exist**.
- *
- * @param obj          The source object (not mutated)
- * @param keysToRemove An array of strings – only the ones that are real keys of `obj` are removed
- * @returns            A new object without those keys
- */
-export function removeExistingKeys<T extends object>(obj: T, keysToRemove: (keyof T)[]): Omit<T, keyof T> {
-	// Start with a shallow copy
-	const result = { ...obj };
+export function sanitizeBody2<T extends Record<string, any>>(body: T): T {
+	const cleanedBody = {} as T;
+	for (const key in body) {
+		if (!Object.prototype.hasOwnProperty.call(body, key)) continue;
+		if (typeof body[key] === "string") {
+			// Trim whitespace and remove dangerous HTML characters only
+			cleanedBody[key] = (body[key] as string)
+				.trim()
+				.replace(/[<>"']/g, "") as any;
+		} else if (typeof body[key] === "object" && body[key] !== null && !Array.isArray(body[key])) {
+			// Recursively sanitize nested objects
+			cleanedBody[key] = sanitizeBody2(body[key]);
+		} else {
+			cleanedBody[key] = body[key];
+		}
+	}
+	return cleanedBody;
+}
 
-	// `key` is guaranteed to be a key of `T` → safe to delete
+export function removeExistingKeys<T extends object>(obj: T, keysToRemove: (keyof T)[]): Omit<T, keyof T> {
+	const result = { ...obj };
 	for (const key of keysToRemove) {
 		if (key in result) {
 			delete (result as any)[key];
 		}
 	}
-
 	return result as Omit<T, keyof T>;
 }
+
+export const hashPassword = async (password: string): Promise<string> => {
+	const saltRounds = 10;
+	return bcrypt.hash(password, saltRounds);
+};
+
+export const verifyPassword = async (password: string, hash: string): Promise<boolean> => {
+	return bcrypt.compare(password, hash);
+};
+
+export const encryptWithPassword = (data: string, password: string): string => {
+	const algorithm = "aes-256-cbc";
+	const key = crypto.scryptSync(password, "salt", 32);
+	const iv = crypto.randomBytes(16);
+	const cipher = crypto.createCipheriv(algorithm, key, iv);
+	let encrypted = cipher.update(data, "utf8", "hex");
+	encrypted += cipher.final("hex");
+	return iv.toString("hex") + ":" + encrypted;
+};
+
+export const sanitizeInput = (input: string): string => {
+	return input.trim().replace(/[<>]/g, "");
+};
+
+export const validateSchema = (schema: Joi.Schema, data: any): { error: string | null; value: any } => {
+	const { error, value } = schema.validate(data, { abortEarly: false });
+	if (error) {
+		return {
+			error: error.details.map((d) => d.message).join(", "),
+			value: undefined as any,
+		};
+	}
+	return { error: null, value };
+};
+
+export async function manageAsyncOps<T>(
+	promise: Promise<T>
+): Promise<[Error | null, T | null]> {
+	try {
+		const data = await promise;
+		return [null, data];
+	} catch (error) {
+		return [error as Error, null];
+	}
+}
+
+export const generateOTP = (length: number = 4): string => {
+	return Math.random()
+		.toString()
+		.substring(2, 2 + length)
+		.padStart(length, "0");
+};
+
+export const generateUUID = (): string => {
+	return uuidv4();
+};
+
+export const splitOTPDigits = (otp: string): string[] => {
+	return otp.split("");
+};
+
+export function deepMerge<T = any>(target: T, source: Partial<T>): T {
+	if (!source) return target;
+	if (!target) return source as T;
+	const output = { ...target } as any;
+	for (const key in source) {
+		const sourceValue = source[key];
+		const targetValue = (target as any)[key];
+		if (
+			sourceValue &&
+			typeof sourceValue === "object" &&
+			!Array.isArray(sourceValue) &&
+			targetValue &&
+			typeof targetValue === "object" &&
+			!Array.isArray(targetValue)
+		) {
+			output[key] = deepMerge(targetValue, sourceValue);
+		} else if (sourceValue !== undefined) {
+			output[key] = sourceValue;
+		}
+	}
+	return output as T;
+}
+
+const storage = multer.memoryStorage();
+
+const uploadFiles = multer({
+	storage: storage,
+	limits: { fileSize: 5 * 1024 * 1024 },
+	fileFilter: (req, file, cb) => {
+		const allowedTypes = /jpeg|jpg|png|pdf|svg/;
+		const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+		const mimetype = allowedTypes.test(file.mimetype);
+		if (mimetype && extname) {
+			return cb(null, true);
+		} else {
+			cb(new Error("Invalid file type. Only JPEG, JPG, PNG, PDF, SVG are allowed."));
+		}
+	},
+});
+
+export const uploadLicenseMiddleware: any = uploadFiles.single("license");
+
+export {
+	generateToken,
+	generateOTPFlowToken,
+	verifyToken,
+	verifyOTPFlowToken,
+	generateRefreshToken,
+	verifyRefreshToken,
+	type JWTPayload,
+	type OTPFlowPayload,
+	type RefreshTokenPayload,
+	type JWTConfig,
+} from "./jwt";
+
+export { default as AwsUtil_s3, type AWSConfig, type IAWS } from "./aws.s3";
+export { default as SendEmail, type SMTPConfig } from "./SendEmail";

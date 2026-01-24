@@ -1,0 +1,75 @@
+import { Dialect } from "sequelize";
+import { Sequelize } from "sequelize-typescript";
+import { applicationConfig } from "../config";
+import { Merchant } from "../modules/merchant/Merchant.model";
+import { MerchantVerification } from "../modules/merchant_verification/MerchantVerification.model";
+import { StoreDetails } from "../modules/store_details/StoreDetails.model";
+import { PaymentDetails } from "../modules/payment_details/PaymentDetails.model";
+import { MerchantSettings } from "../modules/merchant_settings/MerchantSettings.model";
+import { Product } from "../modules/products/Product.model";
+import { Discount } from "../modules/discounts/Discount.model";
+import { Category } from "../modules/categories/Category.model";
+import { RefreshToken } from "../modules/refresh_tokens/RefreshToken.model";
+import { setupAssociations } from "../modules/associations";
+
+const { postgres } = applicationConfig;
+
+const connection = async (): Promise<Sequelize> => {
+  const sequelize = new Sequelize({
+    dialect: "postgres" as Dialect,
+    host: postgres.host,
+    port: postgres.port,
+    username: postgres.username,
+    password: postgres.password,
+    database: postgres.database,
+    logging: postgres.logging ? console.log : false,
+    dialectOptions: {
+      ssl: applicationConfig.nodeEnv === "production" ? {
+        require: true,
+        rejectUnauthorized: false,
+      } : false,
+    },
+    define: {
+      underscored: true,
+    },
+    models: [
+      Merchant,
+      MerchantVerification,
+      StoreDetails,
+      PaymentDetails,
+      MerchantSettings,
+      Product,
+      Discount,
+      Category,
+      RefreshToken,
+    ],
+  });
+
+  try {
+    await sequelize.authenticate();
+    console.log("PostgreSQL connection established successfully.");
+
+    // Setup model associations
+    setupAssociations();
+
+    // Sync database tables in development mode
+    if (applicationConfig.nodeEnv === "development") {
+      await sequelize.sync({ alter: true });
+      console.log("Database tables synchronized.");
+    }
+  } catch (error) {
+    console.error("Unable to connect to PostgreSQL:", error);
+    console.error("Please check your database configuration in .env file");
+    console.error("DB_HOST:", postgres.host);
+    console.error("DB_NAME:", postgres.database);
+    console.error("\nMake sure PostgreSQL is running locally and the database exists.");
+    console.error("You can create the database with: createdb merchant_db");
+    console.error("\nServer will continue but database operations will fail.");
+    // Don't exit - allow server to start for development
+    // process.exit(1);
+  }
+
+  return sequelize;
+};
+
+export default connection;
