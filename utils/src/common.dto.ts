@@ -4,3 +4,14 @@ export type ApiResponse = {
 	message: string;
 	data?: any;
 };
+
+export interface PaginationDto {
+	page?: number;
+	limit?: number;
+}
+
+export interface SortDto {
+	sortBy?: string;
+	sortOrder?: "asc" | "desc";
+}
+  
