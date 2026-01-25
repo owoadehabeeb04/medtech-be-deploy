@@ -18,52 +18,38 @@ import supportRouter from "../modules/support/Support.route";
 import { authMiddleware } from "../middlewares/Auth.Middleware";
 
 export default function (app: Application) {
-  app.use(cors());
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
-  app.use(helmet() as any);
-  app.use(cookieParser() as any);
+	app.use(cors());
+	app.use(express.json());
+	app.use(express.urlencoded({ extended: true }));
+	app.use(helmet() as any);
+	app.use(cookieParser() as any);
 
-  app.get("/api-docs.json", (req, res) => {
-    res.setHeader("Content-Type", "application/json");
-    res.send(swaggerSpec);
-  });
-  
-  const swaggerOptions = {
-    explorer: true,
-    swaggerOptions: {
-      persistAuthorization: true,
-    },
-  };
-  
-  app.use("/api-docs", swaggerUi.serve as any, swaggerUi.setup(swaggerSpec, swaggerOptions));
+	app.get("/api-docs.json", (req, res) => {
+		res.setHeader("Content-Type", "application/json");
+		res.send(swaggerSpec);
+	});
 
-  console.log(`Swagger UI available at http://localhost:${applicationConfig.serverPort}/api-docs`);
-  console.log(`Swagger JSON available at http://localhost:${applicationConfig.serverPort}/api-docs.json`);
+	const swaggerOptions = {
+		explorer: true,
+		swaggerOptions: {
+			persistAuthorization: true,
+		},
+	};
 
-  const apiRouter = express.Router();
-  
-  apiRouter.use("/health", healthRouter);
-  apiRouter.use("/auth", merchantAuthRouter);
-  
-  apiRouter.use("/upload", authMiddleware, uploadRouter);
-  apiRouter.use("/onboarding", authMiddleware, onboardingRouter);
-  apiRouter.use("/settings", settingsRouter);
-  apiRouter.use("/products", authMiddleware, productRouter);
-  apiRouter.use("/discounts", authMiddleware, discountRouter);
-  apiRouter.use("/categories", authMiddleware, categoryRouter);
-  apiRouter.use("/support", authMiddleware, supportRouter);
+	app.use("/api-docs", swaggerUi.serve as any, swaggerUi.setup(swaggerSpec, swaggerOptions));
 
-  app.use("/api/v1/merchant", apiRouter);
+	const apiRouter = express.Router();
 
-  console.log("✅ Routes registered:");
-  console.log("   - /api/v1/merchant/health");
-  console.log("   - /api/v1/merchant/auth/*");
-  console.log("   - /api/v1/merchant/upload/* (protected)");
-  console.log("   - /api/v1/merchant/onboarding/* (protected)");
-  console.log("   - /api/v1/merchant/settings/* (protected)");
-  console.log("   - /api/v1/merchant/products/* (protected)");
-  console.log("   - /api/v1/merchant/discounts/* (protected)");
-  console.log("   - /api/v1/merchant/categories/* (protected)");
-  console.log("   - /api/v1/merchant/support/* (protected)");
+	apiRouter.use("/health", healthRouter);
+	apiRouter.use("/auth", merchantAuthRouter);
+
+	apiRouter.use("/upload", authMiddleware, uploadRouter);
+	apiRouter.use("/onboarding", authMiddleware, onboardingRouter);
+	apiRouter.use("/settings", settingsRouter);
+	apiRouter.use("/products", authMiddleware, productRouter);
+	apiRouter.use("/discounts", authMiddleware, discountRouter);
+	apiRouter.use("/categories", authMiddleware, categoryRouter);
+	apiRouter.use("/support", authMiddleware, supportRouter);
+
+	app.use("/api/v1/merchant", apiRouter);
 }

@@ -16,7 +16,7 @@ export interface AuthenticatedUser {
   [key: string]: any;
 }
 
-export const bootstrapRequestContext = async () => {
+export const bootstrapRequestContext : any= async () => {
   const sequelize = await connection();
   const token: string | null = null;
   const user: AuthenticatedUser | null = null;

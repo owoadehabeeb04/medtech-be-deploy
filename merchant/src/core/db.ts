@@ -15,61 +15,47 @@ import { setupAssociations } from "../modules/associations";
 const { postgres } = applicationConfig;
 
 const connection = async (): Promise<Sequelize> => {
-  const sequelize = new Sequelize({
-    dialect: "postgres" as Dialect,
-    host: postgres.host,
-    port: postgres.port,
-    username: postgres.username,
-    password: postgres.password,
-    database: postgres.database,
-    logging: postgres.logging ? console.log : false,
-    dialectOptions: {
-      ssl: applicationConfig.nodeEnv === "production" ? {
-        require: true,
-        rejectUnauthorized: false,
-      } : false,
-    },
-    define: {
-      underscored: true,
-    },
-    models: [
-      Merchant,
-      MerchantVerification,
-      StoreDetails,
-      PaymentDetails,
-      MerchantSettings,
-      Product,
-      Discount,
-      Category,
-      RefreshToken,
-    ],
-  });
+	const sequelize = new Sequelize({
+		dialect: "postgres" as Dialect,
+		host: postgres.host,
+		port: postgres.port,
+		username: postgres.username,
+		password: postgres.password,
+		database: postgres.database,
+		logging: postgres.logging ? console.log : false,
+		dialectOptions: {
+			ssl:
+				applicationConfig.nodeEnv === "production"
+					? {
+							require: true,
+							rejectUnauthorized: false,
+						}
+					: false,
+		},
+		define: {
+			underscored: true,
+		},
+		models: [Merchant, MerchantVerification, StoreDetails, PaymentDetails, MerchantSettings, Product, Discount, Category, RefreshToken],
+	});
 
-  try {
-    await sequelize.authenticate();
-    console.log("PostgreSQL connection established successfully.");
+	try {
+		await sequelize.authenticate();
+		console.log("PostgreSQL connection established successfully.");
 
-    // Setup model associations
-    setupAssociations();
+		// Setup model associations
+		setupAssociations();
 
-    // Sync database tables in development mode
-    if (applicationConfig.nodeEnv === "development") {
-      await sequelize.sync({ alter: true });
-      console.log("Database tables synchronized.");
-    }
-  } catch (error) {
-    console.error("Unable to connect to PostgreSQL:", error);
-    console.error("Please check your database configuration in .env file");
-    console.error("DB_HOST:", postgres.host);
-    console.error("DB_NAME:", postgres.database);
-    console.error("\nMake sure PostgreSQL is running locally and the database exists.");
-    console.error("You can create the database with: createdb merchant_db");
-    console.error("\nServer will continue but database operations will fail.");
-    // Don't exit - allow server to start for development
-    // process.exit(1);
-  }
+		// Sync database tables in development mode
+		if (applicationConfig.nodeEnv === "development") {
+			await sequelize.sync({ alter: true });
+			console.log("Database tables synchronized.");
+		}
+	} catch (error) {
+		console.error("Unable to connect to the database:", error);
+		process.exit(1);
+	}
 
-  return sequelize;
+	return sequelize;
 };
 
 export default connection;
