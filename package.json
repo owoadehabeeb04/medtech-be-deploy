@@ -15,9 +15,6 @@
 		"build:utils": "npm run build --workspace=utils",
 		"build:merchant": "npm run build --workspace=merchant"
 	},
-	"dependencies": {
-		"joi": "^18.0.2"
-	},
 	"overrides": {
 		"joi": "$joi"
 	}
