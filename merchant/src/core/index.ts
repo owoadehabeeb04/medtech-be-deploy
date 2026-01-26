@@ -68,6 +68,5 @@ app.use(notFoundHandler);
 export const startServer = async (): Promise<void> => {
 	requestContext = await bootstrapRequestContext();
 
-  app.listen(serverPort, () => {
-  });
+  app.listen(serverPort, () => console.log(`Server started on ${serverPort}`));
 };

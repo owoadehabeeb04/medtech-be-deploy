@@ -5,6 +5,7 @@ import { RESPONSE_MESSAGES } from "../../constants/response";
 
 export const healthCheck = async (req: Request, res: Response, next: NextFunction) => {
   const result = await HealthService.checkAll();
+  console.log("here 000")
   
   res.status(result.code);
   res.response = {
