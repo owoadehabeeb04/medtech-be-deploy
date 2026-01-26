@@ -17,5 +17,8 @@
 	},
 	"dependencies": {
 		"joi": "^18.0.2"
+	},
+	"overrides": {
+		"joi": "$joi"
 	}
 }

@@ -22,11 +22,13 @@
 		"multer": "^2.0.2",
 		"redis": "^4.6.10",
 		"bcryptjs": "^2.4.3",
-		"joi": "^17.11.0",
 		"uuid": "^9.0.1",
 		"jsonwebtoken": "^9.0.2",
 		"nodemailer": "^6.9.7",
 		"nodemailer-express-handlebars": "^6.1.0",
 		"@aws-sdk/client-s3": "^3.490.0"
+	},
+	"peerDependencies": {
+		"joi": "^18.0.2"
 	}
 }
