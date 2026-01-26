@@ -48,8 +48,8 @@ const connection = async (): Promise<Sequelize> => {
   try {
     await sequelize.authenticate();
 
-    // Setup model associations
-    setupAssociations();
+		// Setup model associations
+		setupAssociations();
 
     // Sync database tables in development mode
     if (applicationConfig.nodeEnv === "development") {
@@ -60,7 +60,7 @@ const connection = async (): Promise<Sequelize> => {
     // process.exit(1);
   }
 
-  return sequelize;
+	return sequelize;
 };
 
 export default connection;

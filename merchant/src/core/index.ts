@@ -16,18 +16,18 @@ const { rateLimitOptions, serverPort } = applicationConfig;
 export type RequestContextType = Awaited<ReturnType<typeof bootstrapRequestContext>>;
 
 declare global {
-  namespace Express {
-    interface Request {
-      context: RequestContextType;
-    }
-    interface Response {
-      response?: {
-        statusCode?: number;
-        message?: string;
-        data?: unknown;
-      };
-    }
-  }
+	namespace Express {
+		interface Request {
+			context: RequestContextType;
+		}
+		interface Response {
+			response?: {
+				statusCode?: number;
+				message?: string;
+				data?: unknown;
+			};
+		}
+	}
 }
 
 let requestContext: RequestContextType;
@@ -37,14 +37,14 @@ const app: Application = express();
 app.set("trust proxy", 1);
 
 const limiter = rateLimit({
-  windowMs: rateLimitOptions.duration,
-  max: rateLimitOptions.maxRequestsPerMinute,
-  message: {
-    status: 429,
-    message: "Too many requests from this IP. Try again in a minute.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
+	windowMs: rateLimitOptions.duration,
+	max: rateLimitOptions.maxRequestsPerMinute,
+	message: {
+		status: 429,
+		message: "Too many requests from this IP. Try again in a minute.",
+	},
+	standardHeaders: true,
+	legacyHeaders: false,
 });
 
 app.use(limiter as unknown as RequestHandler);
@@ -53,8 +53,8 @@ app.use(express.static("asset"));
 app.use(express.static("public"));
 
 app.use(async (req, _, next) => {
-  req.context = requestContext;
-  return next();
+	req.context = requestContext;
+	return next();
 });
 
 routes(app);
@@ -66,7 +66,7 @@ app.use(errorHandler);
 app.use(notFoundHandler);
 
 export const startServer = async (): Promise<void> => {
-  requestContext = await bootstrapRequestContext();
+	requestContext = await bootstrapRequestContext();
 
   app.listen(serverPort, () => {
   });
