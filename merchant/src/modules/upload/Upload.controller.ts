@@ -21,7 +21,6 @@ export const uploadSingle = async (req: Request, res: Response, next: NextFuncti
   const [error, data] = await manageAsyncOps(UploadService.uploadSingle(req.file, folder));
 
   if (error) {
-    console.log(error);
     return next(
       manageApplicationErrors({
         message: error.message || "Failed to upload file",
@@ -59,7 +58,6 @@ export const uploadBulk = async (req: Request, res: Response, next: NextFunction
   const [error, data] = await manageAsyncOps(UploadService.uploadBulk(req.files, folder));
 
   if (error) {
-    console.log(error);
     return next(
       manageApplicationErrors({
         message: error.message || "Failed to upload files",

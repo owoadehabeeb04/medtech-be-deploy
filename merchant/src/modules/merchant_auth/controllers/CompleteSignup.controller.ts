@@ -23,7 +23,6 @@ export const completeSignup = async (req: Request, res: Response, next: NextFunc
   const [error, data] = await manageAsyncOps(MerchantAuthService.completeSignup(payload));
 
   if (error) {
-    console.log(error);
     return next(
       manageApplicationErrors({
         message: error.message,

@@ -23,7 +23,6 @@ export const verifyResetOtp = async (req: Request, res: Response, next: NextFunc
   const [error, data] = await manageAsyncOps(MerchantAuthService.verifyResetOtp(payload));
 
   if (error) {
-    console.log(error);
     return next(
       manageApplicationErrors({
         message: error.message,

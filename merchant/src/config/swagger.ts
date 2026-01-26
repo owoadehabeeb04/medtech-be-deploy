@@ -272,10 +272,5 @@ const options: swaggerJsdoc.Options = {
 // Generate the spec
 const swaggerSpec = swaggerJsdoc(options) as any;
 
-// Log for debugging
-if (applicationConfig.nodeEnv === "development") {
-  const pathCount = swaggerSpec.paths ? Object.keys(swaggerSpec.paths).length : 0;
-  console.log("Swagger spec generated with", pathCount, "paths");
-}
 
 export { swaggerSpec };

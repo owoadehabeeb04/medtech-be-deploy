@@ -19,7 +19,6 @@ import { Merchant } from "../merchant/Merchant.model";
   timestamps: true,
   indexes: [
     { fields: ["merchant_id"] },
-    { fields: ["token"] },
     { fields: ["expires_at"] },
     { unique: true, fields: ["token"] },
   ],
@@ -40,7 +39,6 @@ export class RefreshToken extends Model<RefreshToken> {
   declare merchant: Merchant;
 
   @AllowNull(false)
-  @Index
   @Column(DataType.TEXT)
   declare token: string; // Hashed refresh token
 

@@ -69,7 +69,5 @@ export const startServer = async (): Promise<void> => {
   requestContext = await bootstrapRequestContext();
 
   app.listen(serverPort, () => {
-    console.log(` Merchant Backend Server started on port ${serverPort}`);
-    console.log(` Environment: ${applicationConfig.nodeEnv}`);
   });
 };

@@ -5,8 +5,8 @@
 		"strict": true,
 		"baseUrl": ".",
 		"paths": {
-			"@medtech/utils": ["utils/src/index.ts"],
-			"@medtech/utils/*": ["utils/src/*"]
+			"@medtech/utils": ["utils/dist/index.d.ts", "utils/src/index.ts"],
+			"@medtech/utils/*": ["utils/dist/*", "utils/src/*"]
 		},
 		"esModuleInterop": true,
 		"skipLibCheck": true,

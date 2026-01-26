@@ -22,9 +22,9 @@ const connection = async (): Promise<Sequelize> => {
     username: postgres.username,
     password: postgres.password,
     database: postgres.database,
-    logging: postgres.logging ? console.log : false,
+    logging: false,
     dialectOptions: {
-      ssl: applicationConfig.nodeEnv === "production" ? {
+      ssl: postgres.host.includes("rds.amazonaws.com") || applicationConfig.nodeEnv === "production" ? {
         require: true,
         rejectUnauthorized: false,
       } : false,
@@ -47,7 +47,6 @@ const connection = async (): Promise<Sequelize> => {
 
   try {
     await sequelize.authenticate();
-    console.log("PostgreSQL connection established successfully.");
 
     // Setup model associations
     setupAssociations();
@@ -55,16 +54,8 @@ const connection = async (): Promise<Sequelize> => {
     // Sync database tables in development mode
     if (applicationConfig.nodeEnv === "development") {
       await sequelize.sync({ alter: true });
-      console.log("Database tables synchronized.");
     }
   } catch (error) {
-    console.error("Unable to connect to PostgreSQL:", error);
-    console.error("Please check your database configuration in .env file");
-    console.error("DB_HOST:", postgres.host);
-    console.error("DB_NAME:", postgres.database);
-    console.error("\nMake sure PostgreSQL is running locally and the database exists.");
-    console.error("You can create the database with: createdb merchant_db");
-    console.error("\nServer will continue but database operations will fail.");
     // Don't exit - allow server to start for development
     // process.exit(1);
   }

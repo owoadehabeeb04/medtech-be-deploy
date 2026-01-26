@@ -88,7 +88,6 @@ export class PaystackService {
 
       return [];
     } catch (error: any) {
-      console.error("Failed to fetch bank list:", error.message);
       return [];
     }
   }

@@ -7,7 +7,6 @@ import { validateSchema } from "@medtech/utils";
 export default async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { user } = req.context;
-    console.log(user, 'user from context');
     if (!user?.id) {
       res.status(401);
       res.response = {

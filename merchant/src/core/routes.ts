@@ -38,9 +38,6 @@ export default function (app: Application) {
   
   app.use("/api-docs", swaggerUi.serve as any, swaggerUi.setup(swaggerSpec, swaggerOptions));
 
-  console.log(`Swagger UI available at http://localhost:${applicationConfig.serverPort}/api-docs`);
-  console.log(`Swagger JSON available at http://localhost:${applicationConfig.serverPort}/api-docs.json`);
-
   const apiRouter = express.Router();
   
   apiRouter.use("/health", healthRouter);
@@ -55,15 +52,4 @@ export default function (app: Application) {
   apiRouter.use("/support", authMiddleware, supportRouter);
 
   app.use("/api/v1/merchant", apiRouter);
-
-  console.log("✅ Routes registered:");
-  console.log("   - /api/v1/merchant/health");
-  console.log("   - /api/v1/merchant/auth/*");
-  console.log("   - /api/v1/merchant/upload/* (protected)");
-  console.log("   - /api/v1/merchant/onboarding/* (protected)");
-  console.log("   - /api/v1/merchant/settings/* (protected)");
-  console.log("   - /api/v1/merchant/products/* (protected)");
-  console.log("   - /api/v1/merchant/discounts/* (protected)");
-  console.log("   - /api/v1/merchant/categories/* (protected)");
-  console.log("   - /api/v1/merchant/support/* (protected)");
 }
