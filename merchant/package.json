@@ -4,7 +4,7 @@
 	"scripts": {
 		"start": "npm run build && node dist/app.js",
 		"dev": "nodemon --exec ts-node --project tsconfig.json src/app.ts",
-		"build": "tsc",
+		"build": "tsc --build",
 		"build:watch": "tsc --watch",
 		"seed": "ts-node --project tsconfig.json src/scripts/seed.ts"
 	},
