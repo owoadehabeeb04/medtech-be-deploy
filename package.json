@@ -16,6 +16,6 @@
 		"build:merchant": "npm run build --workspace=merchant"
 	},
 	"overrides": {
-		"joi": "$joi"
+		"joi": "18.0.2"
 	}
 }
