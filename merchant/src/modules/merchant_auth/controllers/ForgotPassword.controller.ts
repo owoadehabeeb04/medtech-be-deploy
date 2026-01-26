@@ -23,7 +23,6 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
   const [error, data] = await manageAsyncOps(MerchantAuthService.forgotPassword(payload, req));
 
   if (error) {
-    console.log(error);
     return next(
       manageApplicationErrors({
         message: error.message,

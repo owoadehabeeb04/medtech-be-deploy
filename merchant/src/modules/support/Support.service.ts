@@ -23,7 +23,6 @@ export class SupportService {
         supportEmail,
       });
     } catch (error) {
-      console.error("Error sending support email to team:", error);
       throw new Error("Failed to send support message. Please try again later.");
     }
 
@@ -37,7 +36,6 @@ export class SupportService {
         supportAddress: applicationConfig.supportAddress,
       });
     } catch (error) {
-      console.error("Error sending confirmation email to merchant:", error);
     }
 
     return {

@@ -78,7 +78,6 @@ export class UploadService {
         mimetype: file.mimetype,
       };
     } catch (error) {
-      console.error("S3 upload error:", error);
       throw new Error("Failed to upload file to S3");
     }
   }
@@ -98,7 +97,6 @@ export class UploadService {
         totalSize,
       };
     } catch (error) {
-      console.error("Bulk upload error:", error);
       throw new Error("Failed to upload files to S3");
     }
   }

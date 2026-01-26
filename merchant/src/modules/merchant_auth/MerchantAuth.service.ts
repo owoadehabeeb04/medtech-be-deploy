@@ -73,12 +73,8 @@ export class MerchantAuthService {
     try {
       await EmailService.sendSignupOtpEmail(email, emailData);
     } catch (error: any) {
-      console.error("Error sending signup OTP email:", error);
-      console.error("Error details:", { email, errorMessage: error?.message, errorCode: error?.code });
       if (isProduction) {
         throw error;
-      } else {
-        console.warn("Continuing in development mode despite email error. OTP:", otp);
       }
     }
 
@@ -203,20 +199,31 @@ export class MerchantAuthService {
   static async login(data: LoginDTO, req?: Request): Promise<ApiResponse> {
     const { email, password } = data;
 
-    // Find merchant with relations
+    // First, check if email exists (without checking isActive)
     const merchant = await Merchant.findOne({
-      where: { email, isActive: true },
+      where: { email },
       include: [
         { model: StoreDetails, as: "storeDetails" },
         { model: PaymentDetails, as: "paymentDetails" },
         { model: MerchantSettings, as: "settings" },
       ],
     });
+
+    // Check if email exists
     if (!merchant) {
       return {
         status: false,
-        code: 401,
-        message: "Invalid email or password",
+        code: 404,
+        message: "Email not found. Please check your email address or sign up.",
+      };
+    }
+
+    // Check if account is active
+    if (!merchant.isActive) {
+      return {
+        status: false,
+        code: 403,
+        message: "Your account has been deactivated. Please contact support.",
       };
     }
 
@@ -226,7 +233,7 @@ export class MerchantAuthService {
       return {
         status: false,
         code: 401,
-        message: "Invalid email or password",
+        message: "Invalid password. Please check your password and try again.",
       };
     }
 
@@ -322,12 +329,8 @@ export class MerchantAuthService {
     try {
       await EmailService.sendResetPasswordOtpEmail(email, emailData);
     } catch (error: any) {
-      console.error("Error sending reset password OTP email:", error);
-      console.error("Error details:", { email, errorMessage: error?.message, errorCode: error?.code });
       if (isProduction) {
         throw error;
-      } else {
-        console.warn("Continuing in development mode despite email error. OTP:", otp);
       }
     }
 

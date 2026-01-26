@@ -9,5 +9,10 @@
 			"utils"
 		],
 		"nohoist": []
+	},
+	"scripts": {
+		"build": "npm run build --workspace=utils && npm run build --workspace=merchant",
+		"build:utils": "npm run build --workspace=utils",
+		"build:merchant": "npm run build --workspace=merchant"
 	}
 }

@@ -38,10 +38,5 @@ router.post("/reset-password", resetPassword);
 
 // Refresh token
 router.post("/refresh-token", refreshToken);
-console.log(
-  "Merchant auth routes:",
-  router.stack
-    .filter((l: any) => l.route)
-    .map((l: any) => l.route.path)
-);
+
 export default router;

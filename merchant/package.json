@@ -5,7 +5,8 @@
 		"start": "ts-node --project tsconfig.json src/app.ts",
 		"dev": "nodemon --exec ts-node --project tsconfig.json src/app.ts",
 		"build": "tsc",
-		"build:watch": "tsc --watch"
+		"build:watch": "tsc --watch",
+		"seed": "ts-node --project tsconfig.json src/scripts/seed.ts"
 	},
 	"dependencies": {
 		"@medtech/utils": "*",

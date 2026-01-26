@@ -16,7 +16,6 @@ import { RefreshToken } from "./refresh_tokens/RefreshToken.model";
  * This function is kept for potential future complex associations.
  */
 export const setupAssociations = () => {
-  console.log("✅ Model associations established (via decorators)");
 };
 
 // Export all models for easy import

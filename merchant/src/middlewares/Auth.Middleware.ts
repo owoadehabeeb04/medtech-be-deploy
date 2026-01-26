@@ -68,7 +68,6 @@ export const authMiddleware = async (
 
     next();
   } catch (error) {
-    console.error("Auth middleware error:", error);
     return next(
       manageApplicationErrors({
         message: "Authentication failed",
