@@ -11,13 +11,19 @@
 		"nohoist": []
 	},
 	"scripts": {
-		"build": "tsc -b tsconfig.build.json && npm exec -w merchant -- copyfiles \"src/view/emails/**/*\" dist/",
+		"build": "npx tsc -p utils/tsconfig.json && npx tsc -b merchant/tsconfig.json && npm exec -w merchant -- copyfiles \"src/view/emails/**/*\" dist/",
 		"build:utils": "npm run build --workspace=utils",
 		"build:merchant": "npm run build --workspace=merchant",
 		"start": "npm run start --workspace=merchant",
 		"postinstall": "node -e \"if (process.env.RENDER === 'true') { require('child_process').execSync('npm run build', { stdio: 'inherit' }) }\""
 	},
 	"overrides": {
-		"joi": "18.0.2"
+		"joi": "18.0.2",
+		"@types/express": "^4.17.21",
+		"@types/express-serve-static-core": "^4.19.0"
+	},
+	"resolutions": {
+		"@types/express": "^4.17.21",
+		"@types/express-serve-static-core": "^4.19.0"
 	}
 }

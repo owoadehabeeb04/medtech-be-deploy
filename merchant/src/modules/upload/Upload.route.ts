@@ -21,16 +21,16 @@ const upload = multer({
 
     if (mimetype && extname) {
       return cb(null, true);
-    } else {
+    } elsen {
       cb(new Error("Invalid file type. Only JPEG, JPG, PNG, PDF, SVG are allowed."));
     }
   },
 });
 
-// Single file upload
-router.post("/single", upload.single("file"), uploadSingle);
+// Single file upload (cast for compatibility with express/swagger-ui-express typings)
+router.post("/single", upload.single("file") as any, uploadSingle);
 
 // Multiple files upload
-router.post("/bulk", upload.array("files", 10), uploadBulk);
+router.post("/bulk", upload.array("files", 10) as any, uploadBulk);
 
 export default router;
