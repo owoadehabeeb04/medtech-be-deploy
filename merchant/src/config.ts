@@ -41,11 +41,11 @@ export const applicationConfig = {
     password: process.env.ENCRYPTION_PASSWORD || "",
   },
   
-  smtp: {
-    host: process.env.SMTP_HOST || "",
-    port: parseInt(process.env.SMTP_PORT || "587", 10),
-    user: process.env.SMTP_USER || "",
-    pass: process.env.SMTP_PASS || "",
+  brevo: {
+    apiKey: process.env.BREVO_API_KEY || "",
+    senderEmail: process.env.BREVO_SENDER_EMAIL || "",
+    senderName: process.env.BREVO_SENDER_NAME || "",
+    baseUrl: process.env.BREVO_BASE_URL || "",
   },
   
   aws: {

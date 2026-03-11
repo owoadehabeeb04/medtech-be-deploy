@@ -14,11 +14,7 @@ const router: Router = Router();
 // All routes require authentication
 router.use(authMiddleware);
 
-/**
- * @route GET /api/v1/merchant/settings
- * @description Get all merchant settings
- * @access Private
- */
+
 router.get("/", getAllSettings);
 
 /**

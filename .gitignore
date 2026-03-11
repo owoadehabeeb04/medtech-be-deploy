@@ -1,3 +1,18 @@
-node_modules
+node_modules/
 .env
+.env.example
+# Build artifacts
+dist/
+build/
+*.tsbuildinfo
+
+# Coverage
+coverage/
+
+# Turbo repo cache
+.turbo/
+
+# Logs
+*.log
+logs/
 
