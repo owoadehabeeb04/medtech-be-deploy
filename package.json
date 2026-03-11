@@ -13,7 +13,8 @@
 	"scripts": {
 		"build": "npm run build --workspace=utils && npm run build --workspace=merchant",
 		"build:utils": "npm run build --workspace=utils",
-		"build:merchant": "npm run build --workspace=merchant"
+		"build:merchant": "npm run build --workspace=merchant",
+		"start": "npm run start --workspace=merchant"
 	},
 	"overrides": {
 		"joi": "18.0.2"
