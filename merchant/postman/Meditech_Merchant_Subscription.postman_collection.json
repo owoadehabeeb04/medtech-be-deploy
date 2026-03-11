@@ -1,0 +1,568 @@
+{
+  "info": {
+    "name": "Meditech Merchant - Subscription & Wallet",
+    "_postman_id": "meditech-merchant-sub-wallet",
+    "description": "API collection for Meditech Merchant subscription management and wallet system.\n\n## Setup\n1. Run the **Login** request first\n2. The token is auto-saved to the `token` variable\n3. All authenticated requests use it automatically\n\n## Test Flow\n1. Login → 2. Get Plans → 3. Get Subscription (Free) → 4. Fund Wallet → 5. Confirm Funding → 6. Subscribe (wallet) → 7. Upgrade → 8. Downgrade → 9. Cancel",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1/merchant"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "planId_bronze",
+      "value": ""
+    },
+    {
+      "key": "planId_silver",
+      "value": ""
+    },
+    {
+      "key": "planId_gold",
+      "value": ""
+    },
+    {
+      "key": "paymentReference",
+      "value": ""
+    },
+    {
+      "key": "fundingReference",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Authentication endpoints. Run Login first to auto-set the token.",
+      "item": [
+        {
+          "name": "1. Signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": { "type": "noauth" },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "signup"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testmerchant@example.com\",\n  \"name\": \"Test Pharmacy\"\n}"
+            },
+            "description": "Start signup flow. Returns OTP (visible in dev mode)."
+          }
+        },
+        {
+          "name": "2. Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": { "type": "noauth" },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-otp"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testmerchant@example.com\",\n  \"otp\": \"1234\"\n}"
+            },
+            "description": "Verify OTP from signup. Use the OTP returned in dev mode."
+          }
+        },
+        {
+          "name": "3. Complete Signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": { "type": "noauth" },
+            "url": {
+              "raw": "{{baseUrl}}/auth/complete-signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "complete-signup"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testmerchant@example.com\",\n  \"businessName\": \"Test Pharmacy Ltd\",\n  \"phoneNumber\": \"08012345678\",\n  \"password\": \"Test@1234\",\n  \"confirmPassword\": \"Test@1234\"\n}"
+            },
+            "description": "Complete signup with business details. Creates merchant, wallet, and Free subscription."
+          }
+        },
+        {
+          "name": "4. Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.token) {",
+                  "    pm.collectionVariables.set('token', res.data.token);",
+                  "    console.log('✅ Token saved to collection variable');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": { "type": "noauth" },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testmerchant@example.com\",\n  \"password\": \"Test@1234\"\n}"
+            },
+            "description": "Login and auto-save JWT token to collection variable. All other requests use this token automatically."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subscriptions",
+      "description": "Subscription plan management endpoints.",
+      "item": [
+        {
+          "name": "Get All Plans (Public)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && Array.isArray(res.data)) {",
+                  "    res.data.forEach(plan => {",
+                  "        if (plan.name === 'bronze') pm.collectionVariables.set('planId_bronze', plan.id);",
+                  "        if (plan.name === 'silver') pm.collectionVariables.set('planId_silver', plan.id);",
+                  "        if (plan.name === 'gold') pm.collectionVariables.set('planId_gold', plan.id);",
+                  "    });",
+                  "    console.log('✅ Plan IDs saved: bronze=' + pm.collectionVariables.get('planId_bronze'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": { "type": "noauth" },
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/plans",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "plans"]
+            },
+            "description": "Get all available subscription plans. No auth required.\n\nPlan IDs are auto-saved to collection variables for use in other requests.\n\n**Plans:**\n- Free (₦0) — 10 products\n- Bronze (₦2,500/mo) — 30 products\n- Silver (₦5,000/mo) — 80 products\n- Gold (₦10,000/mo) — unlimited"
+          }
+        },
+        {
+          "name": "Get My Subscription",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions"]
+            },
+            "description": "Get the current merchant's subscription details including plan info and any pending plan changes."
+          }
+        },
+        {
+          "name": "Subscribe to Plan (Wallet)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/subscribe",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "subscribe"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{planId_bronze}}\",\n  \"paymentMethod\": \"wallet\"\n}"
+            },
+            "description": "Subscribe to a paid plan from Free using wallet balance.\n\nMake sure wallet has enough funds first (Fund Wallet → Confirm Funding)."
+          }
+        },
+        {
+          "name": "Subscribe to Plan (Card)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.reference) {",
+                  "    pm.collectionVariables.set('paymentReference', res.data.reference);",
+                  "    console.log('✅ Reference saved: ' + res.data.reference);",
+                  "    console.log('🔗 Open authorizationUrl in browser to pay: ' + res.data.authorizationUrl);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/subscribe",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "subscribe"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{planId_bronze}}\",\n  \"paymentMethod\": \"card\"\n}"
+            },
+            "description": "Subscribe via Paystack card payment.\n\nReturns an `authorizationUrl` — open in browser to complete payment.\nThen call **Confirm Payment** with the reference."
+          }
+        },
+        {
+          "name": "Subscribe to Plan (Bank Transfer)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.reference) {",
+                  "    pm.collectionVariables.set('paymentReference', res.data.reference);",
+                  "    console.log('✅ Reference saved: ' + res.data.reference);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/subscribe",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "subscribe"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{planId_bronze}}\",\n  \"paymentMethod\": \"bank_transfer\"\n}"
+            },
+            "description": "Subscribe via Paystack bank transfer.\n\nReturns an `authorizationUrl` — open in browser to complete payment.\nThen call **Confirm Payment** with the reference."
+          }
+        },
+        {
+          "name": "Confirm Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/confirm-payment",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "confirm-payment"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference\": \"{{paymentReference}}\"\n}"
+            },
+            "description": "Confirm a Paystack payment after card/bank_transfer.\n\nUse the reference returned from the Subscribe or Upgrade request."
+          }
+        },
+        {
+          "name": "Upgrade Plan (Wallet)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/upgrade",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "upgrade"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{planId_silver}}\",\n  \"paymentMethod\": \"wallet\"\n}"
+            },
+            "description": "Upgrade to a higher plan. Charges the full new plan price.\n\nNew billing cycle starts immediately. Any pending downgrades are cancelled."
+          }
+        },
+        {
+          "name": "Upgrade Plan (Card)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.reference) {",
+                  "    pm.collectionVariables.set('paymentReference', res.data.reference);",
+                  "    console.log('✅ Reference saved. Open authorizationUrl in browser to pay.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/upgrade",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "upgrade"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{planId_gold}}\",\n  \"paymentMethod\": \"card\"\n}"
+            },
+            "description": "Upgrade via Paystack card. Open `authorizationUrl` in browser, then call **Confirm Payment**."
+          }
+        },
+        {
+          "name": "Downgrade Plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/downgrade",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "downgrade"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{planId_bronze}}\"\n}"
+            },
+            "description": "Schedule a downgrade to a lower plan.\n\n**Deferred** — takes effect at the end of the current billing period.\nNo payment required. Your current plan stays active until then."
+          }
+        },
+        {
+          "name": "Cancel Pending Downgrade",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/cancel-downgrade",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "cancel-downgrade"]
+            },
+            "description": "Cancel a previously scheduled downgrade. Your current plan continues as normal."
+          }
+        },
+        {
+          "name": "Cancel Subscription",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "cancel"]
+            },
+            "description": "Cancel your subscription. Reverts to the Free plan at the end of the current billing period.\n\nAuto-renewal is disabled. Current plan stays active until period end."
+          }
+        },
+        {
+          "name": "Toggle Auto-Renew (Enable)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/auto-renew",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "auto-renew"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"autoRenew\": true\n}"
+            },
+            "description": "Enable auto-renewal. Plan renews automatically at billing period end."
+          }
+        },
+        {
+          "name": "Toggle Auto-Renew (Disable)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/auto-renew",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "auto-renew"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"autoRenew\": false\n}"
+            },
+            "description": "Disable auto-renewal. Plan expires at the end of current billing period."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wallet",
+      "description": "Wallet management and transaction history.",
+      "item": [
+        {
+          "name": "Get Wallet",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/wallet",
+              "host": ["{{baseUrl}}"],
+              "path": ["wallet"]
+            },
+            "description": "Get wallet balance. Amount is in kobo (÷100 for Naira).\n\n`balanceInNaira` is provided for convenience."
+          }
+        },
+        {
+          "name": "Fund Wallet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.reference) {",
+                  "    pm.collectionVariables.set('fundingReference', res.data.reference);",
+                  "    console.log('✅ Funding reference saved: ' + res.data.reference);",
+                  "    if (res.data.authorizationUrl) {",
+                  "        console.log('🔗 Open in browser: ' + res.data.authorizationUrl);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wallet/fund",
+              "host": ["{{baseUrl}}"],
+              "path": ["wallet", "fund"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 5000\n}"
+            },
+            "description": "Initialize wallet funding via Paystack.\n\n**Amount is in Naira** (minimum ₦100).\n\nReturns `authorizationUrl` — open in browser to pay with card or bank transfer.\nThen call **Confirm Funding** with the reference."
+          }
+        },
+        {
+          "name": "Confirm Funding",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wallet/confirm-funding",
+              "host": ["{{baseUrl}}"],
+              "path": ["wallet", "confirm-funding"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference\": \"{{fundingReference}}\"\n}"
+            },
+            "description": "Confirm wallet funding after completing Paystack payment.\n\nUse the reference from the Fund Wallet response."
+          }
+        },
+        {
+          "name": "Get Transactions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/wallet/transactions?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["wallet", "transactions"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            },
+            "description": "Get paginated transaction history.\n\n**Optional filters** (as query params):\n- `type`: `subscription_payment`, `wallet_funding`, `wallet_debit`, `refund`\n- `status`: `pending`, `success`, `failed`"
+          }
+        },
+        {
+          "name": "Get Transactions (Filtered)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/wallet/transactions?page=1&limit=20&type=subscription_payment&status=success",
+              "host": ["{{baseUrl}}"],
+              "path": ["wallet", "transactions"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "type", "value": "subscription_payment" },
+                { "key": "status", "value": "success" }
+              ]
+            },
+            "description": "Get transactions filtered by type and status."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "noauth" },
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Check API and database status."
+          }
+        }
+      ]
+    }
+  ]
+}

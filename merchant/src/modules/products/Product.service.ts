@@ -1,5 +1,7 @@
 import { Product } from "./Product.model";
 import { MerchantSettings } from "../merchant_settings/MerchantSettings.model";
+import { Subscription } from "../subscriptions/Subscription.model";
+import { Plan } from "../subscriptions/Plan.model";
 import { CreateProductDTO, UpdateProductDTO, UpdateProductStockDTO } from "./Product.dto";
 import { ProductStatus } from "../../constants/enums";
 import { Op } from "sequelize";
@@ -91,6 +93,22 @@ export class ProductService {
    * Create a new product
    */
   static async createProduct(merchantId: string, data: CreateProductDTO) {
+    // Enforce plan product listing limits
+    const subscription = await Subscription.findOne({
+      where: { merchantId },
+      include: [{ model: Plan, as: "plan" }],
+    });
+
+    if (subscription?.plan?.maxProductListings !== null && subscription?.plan?.maxProductListings !== undefined) {
+      const currentCount = await Product.count({ where: { merchantId, isActive: true } });
+      if (currentCount >= subscription.plan.maxProductListings) {
+        throw new HttpException(
+          403,
+          `Your ${subscription.plan.displayName} plan allows a maximum of ${subscription.plan.maxProductListings} product listings. Please upgrade your plan to add more products.`
+        );
+      }
+    }
+
     // Get merchant settings to determine low stock threshold
     const settings = await MerchantSettings.findOne({ where: { merchantId } });
     const lowStockThreshold = settings?.storePreferences?.lowStockThreshold || 10;

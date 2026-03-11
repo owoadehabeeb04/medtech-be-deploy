@@ -7,6 +7,11 @@ import { Product } from "./products/Product.model";
 import { Discount } from "./discounts/Discount.model";
 import { Category } from "./categories/Category.model";
 import { RefreshToken } from "./refresh_tokens/RefreshToken.model";
+import { Plan } from "./subscriptions/Plan.model";
+import { Subscription } from "./subscriptions/Subscription.model";
+import { ScheduledPlanChange } from "./subscriptions/ScheduledPlanChange.model";
+import { Wallet } from "./wallet/Wallet.model";
+import { Transaction } from "./transactions/Transaction.model";
 
 /**
  * Setup all Sequelize model associations
@@ -19,4 +24,19 @@ export const setupAssociations = () => {
 };
 
 // Export all models for easy import
-export { Merchant, StoreDetails, PaymentDetails, MerchantSettings, MerchantVerification, Product, Discount, Category, RefreshToken };
+export {
+  Merchant,
+  StoreDetails,
+  PaymentDetails,
+  MerchantSettings,
+  MerchantVerification,
+  Product,
+  Discount,
+  Category,
+  RefreshToken,
+  Plan,
+  Subscription,
+  ScheduledPlanChange,
+  Wallet,
+  Transaction,
+};

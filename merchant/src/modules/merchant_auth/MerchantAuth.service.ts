@@ -4,6 +4,10 @@ import { StoreDetails } from "../store_details/StoreDetails.model";
 import { PaymentDetails } from "../payment_details/PaymentDetails.model";
 import { MerchantSettings } from "../merchant_settings/MerchantSettings.model";
 import { Category } from "../categories/Category.model";
+import { Wallet } from "../wallet/Wallet.model";
+import { Subscription } from "../subscriptions/Subscription.model";
+import { Plan } from "../subscriptions/Plan.model";
+import { SubscriptionStatus, PlanTier } from "../../constants/enums";
 import { MerchantVerificationService } from "../merchant_verification/MerchantVerification.service";
 import { RefreshTokenService } from "../refresh_tokens/RefreshToken.service";
 import { EmailService } from "../../service/Email/Email.service";
@@ -175,6 +179,20 @@ export class MerchantAuthService {
 
     // Seed default categories (Antibiotics, Pain Relief)
     await Category.seedDefaultCategories(merchant.id);
+
+    // Create wallet
+    await Wallet.create({ merchantId: merchant.id });
+
+    // Assign Free plan subscription
+    const freePlan = await Plan.findOne({ where: { name: PlanTier.FREE } });
+    if (freePlan) {
+      await Subscription.create({
+        merchantId: merchant.id,
+        planId: freePlan.id,
+        status: SubscriptionStatus.ACTIVE,
+        autoRenew: false,
+      });
+    }
 
     // Delete session after successful signup
     await MerchantVerificationService.delSession(session.sessionId);
