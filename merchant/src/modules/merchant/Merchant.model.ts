@@ -17,6 +17,9 @@ import { Product } from "../products/Product.model";
 import { Discount } from "../discounts/Discount.model";
 import { Category } from "../categories/Category.model";
 import { RefreshToken } from "../refresh_tokens/RefreshToken.model";
+import { Subscription } from "../subscriptions/Subscription.model";
+import { Wallet } from "../wallet/Wallet.model";
+import { Transaction } from "../transactions/Transaction.model";
 
 @Table({
   tableName: "merchants",
@@ -113,6 +116,15 @@ export class Merchant extends Model<Merchant> {
 
   @HasMany(() => RefreshToken)
   declare refreshTokens: RefreshToken[];
+
+  @HasOne(() => Subscription)
+  declare subscription: Subscription;
+
+  @HasOne(() => Wallet)
+  declare wallet: Wallet;
+
+  @HasMany(() => Transaction)
+  declare transactions: Transaction[];
 
   // Computed property for full name
   get fullName(): string {

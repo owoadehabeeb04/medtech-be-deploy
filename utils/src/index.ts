@@ -492,4 +492,4 @@ export {
 } from "./jwt";
 
 export { default as AwsUtil_s3, type AWSConfig, type IAWS } from "./aws.s3";
-export { default as SendEmail, type SMTPConfig } from "./SendEmail";
+export { default as SendEmail, type BrevoConfig } from "./SendEmail";

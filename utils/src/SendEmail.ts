@@ -1,88 +1,44 @@
-import * as nodemailer from "nodemailer";
-import hbs from "nodemailer-express-handlebars";
-import * as path from "path";
 import * as fs from "fs";
+import * as path from "path";
+import * as https from "https";
+import handlebars from "handlebars";
 
-export interface SMTPConfig {
-  user: string;
-  host: string;
-  port: number;
-  pass: string;
+export interface BrevoConfig {
+  apiKey: string;
+  senderEmail: string;
+  senderName?: string;
+  baseUrl?: string;
 }
 
+type EmailRecipient = {
+  email: string;
+};
+
 export default class SendEmail {
-  private user: string;
-  private host: string;
-  private port: number;
-  private password: string;
-  private transporter: nodemailer.Transporter;
-  private handlebarOptions: hbs.NodemailerExpressHandlebarsOptions;
-  private mailOptions: nodemailer.SendMailOptions & any;
+  private readonly apiKey: string;
+  private readonly senderEmail: string;
+  private readonly senderName: string;
+  private readonly baseUrl: string;
+  private readonly emailTemplatePath: string;
 
-  constructor(smtpConfig: SMTPConfig, emailTemplatePath?: string) {
-    this.user = smtpConfig.user;
-    this.host = smtpConfig.host;
-    this.port = smtpConfig.port;
-    this.password = smtpConfig.pass;
+  constructor(brevoConfig: BrevoConfig, emailTemplatePath?: string) {
+    this.apiKey = brevoConfig.apiKey;
+    this.senderEmail = brevoConfig.senderEmail;
+    this.senderName = brevoConfig.senderName || "Quick Medic";
+    this.baseUrl = brevoConfig.baseUrl || "https://api.brevo.com";
 
-    if (this.host && this.user && this.password) {
-      const isGmail = this.host.includes("gmail.com");
-      const emailConfig: any = {
-        host: this.host,
-        port: this.port,
-        auth: { user: this.user, pass: this.password },
-        secure: isGmail && this.port === 465,
-        debug: true,
-      };
-
-      if (isGmail && this.port === 587) {
-        emailConfig.requireTLS = true;
-        emailConfig.tls = {
-          rejectUnauthorized: false,
-        };
-      } else if (!isGmail) {
-        emailConfig.secure = false;
-        emailConfig.tls = {
-          rejectUnauthorized: false,
-        };
-      }
-
-      this.transporter = nodemailer.createTransport(emailConfig);
-      console.log("SMTP transporter configured:", { 
-        host: this.host, 
-        port: this.port, 
-        secure: emailConfig.secure,
-        isGmail 
-      });
-    } else {
-      console.warn("SMTP not fully configured - creating empty transporter");
-      this.transporter = nodemailer.createTransport({});
-    }
-
-    // Use provided email template path or try to find it
-    let emailPath = emailTemplatePath;
-    if (!emailPath) {
-      // Try merchant path first, then fallback to utils path
+    let resolvedTemplatePath = emailTemplatePath;
+    if (!resolvedTemplatePath) {
       const merchantEmailPath = path.resolve(__dirname, "../../merchant/src/view/emails/");
       const utilsEmailPath = path.resolve(__dirname, "../view/emails/");
-      emailPath = fs.existsSync(merchantEmailPath) ? merchantEmailPath : utilsEmailPath;
+      resolvedTemplatePath = fs.existsSync(merchantEmailPath) ? merchantEmailPath : utilsEmailPath;
     }
 
-    this.handlebarOptions = {
-      viewEngine: {
-        partialsDir: emailPath,
-        defaultLayout: "",
-      },
-      viewPath: emailPath,
-    };
-
-    if (!fs.existsSync(emailPath)) {
-      console.error("Email template path does not exist:", emailPath);
-      throw new Error(`Email template path does not exist: ${emailPath}`);
+    if (!fs.existsSync(resolvedTemplatePath)) {
+      throw new Error(`Email template path does not exist: ${resolvedTemplatePath}`);
     }
 
-    console.log("Email templates initialized with path:", emailPath);
-    this.transporter.use("compile", hbs(this.handlebarOptions));
+    this.emailTemplatePath = resolvedTemplatePath;
   }
 
   async send(
@@ -92,75 +48,113 @@ export default class SendEmail {
     data: any,
     cc?: string | string[]
   ) {
-    if (!this.host || !this.user || !this.password) {
-      const errorMsg = "SMTP not configured. Email not sent. Configure SMTP_HOST, SMTP_USER, and SMTP_PASS in .env";
-      console.error(errorMsg);
-      console.error("Current SMTP config:", { host: this.host, user: this.user, hasPassword: !!this.password });
-      throw new Error(errorMsg);
+    if (!this.apiKey || !this.senderEmail) {
+      throw new Error(
+        "Brevo is not configured. Set BREVO_API_KEY and BREVO_SENDER_EMAIL in your environment."
+      );
     }
 
-    if (Array.isArray(to)) {
-      to = to.filter(email => !email.includes("@example.com"));
-      if (to.length === 0) {
-        throw new Error("All recipient emails are invalid (@example.com addresses are not real)");
-      }
-    } else if (to.includes("@example.com")) {
-      throw new Error("Cannot send email to @example.com - this is not a real email domain. Please use a real email address.");
+    const toRecipients = this.normalizeRecipients(to);
+    const ccRecipients = cc ? this.normalizeRecipients(cc) : [];
+
+    if (toRecipients.length === 0) {
+      throw new Error("At least one valid recipient is required.");
     }
 
-    if (!this.handlebarOptions || !this.handlebarOptions.viewPath) {
-      const errorMsg = "Email template path not configured";
-      console.error(errorMsg);
-      throw new Error(errorMsg);
-    }
+    const htmlContent = this.renderTemplate(template, data);
 
-    this.mailOptions = {
-      from: `"Quick Medic" <${this.user}>`,
-      to,
+    const payload = JSON.stringify({
+      sender: {
+        email: this.senderEmail,
+        name: this.senderName,
+      },
+      to: toRecipients,
+      cc: ccRecipients.length > 0 ? ccRecipients : undefined,
       subject,
-      template,
-      context: data,
-      cc,
-    };
+      htmlContent,
+    });
+
+    await this.post("/v3/smtp/email", payload);
+
+    return toRecipients.map((recipient) => recipient.email);
+  }
+
+  private normalizeRecipients(recipients: string | string[]): EmailRecipient[] {
+    const recipientList = Array.isArray(recipients) ? recipients : [recipients];
+
+    return recipientList
+      .map((email) => email.trim())
+      .filter((email) => email.length > 0 && !email.includes("@example.com"))
+      .map((email) => ({ email }));
+  }
+
+  private renderTemplate(template: string, data: any): string {
+    const templateFilePath = path.resolve(this.emailTemplatePath, `${template}.handlebars`);
+
+    if (!fs.existsSync(templateFilePath)) {
+      throw new Error(`Email template not found: ${templateFilePath}`);
+    }
+
+    const templateSource = fs.readFileSync(templateFilePath, "utf8");
+    const compiledTemplate = handlebars.compile(templateSource);
+
+    return compiledTemplate(data);
+  }
+
+  private post(endpoint: string, payload: string): Promise<void> {
+    const url = new URL(endpoint, this.baseUrl);
 
     return new Promise((resolve, reject) => {
-      this.transporter.sendMail(this.mailOptions, function (error, info) {
-        if (error) {
-          console.error("Email send error:", error);
-          const errorWithCode = error as Error & { code?: string; response?: string; responseCode?: number };
-          console.error("Email details:", { 
-            to, 
-            subject, 
-            template, 
-            errorCode: errorWithCode.code, 
-            errorMessage: error.message,
-            response: errorWithCode.response,
-            responseCode: errorWithCode.responseCode
+      const request = https.request(
+        {
+          method: "POST",
+          protocol: url.protocol,
+          hostname: url.hostname,
+          port: url.port || (url.protocol === "https:" ? 443 : 80),
+          path: `${url.pathname}${url.search}`,
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.byteLength(payload),
+            "api-key": this.apiKey,
+            Accept: "application/json",
+          },
+        },
+        (response) => {
+          let responseBody = "";
+
+          response.on("data", (chunk) => {
+            responseBody += chunk;
           });
-          
-          if (errorWithCode.code === "EAUTH") {
-            console.error("Authentication failed. Check your SMTP credentials (username/password).");
-            console.error("For Gmail, make sure you're using an App Password, not your regular password.");
-          }
-          
-          return reject(error);
+
+          response.on("end", () => {
+            if (response.statusCode && response.statusCode >= 200 && response.statusCode < 300) {
+              resolve();
+              return;
+            }
+
+            let errorMessage = "Brevo email request failed";
+
+            if (responseBody) {
+              try {
+                const parsedResponse = JSON.parse(responseBody);
+                errorMessage =
+                  parsedResponse.message ||
+                  parsedResponse.code ||
+                  parsedResponse.error ||
+                  errorMessage;
+              } catch {
+                errorMessage = responseBody;
+              }
+            }
+
+            reject(new Error(errorMessage));
+          });
         }
-        
-        console.log("Email sent successfully:", { 
-          to, 
-          subject, 
-          messageId: info?.messageId,
-          accepted: info?.accepted,
-          rejected: info?.rejected,
-          response: info?.response
-        });
-        
-        if (info?.rejected && info.rejected.length > 0) {
-          console.warn("Some recipients were rejected:", info.rejected);
-        }
-        
-        resolve(to);
-      });
+      );
+
+      request.on("error", reject);
+      request.write(payload);
+      request.end();
     });
   }
 }

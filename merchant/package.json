@@ -2,7 +2,7 @@
 	"name": "merchant",
 	"version": "1.0.0",
 	"scripts": {
-		"start": "npm run build && node dist/src/app.js",
+		"start": "node dist/src/app.js",
 		"dev": "nodemon --exec ts-node --project tsconfig.json src/app.ts",
 		"build": "tsc --build && copyfiles \"src/view/emails/**/*\" dist/",
 		"build:watch": "tsc --watch",

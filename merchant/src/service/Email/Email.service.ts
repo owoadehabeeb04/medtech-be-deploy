@@ -2,10 +2,10 @@ import { SendEmail } from "@medtech/utils";
 import { applicationConfig } from "../../config";
 import * as path from "path";
 
-const { baseUrl, supportEmail, smtp } = applicationConfig;
+const { baseUrl, supportEmail, brevo } = applicationConfig;
 const emailTemplatePath = path.resolve(__dirname, "../../view/emails/");
 
-const send_mail = new SendEmail(smtp, emailTemplatePath);
+const send_mail = new SendEmail(brevo, emailTemplatePath);
 
 export class EmailService {
   static async sendSignupOtpEmail(email: string, payload: any) {

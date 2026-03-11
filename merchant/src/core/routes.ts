@@ -15,6 +15,8 @@ import productRouter from "../modules/products/Product.route";
 import discountRouter from "../modules/discounts/Discount.route";
 import categoryRouter from "../modules/categories/Category.route";
 import supportRouter from "../modules/support/Support.route";
+import subscriptionRouter from "../modules/subscriptions/Subscription.route";
+import walletRouter from "../modules/wallet/Wallet.route";
 import { authMiddleware } from "../middlewares/Auth.Middleware";
 
 export default function (app: Application) {
@@ -50,6 +52,8 @@ export default function (app: Application) {
 	apiRouter.use("/discounts", authMiddleware, discountRouter);
 	apiRouter.use("/categories", authMiddleware, categoryRouter);
 	apiRouter.use("/support", authMiddleware, supportRouter);
+	apiRouter.use("/subscriptions", subscriptionRouter);
+	apiRouter.use("/wallet", authMiddleware, walletRouter);
 
 	app.use("/api/v1/merchant", apiRouter);
 }

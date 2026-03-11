@@ -23,14 +23,11 @@ export type Configuration = {
 		password?: string;
 		salt?: string;
 	};
-	mailOptions: {
-		username: string;
-		password: string;
-		port: number;
-		host: string;
-		fromEmail?: string;
-		fromName?: string;
-		otpExpiresIn?: number; // Optional, if needed for OTP emails
+	brevo: {
+		apiKey: string;
+		senderEmail: string;
+		senderName?: string;
+		baseUrl?: string;
 	};
 	awsOptions: {
 		region: string;
@@ -69,13 +66,11 @@ export const applicationConfig: Configuration = {
 		duration: +process.env.RATE_LIMIT_DURATION || 60000,
 		maxRequestsPerMinute: +process.env.RATE_LIMIT_MAX_REQUESTS || 100,
 	},
-	mailOptions: {
-		username: process.env.MAIL_USER,
-		password: process.env.MAIL_PASS,
-		port: +process.env.MAIL_PORT,
-		host: process.env.MAIL_HOST,
-		fromEmail: process.env.MAIL_FROM_EMAIL,
-		fromName: process.env.MAIL_FROM_EMAIL_NAME,
+	brevo: {
+		apiKey: process.env.BREVO_API_KEY,
+		senderEmail: process.env.BREVO_SENDER_EMAIL,
+		senderName: process.env.BREVO_SENDER_NAME || "Quick Medic",
+		baseUrl: process.env.BREVO_BASE_URL || "https://api.brevo.com",
 	},
 	awsOptions: {
 		region: process.env.AWS_DEFAULT_REGION,
