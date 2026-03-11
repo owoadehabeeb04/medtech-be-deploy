@@ -11,7 +11,7 @@
 		"nohoist": []
 	},
 	"scripts": {
-		"build": "npm run build --workspace=utils && npm run build --workspace=merchant",
+		"build": "tsc -b tsconfig.build.json && npm exec -w merchant -- copyfiles \"src/view/emails/**/*\" dist/",
 		"build:utils": "npm run build --workspace=utils",
 		"build:merchant": "npm run build --workspace=merchant",
 		"start": "npm run start --workspace=merchant",
