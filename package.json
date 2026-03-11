@@ -14,7 +14,8 @@
 		"build": "npm run build --workspace=utils && npm run build --workspace=merchant",
 		"build:utils": "npm run build --workspace=utils",
 		"build:merchant": "npm run build --workspace=merchant",
-		"start": "npm run start --workspace=merchant"
+		"start": "npm run start --workspace=merchant",
+		"postinstall": "node -e \"if (process.env.RENDER === 'true') { require('child_process').execSync('npm run build', { stdio: 'inherit' }) }\""
 	},
 	"overrides": {
 		"joi": "18.0.2"
