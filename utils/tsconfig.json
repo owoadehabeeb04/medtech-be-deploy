@@ -1,12 +1,11 @@
 {
-	"extends": "../tsconfig.base.json", // adjust if your base is named/located differently (e.g. "../tsconfig.json")
+	"extends": "../tsconfig.base.json",
 	"compilerOptions": {
-		"composite": true,
-		"rootDir": "src", // add this — strongly recommended with composite
+		"rootDir": "src",
 		"outDir": "./dist",
 		"declaration": true,
-		"declarationMap": true
+		"declarationMap": true,
+		"skipLibCheck": true
 	},
 	"include": ["src/**/*"]
-	// No "references" here — utils is a leaf/shared package, it doesn't depend on other TS projects
 }
