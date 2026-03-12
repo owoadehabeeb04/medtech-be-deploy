@@ -403,7 +403,7 @@ export const validateSchema = (schema: Joi.Schema, data: any): { error: string |
 	const { error, value } = schema.validate(data, { abortEarly: false });
 	if (error) {
 		return {
-			error: error.details.map((d) => d.message).join(", "),
+			error: error.details.map((d: Joi.ValidationErrorItem) => d.message).join(", "),
 			value: undefined as any,
 		};
 	}
