@@ -116,9 +116,8 @@ async function seedDatabase() {
         password: hashedPassword,
         isVerified: true,
         isActive: true,
-        termsAccepted: true,
         onboardingCompleted: true,
-        onboardingStep: 5,
+        onboardingStep: 4,
         onboardingCompletedAt: new Date(),
       });
     }

@@ -1,12 +1,5 @@
 import Joi from "joi";
 
-export const AcceptTermsSchema = Joi.object({
-  accepted: Joi.boolean().valid(true).required().messages({
-    "any.only": "You must accept the terms and conditions",
-    "any.required": "Acceptance is required",
-  }),
-});
-
 export const UploadValidIdSchema = Joi.object({
   validIdUrl: Joi.string().uri().required().messages({
     "string.uri": "Valid ID URL must be a valid URL",

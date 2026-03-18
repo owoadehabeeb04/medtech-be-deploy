@@ -72,11 +72,6 @@ export class Merchant extends Model<Merchant> {
   declare isActive: boolean;
 
   // Onboarding fields
-  @AllowNull(false)
-  @Default(false)
-  @Column(DataType.BOOLEAN)
-  declare termsAccepted: boolean;
-
   @AllowNull(true)
   @Column(DataType.STRING)
   declare validIdUrl: string;
