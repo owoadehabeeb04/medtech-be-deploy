@@ -17,6 +17,7 @@ import { Wallet } from "../modules/wallet/Wallet.model";
 import { Transaction } from "../modules/transactions/Transaction.model";
 import { setupAssociations } from "../modules/associations";
 import { seedPlans } from "../modules/subscriptions/plan-seeds";
+import { runMigrations } from "./migrations";
 
 const { postgres } = applicationConfig;
 
@@ -56,6 +57,9 @@ const connection = async (): Promise<Sequelize> => {
 		if (applicationConfig.nodeEnv === "development") {
 			await sequelize.sync({ alter: true });
 		}
+
+		// Run one-time migrations (idempotent, safe for all environments)
+		await runMigrations(sequelize);
 
 		// Seed subscription plans
 		await seedPlans();

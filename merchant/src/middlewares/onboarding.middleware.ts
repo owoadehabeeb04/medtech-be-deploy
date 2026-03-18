@@ -28,7 +28,6 @@ export const requireOnboarding = async (req: Request, res: Response, next: NextF
         currentStep: merchant.onboardingStep,
         onboardingUrl: "/api/v1/merchant/onboarding/status",
         completed: {
-          terms: merchant.termsAccepted,
           validId: !!merchant.validIdUrl,
           profile: !!merchant.profilePictureUrl,
           bank: merchant.bankVerified,

@@ -1,7 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
 import { getOnboardingStatus } from "./controllers/GetOnboardingStatus.controller";
-import { acceptTerms } from "./controllers/AcceptTerms.controller";
 import { uploadValidId } from "./controllers/UploadValidId.controller";
 import { uploadProfilePicture } from "./controllers/UploadProfilePicture.controller";
 import { verifyBankAccount } from "./controllers/VerifyBankAccount.controller";
@@ -35,7 +34,6 @@ const upload = multer({
 // Onboarding routes
 router.get("/status", getOnboardingStatus);
 router.get("/banks", getBankList);
-router.post("/accept-terms", acceptTerms);
 router.post("/upload-valid-id", uploadValidId); // Accepts JSON with validIdUrl
 router.post("/upload-profile-picture", uploadProfilePicture); // Accepts JSON with profilePictureUrl
 router.post("/verify-bank", verifyBankAccount);

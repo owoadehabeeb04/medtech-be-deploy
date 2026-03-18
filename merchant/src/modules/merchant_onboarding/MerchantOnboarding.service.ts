@@ -1,6 +1,6 @@
 import { Merchant } from "../merchant/Merchant.model";
 import { PaymentDetails } from "../payment_details/PaymentDetails.model";
-import { AcceptTermsDTO, VerifyBankDTO, OnboardingStatusDTO } from "./MerchantOnboarding.dto";
+import { VerifyBankDTO, OnboardingStatusDTO } from "./MerchantOnboarding.dto";
 import { PaystackService } from "../../service/Paystack/Paystack.service";
 import { UploadService } from "../upload/Upload.service";
 import { ApiResponse } from "../merchant_auth/MerchantAuth.service";
@@ -29,10 +29,6 @@ export class MerchantOnboardingService {
         completed: merchant.onboardingCompleted,
         currentStep: merchant.onboardingStep,
         steps: {
-          terms: {
-            completed: merchant.termsAccepted,
-            required: true,
-          },
           validId: {
             completed: !!merchant.validIdUrl,
             required: true,
@@ -67,53 +63,7 @@ export class MerchantOnboardingService {
   }
 
   /**
-   * Step 1: Accept terms and conditions
-   */
-  static async acceptTerms(merchantId: string, data: AcceptTermsDTO): Promise<ApiResponse> {
-    try {
-      const merchant = await Merchant.findByPk(merchantId);
-
-      if (!merchant) {
-        return {
-          status: false,
-          code: 404,
-          message: "Merchant not found",
-        };
-      }
-
-      if (merchant.termsAccepted) {
-        return {
-          status: false,
-          code: 400,
-          message: "Terms already accepted",
-        };
-      }
-
-      await merchant.update({
-        termsAccepted: true,
-        onboardingStep: merchant.onboardingStep === 1 ? 2 : merchant.onboardingStep,
-      });
-
-      return {
-        status: true,
-        code: 200,
-        message: "Terms and conditions accepted successfully",
-        data: {
-          currentStep: merchant.onboardingStep,
-          nextStep: "Upload Valid ID",
-        },
-      };
-    } catch (error: any) {
-      return {
-        status: false,
-        code: 500,
-        message: error.message || "Failed to accept terms",
-      };
-    }
-  }
-
-  /**
-   * Step 2: Upload valid ID document
+   * Step 1: Upload valid ID document
    */
   static async uploadValidId(merchantId: string, validIdUrl: string): Promise<ApiResponse> {
     try {
@@ -127,14 +77,6 @@ export class MerchantOnboardingService {
         };
       }
 
-      if (!merchant.termsAccepted) {
-        return {
-          status: false,
-          code: 400,
-          message: "Please accept terms and conditions first",
-        };
-      }
-
       if (merchant.validIdUrl) {
         return {
           status: false,
@@ -145,7 +87,7 @@ export class MerchantOnboardingService {
 
       await merchant.update({
         validIdUrl: validIdUrl,
-        onboardingStep: merchant.onboardingStep === 2 ? 3 : merchant.onboardingStep,
+        onboardingStep: merchant.onboardingStep === 1 ? 2 : merchant.onboardingStep,
       });
 
       return {
@@ -168,7 +110,7 @@ export class MerchantOnboardingService {
   }
 
   /**
-   * Step 3: Upload profile picture
+   * Step 2: Upload profile picture
    */
   static async uploadProfilePicture(
     merchantId: string,
@@ -203,7 +145,7 @@ export class MerchantOnboardingService {
 
       await merchant.update({
         profilePictureUrl: profilePictureUrl,
-        onboardingStep: merchant.onboardingStep === 3 ? 4 : merchant.onboardingStep,
+        onboardingStep: merchant.onboardingStep === 2 ? 3 : merchant.onboardingStep,
       });
 
       return {
@@ -226,7 +168,7 @@ export class MerchantOnboardingService {
   }
 
   /**
-   * Step 4: Verify bank account
+   * Step 3: Verify bank account
    */
   static async verifyBankAccount(merchantId: string, data: VerifyBankDTO): Promise<ApiResponse> {
     try {

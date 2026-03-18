@@ -299,7 +299,6 @@ export class MerchantAuthService {
           completed: merchant.onboardingCompleted,
           currentStep: merchant.onboardingStep,
           progress: {
-            terms: merchant.termsAccepted,
             validId: !!merchant.validIdUrl,
             profile: !!merchant.profilePictureUrl,
             bank: merchant.paymentDetails?.bankVerified || false,
