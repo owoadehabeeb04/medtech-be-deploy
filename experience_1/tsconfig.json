@@ -1,7 +1,9 @@
 {
 	"extends": "../tsconfig.base.json", // or "../tsconfig.base.json" depending on depth
 	"compilerOptions": {
+		"rootDir": "./src",
 		"outDir": "./dist",
+		"composite": true,
 		"declaration": true, // useful if others consume your .d.ts
 		"declarationMap": true
 	},

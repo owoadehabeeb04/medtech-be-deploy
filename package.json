@@ -11,9 +11,10 @@
 		"nohoist": []
 	},
 	"scripts": {
-		"build": "npx tsc -p utils/tsconfig.json && npx tsc -p merchant/tsconfig.json && npm exec -w merchant -- copyfiles -u 1 \"src/view/emails/**/*\" dist/",
+		"build": "npm run build:utils && npm run build:experience_1 && npm run build:merchant",
 		"build:utils": "npx tsc -p utils/tsconfig.json",
-		"build:merchant": "npx tsc -p merchant/tsconfig.json && npm exec -w merchant -- copyfiles -u 1 \"src/view/emails/**/*\" dist/",
+		"build:experience_1": "npm run build --workspace=experience_1",
+		"build:merchant": "npm run build --workspace=merchant",
 		"start": "npm run start --workspace=merchant",
 		"postinstall": "node -e \"if (process.env.RENDER === 'true') { require('child_process').execSync('npm run build', { stdio: 'inherit' }) }\""
 	},
