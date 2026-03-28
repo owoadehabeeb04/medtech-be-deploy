@@ -19,6 +19,18 @@ export enum USER_TYPE {
 	MEDIC = "medic",
 	ADMIN = "admin",
 	VENDOR = "vendor",
+	CONSUMER = "consumer",
+	DOCTOR = "doctor",
+}
+
+export enum AUTH_ROLE {
+	CONSUMER = "consumer",
+	DOCTOR = "doctor",
+}
+
+export enum OTP_PURPOSE {
+	EMAIL_VERIFICATION = "EMAIL_VERIFICATION",
+	PASSWORD_RESET = "PASSWORD_RESET",
 }
 
 export enum NOTIFICATION_TYPE {

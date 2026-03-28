@@ -1,0 +1,1191 @@
+{
+  "info": {
+    "name": "experience_1 Auth & Profile",
+    "_postman_id": "experience1-auth-profile-collection",
+    "description": "API collection for experience_1 auth, consumer profile onboarding, and doctor onboarding.\n\n## Setup\n1. Import this collection first\n2. Use the collection variables or matching environment values\n3. Run one auth flow at a time\n4. The latest successful login, doctor registration, or consumer signup completion overwrites the shared `token` and `refreshToken`\n\n## Recommended Test Flow\n### Consumer\n1. Request Signup OTP\n2. Verify Signup OTP\n3. Complete Consumer Signup\n4. Get Current User\n5. Create Consumer Profile\n6. Upload Consumer Profile Image\n7. Get Consumer Profile\n\n### Doctor\n1. Register Doctor\n2. Get Current User\n3. Create Doctor Basic Profile\n4. Upload Doctor Profile Image\n5. Add Doctor Address\n6. Add Education History\n7. Add Work History\n8. Create Doctor Specialties\n9. Complete Doctor Onboarding\n10. Get Doctor Profile",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:6200/api/v1/main"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "consumer_email",
+      "value": "consumer1@example.com"
+    },
+    {
+      "key": "consumer_phone",
+      "value": "+2348012345678"
+    },
+    {
+      "key": "consumer_password",
+      "value": "StrongPass1!"
+    },
+    {
+      "key": "doctor_email",
+      "value": "doctor1@example.com"
+    },
+    {
+      "key": "doctor_phone",
+      "value": "+2348099999999"
+    },
+    {
+      "key": "doctor_password",
+      "value": "StrongPass1!"
+    },
+    {
+      "key": "doctor_license",
+      "value": "LIC-12345"
+    },
+    {
+      "key": "signup_session_id",
+      "value": ""
+    },
+    {
+      "key": "forgot_session_id",
+      "value": ""
+    },
+    {
+      "key": "otp_code",
+      "value": ""
+    },
+    {
+      "key": "education_id",
+      "value": ""
+    },
+    {
+      "key": "work_id",
+      "value": ""
+    },
+    {
+      "key": "speciality_id_1",
+      "value": "1"
+    },
+    {
+      "key": "speciality_id_2",
+      "value": "2"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "description": "Basic availability check for the experience_1 API.",
+      "item": [
+        {
+          "name": "Get Health",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Check that the API is online before running the auth and onboarding flows."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "description": "Consumer OTP signup, doctor direct registration, shared login/session endpoints, and auth bootstrap requests. Public auth requests explicitly use no auth; protected requests use the shared collection bearer token automatically.",
+      "item": [
+        {
+          "name": "1. Request Consumer Signup OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "if (data.sessionId) pm.collectionVariables.set('signup_session_id', data.sessionId);",
+                  "if (data.otp) pm.collectionVariables.set('otp_code', data.otp);",
+                  "console.log('signup_session_id updated:', pm.collectionVariables.get('signup_session_id'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup/request-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signup",
+                "request-otp"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Ada\",\n  \"lastName\": \"Stone\",\n  \"email\": \"{{consumer_email}}\",\n  \"role\": \"consumer\"\n}"
+            },
+            "description": "Start the consumer signup flow. In development, the response may include the OTP and this request auto-saves `signup_session_id` and `otp_code`."
+          }
+        },
+        {
+          "name": "2. Verify Signup OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup/verify-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signup",
+                "verify-otp"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{signup_session_id}}\",\n  \"otp\": \"{{otp_code}}\"\n}"
+            },
+            "description": "Verify the consumer signup OTP before completing account creation."
+          }
+        },
+        {
+          "name": "3. Resend Signup OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "if (data.sessionId) pm.collectionVariables.set('signup_session_id', data.sessionId);",
+                  "if (data.otp) pm.collectionVariables.set('otp_code', data.otp);",
+                  "console.log('Updated signup OTP session and code if returned.');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup/resend-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signup",
+                "resend-otp"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{signup_session_id}}\"\n}"
+            },
+            "description": "Regenerate the consumer signup OTP if the previous one has expired or was not received."
+          }
+        },
+        {
+          "name": "4. Complete Consumer Signup",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "if (data.accessToken) pm.collectionVariables.set('token', data.accessToken);",
+                  "if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "console.log('Shared token refreshed from consumer signup completion.');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signup",
+                "complete"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{signup_session_id}}\",\n  \"password\": \"{{consumer_password}}\",\n  \"confirmPassword\": \"{{consumer_password}}\"\n}"
+            },
+            "description": "Finish consumer account creation after OTP verification. This request signs the consumer in and overwrites the shared `token` and `refreshToken`."
+          }
+        },
+        {
+          "name": "5. Register Doctor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "if (data.accessToken) pm.collectionVariables.set('token', data.accessToken);",
+                  "if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "console.log('Shared token refreshed from doctor registration.');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signup",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Tamar\",\n  \"lastName\": \"Ray\",\n  \"phoneNumber\": \"{{doctor_phone}}\",\n  \"email\": \"{{doctor_email}}\",\n  \"password\": \"{{doctor_password}}\",\n  \"confirmPassword\": \"{{doctor_password}}\",\n  \"role\": \"doctor\",\n  \"medicalLicenseNumber\": \"{{doctor_license}}\"\n}"
+            },
+            "description": "Direct doctor registration flow. Successful registration signs the doctor in immediately and overwrites the shared `token` and `refreshToken`."
+          }
+        },
+        {
+          "name": "6. Login as Consumer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "if (data.accessToken) pm.collectionVariables.set('token', data.accessToken);",
+                  "if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "console.log('Consumer login is now the active session in this collection.');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{consumer_email}}\",\n  \"password\": \"{{consumer_password}}\",\n  \"role\": \"consumer\"\n}"
+            },
+            "description": "Shared login endpoint for the consumer flow. A successful response overwrites the collection's active bearer token."
+          }
+        },
+        {
+          "name": "7. Login as Doctor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "if (data.accessToken) pm.collectionVariables.set('token', data.accessToken);",
+                  "if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "console.log('Doctor login is now the active session in this collection.');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{doctor_email}}\",\n  \"password\": \"{{doctor_password}}\",\n  \"role\": \"doctor\"\n}"
+            },
+            "description": "Shared login endpoint for the doctor flow. A successful response overwrites the collection's active bearer token."
+          }
+        },
+        {
+          "name": "8. Get Current User",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Get the currently authenticated user and onboarding status using the shared bearer token."
+          }
+        },
+        {
+          "name": "9. Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "if (data.accessToken) pm.collectionVariables.set('token', data.accessToken);",
+                  "if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "console.log('Shared token refreshed.');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh-token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh-token"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "description": "Refresh the active access token. Uses the shared `refreshToken` variable and overwrites the shared token pair."
+          }
+        },
+        {
+          "name": "10. Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "description": "Logout the active user represented by the shared token."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Forgot Password",
+      "description": "Shared forgot-password flow for both consumer and doctor accounts.",
+      "item": [
+        {
+          "name": "1. Request Forgot Password OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "if (data.sessionId) pm.collectionVariables.set('forgot_session_id', data.sessionId);",
+                  "if (data.otp) pm.collectionVariables.set('otp_code', data.otp);",
+                  "console.log('forgot_session_id updated:', pm.collectionVariables.get('forgot_session_id'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password/request-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password",
+                "request-otp"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{consumer_email}}\"\n}"
+            },
+            "description": "Start the forgot-password flow. Swap in `{{doctor_email}}` if you want to reset a doctor account instead."
+          }
+        },
+        {
+          "name": "2. Verify Forgot Password OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password/verify-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password",
+                "verify-otp"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{forgot_session_id}}\",\n  \"otp\": \"{{otp_code}}\"\n}"
+            },
+            "description": "Verify the OTP received for the forgot-password flow."
+          }
+        },
+        {
+          "name": "3. Resend Forgot Password OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "if (data.sessionId) pm.collectionVariables.set('forgot_session_id', data.sessionId);",
+                  "if (data.otp) pm.collectionVariables.set('otp_code', data.otp);",
+                  "console.log('Forgot password session refreshed if returned.');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password/resend-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password",
+                "resend-otp"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{forgot_session_id}}\"\n}"
+            },
+            "description": "Request a new forgot-password OTP for the current session."
+          }
+        },
+        {
+          "name": "4. Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{forgot_session_id}}\",\n  \"newPassword\": \"NewStrong1!\",\n  \"confirmPassword\": \"NewStrong1!\"\n}"
+            },
+            "description": "Reset the password after the forgot-password OTP has been verified."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Consumer Profile",
+      "description": "Consumer onboarding and profile endpoints. These requests require the shared token to represent a consumer session.",
+      "item": [
+        {
+          "name": "1. Create Consumer Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/consumer/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "consumer",
+                "profile"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"ada_user\",\n  \"phoneNumber\": \"{{consumer_phone}}\",\n  \"dateOfBirth\": \"1998-04-12\",\n  \"houseNumber\": \"12\",\n  \"streetName\": \"Allen Avenue\",\n  \"localGovernmentArea\": \"Ikeja\",\n  \"state\": \"Lagos\"\n}"
+            },
+            "description": "Create the main consumer profile record after consumer authentication."
+          }
+        },
+        {
+          "name": "2. Update Consumer Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/consumer/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "consumer",
+                "profile"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"state\": \"Abuja\"\n}"
+            },
+            "description": "Partial update endpoint for consumer onboarding steps."
+          }
+        },
+        {
+          "name": "3. Get Consumer Profile",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/consumer/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "consumer",
+                "profile"
+              ]
+            },
+            "description": "Fetch the current consumer profile and onboarding state."
+          }
+        },
+        {
+          "name": "4. Upload Consumer Profile Image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/consumer/profile/image/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "consumer",
+                "profile",
+                "image",
+                "upload"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "description": "Multipart upload for the consumer profile image. The form-data field name must be `file`."
+          }
+        },
+        {
+          "name": "5. Skip Consumer Profile Step",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/consumer/profile/skip",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "consumer",
+                "profile",
+                "skip"
+              ]
+            },
+            "description": "Skip the next optional consumer onboarding step for the active consumer session."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Doctor Onboarding",
+      "description": "Doctor onboarding endpoints. These requests require the shared token to represent a doctor session. Run the requests in order before calling complete onboarding.",
+      "item": [
+        {
+          "name": "1. Create Doctor Basic Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/basic",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile",
+                "basic"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Tamar\",\n  \"lastName\": \"Ray\",\n  \"phoneNumber\": \"{{doctor_phone}}\",\n  \"medicalLicenseNumber\": \"{{doctor_license}}\",\n  \"yearsOfExperience\": 8,\n  \"bio\": \"General practitioner\"\n}"
+            },
+            "description": "Create the doctor's core profile details. This is the first onboarding step after authentication."
+          }
+        },
+        {
+          "name": "2. Update Doctor Basic Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/basic",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile",
+                "basic"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bio\": \"Updated doctor bio\"\n}"
+            },
+            "description": "Patch the doctor's basic profile details after initial creation."
+          }
+        },
+        {
+          "name": "3. Upload Doctor Profile Image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile",
+                "image"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "description": "Multipart upload for the doctor profile image. The form-data field name must be `file`."
+          }
+        },
+        {
+          "name": "4. Add Doctor Address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/address",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile",
+                "address"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"addressLine1\": \"12 Marina Road\",\n  \"addressLine2\": \"Suite 4\",\n  \"city\": \"Lagos\",\n  \"state\": \"Lagos\"\n}"
+            },
+            "description": "Add the doctor's contact address before completing onboarding."
+          }
+        },
+        {
+          "name": "5. Add Education History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "const education = data.educationHistory || [];",
+                  "if (education.length) pm.collectionVariables.set('education_id', String(education[education.length - 1].id));",
+                  "console.log('education_id:', pm.collectionVariables.get('education_id'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/education",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile",
+                "education"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"institute\": \"University of Ilorin\",\n  \"certificate\": \"MBBS\",\n  \"startDate\": \"2015-03-12\",\n  \"endDate\": \"2022-07-24\"\n}"
+            },
+            "description": "Add a doctor education history entry. The latest entry id is auto-saved to `education_id` for update or delete requests."
+          }
+        },
+        {
+          "name": "6. Update Education History",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/education/{{education_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile",
+                "education",
+                "{{education_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"institute\": \"University of Ibadan\",\n  \"certificate\": \"MBBS\",\n  \"startDate\": \"2015-03-12\",\n  \"endDate\": \"2022-07-24\"\n}"
+            },
+            "description": "Update the doctor education entry referenced by `education_id`."
+          }
+        },
+        {
+          "name": "7. Delete Education History",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/education/{{education_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile",
+                "education",
+                "{{education_id}}"
+              ]
+            },
+            "description": "Delete the doctor education entry referenced by `education_id`."
+          }
+        },
+        {
+          "name": "8. Add Work History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "const work = data.workHistory || [];",
+                  "if (work.length) pm.collectionVariables.set('work_id', String(work[work.length - 1].id));",
+                  "console.log('work_id:', pm.collectionVariables.get('work_id'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/work-history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile",
+                "work-history"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company\": \"Hillcrest Hospital\",\n  \"designation\": \"Medical Officer\",\n  \"startDate\": \"2022-07-25\",\n  \"endDate\": \"2024-07-24\"\n}"
+            },
+            "description": "Add a doctor work history entry. The latest entry id is auto-saved to `work_id`."
+          }
+        },
+        {
+          "name": "9. Update Work History",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/work-history/{{work_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile",
+                "work-history",
+                "{{work_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company\": \"Hillcrest Hospital\",\n  \"designation\": \"Senior Medical Officer\",\n  \"startDate\": \"2022-07-25\",\n  \"endDate\": \"2024-07-24\"\n}"
+            },
+            "description": "Update the doctor work history entry referenced by `work_id`."
+          }
+        },
+        {
+          "name": "10. Delete Work History",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/work-history/{{work_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile",
+                "work-history",
+                "{{work_id}}"
+              ]
+            },
+            "description": "Delete the doctor work history entry referenced by `work_id`."
+          }
+        },
+        {
+          "name": "11. Create Doctor Specialties",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/specialties",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile",
+                "specialties"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"specialityIds\": [{{speciality_id_1}}, {{speciality_id_2}}],\n  \"yearsOfExperience\": 8,\n  \"bio\": \"General practitioner with telemedicine experience\"\n}"
+            },
+            "description": "Create the doctor's specialties list and shared specialty-facing profile values."
+          }
+        },
+        {
+          "name": "12. Update Doctor Specialties",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/specialties",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile",
+                "specialties"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"specialityIds\": [{{speciality_id_1}}],\n  \"yearsOfExperience\": 10,\n  \"bio\": \"Updated doctor bio\"\n}"
+            },
+            "description": "Update the doctor's specialties and shared specialty-facing profile values."
+          }
+        },
+        {
+          "name": "13. Complete Doctor Onboarding",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/complete-onboarding",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile",
+                "complete-onboarding"
+              ]
+            },
+            "description": "Mark doctor onboarding complete. Run image, address, education, work history, and specialties first."
+          }
+        },
+        {
+          "name": "14. Get Doctor Profile",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile"
+              ]
+            },
+            "description": "Get the full doctor profile after or during onboarding."
+          }
+        }
+      ]
+    }
+  ]
+}

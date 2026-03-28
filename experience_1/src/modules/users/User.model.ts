@@ -6,6 +6,8 @@ import { EducationalHistory } from "../educational_history/EducationalHistory.mo
 import { WorkHistory } from "../work_history/WorkHistory.model";
 import { CreateUserDTO } from "./User.dto";
 import { Permission } from "../permission/Permission.model";
+import { DoctorProfile } from "../doctor_profile/DoctorProfile.model";
+import { UserSpeciality } from "../user_specialities/UserSpecialities.model";
 
 @Table({
 	tableName: "users",
@@ -38,6 +40,9 @@ export class User extends Model<User> {
 	@Column(DataType.STRING)
 	declare verificationNumber: string;
 
+	@Column(DataType.STRING)
+	declare medicalLicenseNumber: string;
+
 	@Default(USER_STATUS.ACTIVE)
 	@Column(DataType.ENUM(...Object.values(USER_STATUS)))
 	declare status: USER_STATUS;
@@ -49,6 +54,10 @@ export class User extends Model<User> {
 	@Column(DataType.BOOLEAN)
 	declare isProfileComplete: boolean;
 
+	@Default(true)
+	@Column(DataType.BOOLEAN)
+	declare isActive: boolean;
+
 	@ForeignKey(() => UserType)
 	@AllowNull(true)
 	@Column(DataType.STRING)
@@ -59,27 +68,47 @@ export class User extends Model<User> {
 	@HasOne(() => UserProfile)
 	declare userProfile: UserProfile;
 
+	@HasOne(() => DoctorProfile)
+	declare doctorProfile: DoctorProfile;
+
 	@HasMany(() => EducationalHistory)
 	declare educationalHistories: EducationalHistory[];
 
 	@HasMany(() => WorkHistory)
 	declare workHistories: WorkHistory[];
 
-	static async findByEmail(email: string, userType?: string): Promise<User | null> {
+	@HasMany(() => UserSpeciality)
+	declare userSpecialities: UserSpeciality[];
+
+	static async findByEmail(email: string, userType?: string | string[]): Promise<User | null> {
+		const where: Record<string, any> = { email };
+		if (userType) {
+			where.userType = userType;
+		}
+
 		return await this.findOne({
-			where: { email, userType },
+			where,
 			include: [
 				{ model: UserType, as: "userTypeData", include: [{ model: Permission, as: "permissions", attributes: ["key"] }] },
 				{ model: UserProfile, as: "userProfile" },
+				{ model: DoctorProfile, as: "doctorProfile" },
 				{ model: EducationalHistory, as: "educationalHistories" },
 				{ model: WorkHistory, as: "workHistories" },
+				{ model: UserSpeciality, as: "userSpecialities" },
 			],
 		});
 	}
 
 	static async findById(id: number): Promise<User | null> {
 		return await User.findByPk(id, {
-			include: [{ model: UserType, as: "userTypeData", include: [{ model: Permission, as: "permissions", attributes: ["key"] }] }],
+			include: [
+				{ model: UserType, as: "userTypeData", include: [{ model: Permission, as: "permissions", attributes: ["key"] }] },
+				{ model: UserProfile, as: "userProfile" },
+				{ model: DoctorProfile, as: "doctorProfile" },
+				{ model: EducationalHistory, as: "educationalHistories" },
+				{ model: WorkHistory, as: "workHistories" },
+				{ model: UserSpeciality, as: "userSpecialities" },
+			],
 		});
 	}
 
@@ -90,6 +119,8 @@ export class User extends Model<User> {
 			email: data.email,
 			tnc: data?.tnc,
 			verificationNumber: data?.verificationNumber,
+			medicalLicenseNumber: data?.medicalLicenseNumber,
+			phoneNumber: data?.phoneNumber,
 			userType: data?.userType,
 		});
 	}

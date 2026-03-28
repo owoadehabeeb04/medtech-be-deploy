@@ -44,7 +44,11 @@ export class UserAuth extends Model<UserAuth> {
 	declare oauthExpiryDate: Date;
 
 	static async findById(id: number): Promise<UserAuth | null> {
-		return await this.findOne({ where: { id } });
+		return await this.findByUserId(id);
+	}
+
+	static async findByUserId(userId: number): Promise<UserAuth | null> {
+		return await this.findOne({ where: { userId } });
 	}
 
 	static async findByIdentifier(identifier: string): Promise<UserAuth | null> {
@@ -55,8 +59,8 @@ export class UserAuth extends Model<UserAuth> {
 		return await this.findOne({ where: { identifier } });
 	}
 
-	static async createAuth(identifier: string, password?: string): Promise<UserAuth> {
-		return await this.create({ identifier, password });
+	static async createAuth(userId: number, identifier: string, password?: string): Promise<UserAuth> {
+		return await this.create({ userId, identifier, password });
 	}
 
 	static async encryptPassword(password: string): Promise<string> {

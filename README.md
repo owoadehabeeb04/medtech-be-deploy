@@ -3,6 +3,12 @@
 Central monorepo for MedTech applications and shared utilities.  
 Contains isolated domains (merchant backend, experience_1 backend or service, shared utilities) built with **Node.js**, **TypeScript**, and modern monorepo practices.
 
+## Documentation
+
+- [Monorepo architecture](./docs/monorepo-architecture.md)
+- [experience_1 auth Postman checklist](./docs/postman/experience_1/experience1-auth-postman-checklist.md)
+- [Merchant subscription Postman collection](./docs/postman/merchant/Meditech_Merchant_Subscription.postman_collection.json)
+
 ## Project Structure
 
 ## Install

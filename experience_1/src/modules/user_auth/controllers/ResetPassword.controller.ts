@@ -13,7 +13,7 @@ export const resetPassword: RequestHandler = async (req: Request, res: Response,
 
 	if (!payload) return;
 
-	const [error, data] = await manageAsyncOps(UserAuthService.resetPassword(payload.sessionId, payload.newPassword));
+	const [error, data] = await manageAsyncOps(UserAuthService.resetPasswordLegacy(payload.sessionId, payload.newPassword));
 
 	if (error) {
 		console.log(error);

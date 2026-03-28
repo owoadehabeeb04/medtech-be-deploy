@@ -11,6 +11,7 @@ const { encryption } = applicationConfig;
 
 export interface AuthenticatedUser extends User {
 	permissions: string[];
+	role?: string;
 }
 
 export const bootstrapRequestContext = async () => {

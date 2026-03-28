@@ -10,7 +10,7 @@ import { AuthStrategy } from "./Auth.strategy";
 
 export class UserAuthStrategy implements AuthStrategy {
 	async signup(data: SignupDTO, req?: Request): Promise<ApiResponse> {
-		const { firstName, lastName, email, tnc, userType, verificationNumber, password } = data;
+		const { firstName, lastName, email, userType, verificationNumber, password } = data;
 		const user = await User.findByEmail(data.email, userType);
 
 		if (user) {
@@ -25,7 +25,6 @@ export class UserAuthStrategy implements AuthStrategy {
 			firstName,
 			lastName,
 			email,
-			tnc,
 			userType,
 			verificationNumber,
 		});

@@ -25,7 +25,7 @@ export class UserService {
 
 		if (data.password) password = await UserAuth.encryptPassword(data.password);
 
-		await UserAuth.createAuth(data.email, password);
+		await UserAuth.createAuth(newUser.id, data.email, password);
 
 		return {
 			status: true,
@@ -129,7 +129,7 @@ export class UserService {
 
 			const educationDt = education.map((edu) => ({
 				userId: userDt.id,
-				institution: edu.institution?.toLowerCase() || null,
+				institute: edu.institution?.toLowerCase() || null,
 				certificate: edu.certificate,
 				startDate: edu.startDate,
 				endDate: edu.endDate,
