@@ -46,7 +46,15 @@ export const rdbDel__authSession = async (sessionId: string) => {
 export const redisReady = isReady;
 
 export default async function redisInit(): Promise<RedisClientType> {
-	redisClient = createClient();
+	redisClient = applicationConfig.redis.url
+		? createClient({ url: applicationConfig.redis.url })
+		: createClient({
+				socket: {
+					host: applicationConfig.redis.host || "127.0.0.1",
+					port: applicationConfig.redis.port || 6379,
+				},
+				password: applicationConfig.redis.password || undefined,
+		  });
 
 	redisClient.on("connect", function () {
 		console.log("Redis is connected....");

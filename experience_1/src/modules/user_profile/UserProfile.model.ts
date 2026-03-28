@@ -20,14 +20,42 @@ export class UserProfile extends Model<UserProfile> {
 	@Column(DataType.STRING)
 	declare state: string;
 
+	@Column(DataType.STRING)
+	declare username: string;
+
+	@Column(DataType.STRING)
+	declare phoneNumber: string;
+
+	@Column(DataType.DATE)
+	declare dateOfBirth: Date;
+
+	@Column(DataType.STRING)
+	declare location: string;
+
+	@Column(DataType.STRING)
+	declare profileImage: string;
+
+	@Column(DataType.BOOLEAN)
+	declare profileCompleted: boolean;
+
+	@Column(DataType.BOOLEAN)
+	declare onboardingSkipped: boolean;
+
+	@Column(DataType.JSONB)
+	declare skippedSteps: string[];
+
 	static async createProfile(userId: number, data: Partial<UserProfile>, transaction?: Transaction): Promise<UserProfile> {
-		const profile = await UserProfile.create(
+		const existing = await UserProfile.findOne({ where: { userId }, transaction });
+		if (existing) {
+			return existing.update({ ...data }, { transaction });
+		}
+
+		return UserProfile.create(
 			{
 				userId,
 				...data,
 			},
 			{ transaction }
 		);
-		return profile;
 	}
 }

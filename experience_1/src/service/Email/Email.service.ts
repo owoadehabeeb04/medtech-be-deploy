@@ -6,15 +6,12 @@ const { url } = applicationConfig;
 
 export class EmailService {
 	static async sendOtpEmail(email: string, payload: any) {
-		try {
-			const template = "otp";
-			const to = email;
-			const subject = "Verification Code";
-			payload.baseUrl = url.baseApi;
+		const template = "otp";
+		const to = email;
+		const subject = "Verification Code";
+		payload.baseUrl = url.baseApi;
+		payload.currentYear = new Date().getFullYear().toString();
 
-			await send_mail.send(to, subject, template, payload);
-		} catch (error) {
-			console.log(error);
-		}
+		await send_mail.send(to, subject, template, payload);
 	}
 }

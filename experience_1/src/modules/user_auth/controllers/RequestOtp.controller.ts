@@ -13,13 +13,13 @@ export const requestOtp: RequestHandler = async (req: Request, res: Response, ne
 
 	const identifierType = "email";
 
-	const cleanBody = sanitizeBody({ ...req.body, userType, identifierType, path }, ["email", "path", "userType"]);
+	const cleanBody = sanitizeBody({ email: req.body.email || req.body.identifier, userType, identifierType, path }, ["email", "path", "userType"]);
 
 	const payload = validateSchema(RequestOtpSchema, cleanBody, next);
 
 	if (!payload) return;
 
-	const [error, data] = await manageAsyncOps(UserAuthService.requestOtp(payload, req));
+	const [error, data] = await manageAsyncOps(UserAuthService.requestOtp({ ...payload, email: payload.email }, req));
 
 	if (error) {
 		console.log(error);

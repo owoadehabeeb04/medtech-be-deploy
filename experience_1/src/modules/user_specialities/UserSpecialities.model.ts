@@ -29,7 +29,7 @@ export class UserSpeciality extends Model<UserSpeciality> {
 	static async getMedicsBySpeciality(specialityId: number): Promise<UserSpeciality[] | []> {
 		return await this.findAll({
 			where: { specialityId, isActive: true },
-			include: [{ model: User, where: { isActive: true } }, { model: Speciality }],
+			include: [{ model: User, where: { isActive: true, userType: ["doctor", "medic"] } }, { model: Speciality }],
 		});
 	}
 }

@@ -1,4 +1,5 @@
 import { AllowNull, BelongsTo, Column, DataType, Default, ForeignKey, Model, Table } from "sequelize-typescript";
+import { Op } from "sequelize";
 import { User } from "../users/User.model";
 import { APPOINTMENT_STATUS } from "../../constants/constant";
 import { ConsultationType } from "../consultation_type/ConsultationType.model";
@@ -54,7 +55,7 @@ export class Appointment extends Model<Appointment> {
 			startOfDay.setHours(0, 0, 0, 0);
 			const endOfDay = new Date(date);
 			endOfDay.setHours(23, 59, 59, 999);
-			whereClause.scheduleDate = { $between: [startOfDay, endOfDay] };
+			whereClause.scheduleDate = { [Op.between]: [startOfDay, endOfDay] };
 		}
 
 		return await this.findAll({
@@ -103,13 +104,13 @@ export class Appointment extends Model<Appointment> {
 			startOfDay.setHours(0, 0, 0, 0);
 			const endOfDay = new Date(date);
 			endOfDay.setHours(23, 59, 59, 999);
-			whereClause.scheduleDate = { $between: [startOfDay, endOfDay] };
+			whereClause.scheduleDate = { [Op.between]: [startOfDay, endOfDay] };
 		}
 
 		return await this.findAndCountAll({
 			where: whereClause,
 			include: [
-				{ model: User, as: "user" },
+				{ model: User, as: "appointmentBookedByDetails" },
 				{ model: User, as: "medicUser" },
 			],
 			order: [["scheduleDate", "ASC"]],

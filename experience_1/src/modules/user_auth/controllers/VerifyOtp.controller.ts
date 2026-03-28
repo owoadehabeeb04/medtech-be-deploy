@@ -14,7 +14,7 @@ export const verifyOtp: RequestHandler = async (req: Request, res: Response, nex
 
 	if (!payload) return;
 
-	const [error, data] = await manageAsyncOps(UserAuthService.verifyOtp(payload.sessionId, payload.otp));
+	const [error, data] = await manageAsyncOps(UserAuthService.verifyOtpLegacy(payload.sessionId, payload.otp));
 
 	if (error) {
 		console.log(error);

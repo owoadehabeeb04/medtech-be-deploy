@@ -1,5 +1,6 @@
 import { Dialect } from "sequelize";
 import * as dotenv from "dotenv";
+import * as path from "path";
 import { Sequelize } from "sequelize-typescript";
 import { User } from "../modules/users/User.model";
 import { UserAuth } from "../modules/user_auth/UserAuth.model";
@@ -7,6 +8,7 @@ import { UserType } from "../modules/user_types/UserType.model";
 import { UserToken } from "../modules/user_token/UserToken.model";
 import { UserVerification } from "../modules/user_verification/UserVerification.model";
 import { UserProfile } from "../modules/user_profile/UserProfile.model";
+import { DoctorProfile } from "../modules/doctor_profile/DoctorProfile.model";
 import { EducationalHistory } from "../modules/educational_history/EducationalHistory.model";
 import { WorkHistory } from "../modules/work_history/WorkHistory.model";
 import { Permission } from "../modules/permission/Permission.model";
@@ -15,28 +17,39 @@ import { Speciality } from "../modules/speciality/Speciality.model";
 import { UserSpeciality } from "../modules/user_specialities/UserSpecialities.model";
 import { Appointment } from "../modules/appointment/Appointment.model";
 import { ConsultationType } from "../modules/consultation_type/ConsultationType.model";
-dotenv.config();
+import { applicationConfig } from "../config";
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 const connection = async () => {
 	const user_mod = [User, UserAuth, UserType, UserToken, UserVerification];
-	const extra_user_mod = [UserProfile, EducationalHistory, WorkHistory];
+	const extra_user_mod = [UserProfile, DoctorProfile, EducationalHistory, WorkHistory];
 	const permission_mod = [Permission, UserTypePermission];
 	const medic_mod = [Speciality, UserSpeciality, Appointment, ConsultationType];
 	const models = [...user_mod, ...extra_user_mod, ...permission_mod, ...medic_mod];
+	const dbHost = process.env.EXPERIENCE1_DB_HOST || process.env.DB_HOST;
+	const dbPort = Number(process.env.EXPERIENCE1_DB_PORT || process.env.DB_PORT || 5432);
+	const dbUsername = process.env.EXPERIENCE1_DB_USERNAME || process.env.DB_USERNAME;
+	const dbPassword = process.env.EXPERIENCE1_DB_PASSWORD || process.env.DB_PASSWORD;
+	const dbName = process.env.EXPERIENCE1_DB_NAME || process.env.DB_NAME;
+
+	const dialectOptions = applicationConfig.db.sslEnabled
+		? {
+				ssl: {
+					require: true,
+					rejectUnauthorized: applicationConfig.db.rejectUnauthorized,
+				},
+		  }
+		: undefined;
 
 	const sequelize = new Sequelize({
 		dialect: "postgres" as Dialect,
-		host: process.env.DB_HOST,
-		username: process.env.DB_USERNAME,
-		password: process.env.DB_PASSWORD,
-		database: process.env.DB_NAME,
+		host: dbHost,
+		port: dbPort,
+		username: dbUsername,
+		password: dbPassword,
+		database: dbName,
 		logging: false,
-		dialectOptions: {
-			ssl: {
-				require: true,
-				rejectUnauthorized: false,
-			},
-		},
+		dialectOptions,
 		define: {
 			underscored: true,
 		},
@@ -45,7 +58,9 @@ const connection = async () => {
 
 	try {
 		await sequelize.authenticate();
-		// await sequelize.sync({ alter: true });
+		if ((process.env.APP_ENV || process.env.NODE_ENV) !== "production") {
+			await sequelize.sync({ alter: true });
+		}
 		console.log("Connection has been established successfully.");
 	} catch (error) {
 		console.error("Unable to connect to the database:", error);

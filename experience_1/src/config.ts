@@ -1,9 +1,20 @@
 import * as dotenv from "dotenv";
-dotenv.config();
+import * as path from "path";
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 export type Configuration = {
 	serverPort?: string | number;
 	isProduction?: boolean;
+	db: {
+		sslEnabled: boolean;
+		rejectUnauthorized: boolean;
+	};
+	redis: {
+		url?: string;
+		host?: string;
+		port?: number;
+		password?: string;
+	};
 	tokenSecret: string;
 	refreshTokenSecret: string;
 	tokenExpirationTime: number;
@@ -53,8 +64,18 @@ export type Configuration = {
 };
 
 export const applicationConfig: Configuration = {
-	serverPort: Number(process.env.APP_PORT) || 6200,
+	serverPort: Number(process.env.PORT || process.env.APP_PORT) || 6200,
 	isProduction: process.env.APP_ENV === "production" || false,
+	db: {
+		sslEnabled: (process.env.EXPERIENCE1_DB_SSL_ENABLED || process.env.DB_SSL_ENABLED) === "true",
+		rejectUnauthorized: (process.env.EXPERIENCE1_DB_SSL_REJECT_UNAUTHORIZED || process.env.DB_SSL_REJECT_UNAUTHORIZED) === "true",
+	},
+	redis: {
+		url: process.env.REDIS_URL,
+		host: process.env.REDIS_HOST,
+		port: +process.env.REDIS_PORT || 6379,
+		password: process.env.REDIS_PASSWORD,
+	},
 	tokenSecret: process.env.JWT_SECRET,
 	refreshTokenSecret: process.env.REF_JWT_SECRET,
 	tokenExpirationTime: +process.env.JWT_EXP_TIME || 900,

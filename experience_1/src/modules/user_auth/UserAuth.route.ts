@@ -1,17 +1,36 @@
 import express from "express";
-const router = express.Router();
-import { login } from "./controllers/Login.controller";
-import { signup } from "./controllers/SignUp.controller";
-import { verifyOtp } from "./controllers/VerifyOtp.controller";
-import { resetPassword } from "./controllers/ResetPassword.controller";
-import { setPassword } from "./controllers/SetPassword.controller";
-import { requestOtp } from "./controllers/RequestOtp.controller";
+import Auth from "../../middlewares/Auth.Middleware";
+import {
+	completeSignup,
+	login,
+	logout,
+	me,
+	refreshToken,
+	registerDoctor,
+	requestForgotPasswordOtp,
+	requestSignupOtp,
+	resendForgotPasswordOtp,
+	resendSignupOtp,
+	resetPassword,
+	verifyForgotPasswordOtp,
+	verifySignupOtp,
+} from "./controllers/Auth.controller";
 
-router.post("/:userType/signup", signup);
-router.post("/:userType/login", login);
-router.post("/request-otp", requestOtp);
-router.post("/verify-otp", verifyOtp);
+const router = express.Router();
+const verifyToken = Auth.verifyToken();
+
+router.post("/signup/register", registerDoctor);
+router.post("/signup/request-otp", requestSignupOtp);
+router.post("/signup/verify-otp", verifySignupOtp);
+router.post("/signup/resend-otp", resendSignupOtp);
+router.post("/signup/complete", completeSignup);
+router.post("/login", login);
+router.post("/refresh-token", refreshToken);
+router.post("/forgot-password/request-otp", requestForgotPasswordOtp);
+router.post("/forgot-password/verify-otp", verifyForgotPasswordOtp);
+router.post("/forgot-password/resend-otp", resendForgotPasswordOtp);
 router.post("/reset-password", resetPassword);
-router.post("/set-password", setPassword);
+router.post("/logout", verifyToken, logout);
+router.get("/me", verifyToken, me);
 
 export default router;
