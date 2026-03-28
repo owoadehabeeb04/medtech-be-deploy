@@ -1,5 +1,6 @@
 import { AllowNull, BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { User } from "../users/User.model";
+import { Op } from "sequelize";
 
 @Table({
 	tableName: "user_tokens",
@@ -19,6 +20,7 @@ export class UserToken extends Model<UserToken> {
 	declare refreshToken: string;
 
 	static async setToken(userId: number, accessToken: string, refreshToken?: string): Promise<UserToken> {
+		await this.destroy({ where: { userId } });
 		return this.create({
 			userId,
 			accessToken,
@@ -32,9 +34,34 @@ export class UserToken extends Model<UserToken> {
 		});
 	}
 
+	static async findByAccessToken(accessToken: string): Promise<UserToken | null> {
+		return this.findOne({ where: { accessToken } });
+	}
+
 	static async validateRefreshToken(refreshToken: string): Promise<User | null> {
 		const token = await this.findOne({ where: { refreshToken } });
 		if (!token) return null;
 		return await User.findByPk(token.userId);
+	}
+
+	static async findByRefreshToken(refreshToken: string): Promise<UserToken | null> {
+		return this.findOne({ where: { refreshToken } });
+	}
+
+	static async revokeByRefreshToken(refreshToken: string): Promise<number> {
+		return this.destroy({ where: { refreshToken } });
+	}
+
+	static async revokeByUserId(userId: number): Promise<number> {
+		return this.destroy({ where: { userId } });
+	}
+
+	static async revokeSession(accessToken: string, refreshToken?: string): Promise<number> {
+		const where: any = { accessToken };
+		if (refreshToken) {
+			where[Op.or] = [{ accessToken }, { refreshToken }];
+		}
+
+		return this.destroy({ where });
 	}
 }

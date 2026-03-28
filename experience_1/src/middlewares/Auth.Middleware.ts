@@ -3,11 +3,15 @@ import jwt, { JwtPayload as DefaultJwtPayload } from "jsonwebtoken";
 import { FORBIDDEN, UNAUTHORIZED } from "http-status";
 import { applicationConfig } from "../config";
 import { ERR_USER } from "../constants/error-codes";
+import { UserToken } from "../modules/user_token/UserToken.model";
 import { User } from "../modules/users/User.model";
 import { AuthenticatedUser } from "../core/context";
+import { normalizeAuthRole } from "../utils/auth-role";
 
 interface JwtPayload extends DefaultJwtPayload {
-	id: string;
+	id: number;
+	role?: string;
+	permissions?: string[];
 }
 
 class Authentication {
@@ -32,9 +36,20 @@ class Authentication {
 
 				// Verify and decode token
 				const tokenData = jwt.verify(token, applicationConfig.tokenSecret) as JwtPayload;
+				const activeSession = await UserToken.findByAccessToken(token);
+
+				if (!activeSession || activeSession.userId !== tokenData.id) {
+					return next(
+						manageApplicationErrors({
+							message: "Authentication failed",
+							statusCode: UNAUTHORIZED,
+							errorCode: errorCode(ERR_USER, "04A"),
+						})
+					);
+				}
 
 				//Get user from DB
-				const user = await User.findByPk(tokenData.id);
+				const user = await User.findById(tokenData.id);
 
 				if (!user) {
 					return next(
@@ -52,6 +67,7 @@ class Authentication {
 				req.context.user = {
 					...plainUser,
 					permissions: tokenData.permissions || [],
+					role: normalizeAuthRole(tokenData.role || plainUser.userType) || undefined,
 				} as AuthenticatedUser;
 
 				next();

@@ -8,6 +8,7 @@ import { applicationConfig } from "../config";
 import redisInit from "../utils/redisInit";
 import handleApplicationResponses from "./responseContext";
 import rateLimit from "express-rate-limit";
+import eventListeners from "../observers/user.observer";
 const timezone = "Africa/Lagos";
 process.env.TZ = timezone;
 
@@ -31,6 +32,7 @@ declare global {
 }
 
 let requestContext: RequestContextType;
+let listenersBootstrapped = false;
 
 const app: Application = express();
 
@@ -71,7 +73,10 @@ app.use(notFoundHandler);
 export const startServer = async (): Promise<void> => {
 	requestContext = await bootstrapRequestContext();
 
-	app.listen(serverPort, () => console.log(`Server started on ${serverPort}`));
+	if (!listenersBootstrapped) {
+		eventListeners();
+		listenersBootstrapped = true;
+	}
 
-	// eventListeners();
+	app.listen(serverPort, () => console.log(`Server started on ${serverPort}`));
 };

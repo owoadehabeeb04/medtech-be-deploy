@@ -1,108 +1,231 @@
+import jwt from "jsonwebtoken";
+import { Request } from "express";
+import { Op } from "sequelize";
 import { applicationConfig } from "../../config";
+import { AUTH_ROLE, OTP_PURPOSE, USER_STATUS } from "../../constants/constant";
 import { RESPONSE_MESSAGES } from "../../constants/response";
-import { genAlphaNum, genRandomNumber } from "../../utils";
-import { ApiResponse } from "../../utils/common.dto";
-import { UserToken } from "../user_token/UserToken.model";
-import { CreateOTPDTO } from "../user_verification/UserVerification.dto";
 import { UserVerification } from "../user_verification/UserVerification.model";
 import { UserVerificationService } from "../user_verification/UserVerification.service";
 import { User } from "../users/User.model";
-import jwt from "jsonwebtoken";
 import { UserAuth } from "./UserAuth.model";
-import { LoginDTO, RequestOtpDTO, SignupDTO } from "./UserAuth.dto";
-import { AuthContext } from "./strategy/Auth.context";
-import { AppEventEmitter } from "../../observers/eventEmitter";
-import { EVENT_CONSTANT } from "../../constants/event_type";
-import { Request } from "express";
+import { UserToken } from "../user_token/UserToken.model";
+import { UserType } from "../user_types/UserType.model";
+import { UserProfile } from "../user_profile/UserProfile.model";
+import { DoctorProfile } from "../doctor_profile/DoctorProfile.model";
+import { EducationalHistory } from "../educational_history/EducationalHistory.model";
+import { WorkHistory } from "../work_history/WorkHistory.model";
+import { UserSpeciality } from "../user_specialities/UserSpecialities.model";
+import { ApiResponse } from "../../utils/common.dto";
+import {
+	CompleteSignupDTO,
+	DoctorRegisterDTO,
+	ForgotPasswordRequestOtpDTO,
+	LoginDTO,
+	RequestOtpDTO,
+	RefreshTokenDTO,
+	ResetPasswordDTO,
+	SignupDTO,
+	SignupRequestOtpDTO,
+	VerifyOtpDTO,
+} from "./UserAuth.dto";
+import { genAlphaNum, genRandomNumber } from "../../utils";
+import { EmailService } from "../../service/Email/Email.service";
+import { requireNormalizedAuthRole } from "../../utils/auth-role";
+import { buildConsumerProfileStatus, serializeConsumerProfile } from "../consumer_profile/ConsumerProfile.util";
 
-const { isProduction, tokenSecret, tokenExpirationTime } = applicationConfig;
+const { isProduction, tokenSecret, refreshTokenSecret, tokenExpirationTime, refreshTokenExpirationTime } = applicationConfig;
+
+type AuthPayload = {
+	id: number;
+	role: string;
+	permissions: string[];
+};
 
 export class UserAuthService {
-	static async signup(data: SignupDTO, req: Request): Promise<ApiResponse> {
-		const { firstName, lastName, email, tnc, userType, verificationNumber, password } = data;
+	private static async getOtpSessionError(
+		sessionId: string,
+		purpose: OTP_PURPOSE,
+		options?: { requireValidated?: boolean }
+	): Promise<ApiResponse | null> {
+		const session = await UserVerificationService.findBySessionId(sessionId);
+		if (!session) {
+			return { status: false, code: 400, message: RESPONSE_MESSAGES.SESSION_NOT_FOUND };
+		}
 
-		const constext = new AuthContext(userType);
+		if (session.purpose !== purpose) {
+			return { status: false, code: 400, message: RESPONSE_MESSAGES.SESSION_WRONG_PURPOSE };
+		}
 
-		const result = await constext.signup(data, req);
+		if (session.expiresAt.getTime() < Date.now()) {
+			if (session.isActive) {
+				session.isActive = false;
+				await session.save();
+			}
+			return { status: false, code: 400, message: RESPONSE_MESSAGES.SESSION_EXPIRED };
+		}
 
-		if (!result) {
+		if (options?.requireValidated) {
+			if (!session.validated) {
+				return { status: false, code: 400, message: RESPONSE_MESSAGES.SESSION_NOT_VERIFIED };
+			}
+		} else if (session.validated) {
+			return { status: false, code: 400, message: RESPONSE_MESSAGES.SESSION_ALREADY_USED };
+		}
+
+		if (!session.isActive) {
 			return {
 				status: false,
-				code: result.code,
-				message: result.message || RESPONSE_MESSAGES.SERVER_ERROR,
+				code: 400,
+				message: session.validated ? RESPONSE_MESSAGES.SESSION_ALREADY_USED : RESPONSE_MESSAGES.SESSION_SUPERSEDED,
 			};
 		}
 
-		return {
-			status: true,
-			code: 201,
-			message: result.message || RESPONSE_MESSAGES.USER_REGISTERED,
-			data: { ...result.data },
-		};
+		return null;
 	}
 
-	static async login(data: LoginDTO): Promise<ApiResponse> {
-		const { email, password, userType } = data;
+	private static normalizeRole(role: string): string {
+		return requireNormalizedAuthRole(role);
+	}
 
-		const user = await User.findByEmail(email, userType);
+	private static getExistingAccountMessage(): string {
+		return RESPONSE_MESSAGES.ACCOUNT_ALREADY_EXISTS_LOGIN;
+	}
 
+	private static async ensureUserType(role: string): Promise<void> {
+		const normalized = this.normalizeRole(role);
+		await UserType.findOrCreate({
+			where: { key: normalized },
+			defaults: {
+				key: normalized,
+				name: normalized === AUTH_ROLE.DOCTOR ? "Doctor" : "Consumer",
+				isActive: true,
+			},
+		});
+	}
+
+	private static signAccessToken(user: User): string {
+		const permissions = user.userTypeData?.permissions?.map((permission) => permission.key) || [];
+		const payload: AuthPayload = {
+			id: user.id,
+			role: this.normalizeRole(user.userType),
+			permissions,
+		};
+
+		return jwt.sign(payload, tokenSecret, { expiresIn: tokenExpirationTime });
+	}
+
+	private static signRefreshToken(user: User): string {
+		return jwt.sign(
+			{
+				id: user.id,
+				role: this.normalizeRole(user.userType),
+				type: "refresh",
+			},
+			refreshTokenSecret,
+			{ expiresIn: refreshTokenExpirationTime }
+		);
+	}
+
+	private static async issueSession(user: User) {
+		const accessToken = this.signAccessToken(user);
+		const refreshToken = this.signRefreshToken(user);
+
+		await UserToken.setToken(user.id, accessToken, refreshToken);
+
+		const userAuth = await UserAuth.findByUserId(user.id);
+		if (userAuth) {
+			userAuth.refreshToken = refreshToken;
+			userAuth.emailVerified = true;
+			await userAuth.save();
+		}
+
+		return { accessToken, refreshToken };
+	}
+
+	private static async findUserByEmail(email: string): Promise<User | null> {
+		return User.findByEmail(email.toLowerCase().trim());
+	}
+
+	private static async getUserResponse(userId: number) {
+		const user = await User.findById(userId);
 		if (!user) {
-			return {
-				status: false,
-				code: 404,
-				message: RESPONSE_MESSAGES.USER_NOT_FOUND,
-			};
+			throw new Error(RESPONSE_MESSAGES.USER_NOT_FOUND);
 		}
-
-		const context = new AuthContext(userType);
-
-		const userContext = await context.login(user, password);
-
-		if (!userContext || !userContext.status) {
-			return {
-				status: false,
-				code: 400,
-				message: userContext.message || RESPONSE_MESSAGES.INVALID_CREDENTIALS,
-			};
-		}
-
-		const token = await this.generateToken(user);
-		userContext.data.token = token;
 
 		return {
-			status: true,
-			message: RESPONSE_MESSAGES.SUCCESSS,
-			code: 200,
-			data: { ...userContext.data },
+			user: {
+				id: user.id,
+				email: user.email,
+				role: this.normalizeRole(user.userType),
+				firstName: user.firstName,
+				lastName: user.lastName,
+			},
+			profileStatus: this.buildProfileStatus(user),
+			profileSummary: this.buildProfileSummary(user),
 		};
 	}
 
-	static async requestOtp(data: RequestOtpDTO, req: Request): Promise<ApiResponse> {
-		const { email, phoneNumber, userType, path } = data;
-		if (!email) {
+	private static buildProfileSummary(user: User) {
+		const role = this.normalizeRole(user.userType);
+		if (role === AUTH_ROLE.CONSUMER) {
 			return {
-				status: false,
-				code: 400,
-				message: "Email is required",
+				profile: serializeConsumerProfile(user.userProfile),
 			};
 		}
 
-		const otp = genRandomNumber(4);
-		const sessionId = genAlphaNum(12);
-
-		const otpData: CreateOTPDTO = {
-			otp,
-			sessionId,
-			phoneNumber: phoneNumber || "",
-			email,
-			userType,
-			validated: false,
-			path,
+		return {
+			profile: user.doctorProfile
+				? {
+						profileImage: user.doctorProfile.profileImage,
+						phoneNumber: user.doctorProfile.phoneNumber,
+						medicalLicenseNumber: user.doctorProfile.medicalLicenseNumber,
+						yearsOfExperience: user.doctorProfile.yearsOfExperience,
+						bio: user.doctorProfile.bio,
+						address: {
+							addressLine1: user.doctorProfile.addressLine1,
+							addressLine2: user.doctorProfile.addressLine2,
+							city: user.doctorProfile.city,
+							state: user.doctorProfile.state,
+						},
+						educationHistoryCount: user.educationalHistories?.length || 0,
+						workHistoryCount: user.workHistories?.length || 0,
+						specialtiesCount: user.userSpecialities?.filter((item) => item.isActive).length || 0,
+				  }
+				: null,
 		};
+	}
 
-		await UserVerificationService.setSession(otpData);
+	private static buildProfileStatus(user: User) {
+		const role = this.normalizeRole(user.userType);
+		if (role === AUTH_ROLE.CONSUMER) {
+			return buildConsumerProfileStatus(user.userProfile);
+		}
 
-		//Send Mail
+		const doctorProfile = user.doctorProfile;
+		const educationCount = user.educationalHistories?.length || 0;
+		const workHistoryCount = user.workHistories?.length || 0;
+		const specialtyCount = user.userSpecialities?.filter((item) => item.isActive).length || 0;
+		const requiredChecks = [
+			{ done: Boolean(doctorProfile?.profileImage), nextStep: "doctor_profile_image" },
+			{
+				done: Boolean(doctorProfile?.addressLine1 && doctorProfile?.city && doctorProfile?.state),
+				nextStep: "doctor_address",
+			},
+			{ done: educationCount > 0, nextStep: "doctor_education" },
+			{ done: workHistoryCount > 0, nextStep: "doctor_work_history" },
+			{ done: specialtyCount > 0, nextStep: "doctor_specialties" },
+		];
+		const pending = requiredChecks.find((item) => !item.done);
+		const onboardingCompleted = Boolean(doctorProfile?.onboardingCompleted) && !pending;
+
+		return {
+			onboardingCompleted,
+			profileCompleted: onboardingCompleted,
+			nextStep: onboardingCompleted ? null : pending?.nextStep || "doctor_profile_image",
+		};
+	}
+
+	private static async sendOtpEmail(req: Request, email: string, otp: string) {
 		const emailData = {
 			otpDigits: otp.split(""),
 			browserName: req.headers["user-agent"] || "Unknown",
@@ -112,7 +235,66 @@ export class UserAuthService {
 			supportEmail: "support@quickmedic.com",
 		};
 
-		AppEventEmitter.emit(EVENT_CONSTANT.OTP_REQUESTED, email, emailData);
+		await EmailService.sendOtpEmail(email, emailData);
+	}
+
+	static async requestSignupOtp(data: SignupRequestOtpDTO, req: Request): Promise<ApiResponse> {
+		const role = this.normalizeRole(data.role);
+		const email = data.email.toLowerCase().trim();
+		if (role !== AUTH_ROLE.CONSUMER) {
+			return { status: false, code: 400, message: "Doctor accounts must use the direct registration endpoint" };
+		}
+
+		const [existingByEmail, existingByPhone] = await Promise.all([
+			User.findOne({ where: { email } }),
+			Promise.resolve(null),
+		]);
+
+		if (existingByEmail) {
+			return { status: false, code: 400, message: this.getExistingAccountMessage() };
+		}
+
+		if (existingByPhone) {
+			return { status: false, code: 400, message: RESPONSE_MESSAGES.PHONE_ALREADY_REGISTERED };
+		}
+
+		const otp = genRandomNumber(4);
+		const sessionId = genAlphaNum(16);
+
+		await UserVerificationService.setSession({
+			otp,
+			sessionId,
+			email,
+			userType: role,
+			purpose: OTP_PURPOSE.EMAIL_VERIFICATION,
+			path: "/auth/signup/request-otp",
+			payload: {
+				firstName: data.firstName.trim(),
+				lastName: data.lastName.trim(),
+				email,
+				role,
+			},
+		});
+
+		try {
+			await this.sendOtpEmail(req, email, otp);
+		} catch (error) {
+			if (!isProduction) {
+				console.warn("OTP email delivery failed during signup request; returning dev OTP fallback.", error);
+				return {
+					status: true,
+					code: 200,
+					message: RESPONSE_MESSAGES.OTP_SENT,
+					data: { sessionId, otp },
+				};
+			}
+			await UserVerificationService.delSession(sessionId);
+			return {
+				status: false,
+				code: 500,
+				message: RESPONSE_MESSAGES.OTP_DELIVERY_FAILED,
+			};
+		}
 
 		return {
 			status: true,
@@ -122,19 +304,136 @@ export class UserAuthService {
 		};
 	}
 
-	static async verifyOtp(sessionId: string, otp: string): Promise<ApiResponse> {
-		const session = await UserVerification.getSession(sessionId);
+	static async signup(data: SignupDTO, req: Request): Promise<ApiResponse> {
+		return this.requestSignupOtp(data, req);
+	}
 
-		if (!session) {
+	static async registerDoctor(data: DoctorRegisterDTO): Promise<ApiResponse> {
+		const role = this.normalizeRole(data.role);
+		if (role !== AUTH_ROLE.DOCTOR) {
+			return { status: false, code: 400, message: "Only doctor registration is supported on this endpoint" };
+		}
+
+		if (data.password !== data.confirmPassword) {
+			return { status: false, code: 400, message: "Confirm password must match password" };
+		}
+
+		const email = data.email.toLowerCase().trim();
+		const phoneNumber = data.phoneNumber.trim();
+		const medicalLicenseNumber = (data.medicalLicenseNumber || data.verificationNumber || "").trim();
+
+		const [existingByEmail, existingByPhone] = await Promise.all([
+			User.findOne({ where: { email } }),
+			User.findOne({ where: { phoneNumber } }),
+		]);
+
+		if (existingByEmail) {
+			return { status: false, code: 400, message: this.getExistingAccountMessage() };
+		}
+
+		if (existingByPhone) {
+			return { status: false, code: 400, message: RESPONSE_MESSAGES.PHONE_ALREADY_REGISTERED };
+		}
+
+		await this.ensureUserType(role);
+
+		const password = await UserAuth.encryptPassword(data.password);
+		const user = await User.createUser({
+			firstName: data.firstName,
+			lastName: data.lastName,
+			email,
+			phoneNumber,
+			userType: role,
+			verificationNumber: medicalLicenseNumber,
+			medicalLicenseNumber,
+		});
+
+		await UserAuth.new({
+			userId: user.id,
+			identifier: email,
+			password,
+			emailVerified: true,
+		});
+
+		await DoctorProfile.create({
+			userId: user.id,
+			phoneNumber,
+			medicalLicenseNumber,
+			onboardingCompleted: false,
+			onboardingStep: 1,
+		});
+
+		const hydratedUser = await User.findById(user.id);
+		if (!hydratedUser) {
+			throw new Error(RESPONSE_MESSAGES.USER_NOT_FOUND);
+		}
+
+		const { accessToken, refreshToken } = await this.issueSession(hydratedUser);
+		const responseData = await this.getUserResponse(hydratedUser.id);
+
+		return {
+			status: true,
+			code: 201,
+			message: RESPONSE_MESSAGES.USER_REGISTERED,
+			data: {
+				accessToken,
+				refreshToken,
+				...responseData,
+			},
+		};
+	}
+
+	static async resendOtp(sessionId: string, purpose: OTP_PURPOSE, req: Request): Promise<ApiResponse> {
+		const sessionError = await this.getOtpSessionError(sessionId, purpose);
+		if (sessionError) {
+			return sessionError;
+		}
+		const session = await UserVerification.getSession(sessionId);
+		if (!session) return { status: false, code: 400, message: RESPONSE_MESSAGES.SESSION_NOT_FOUND };
+
+		const otp = genRandomNumber(4);
+		const expiresAt = new Date(Date.now() + applicationConfig.otpExpiration * 60 * 1000);
+
+		await UserVerificationService.updateSession(sessionId, {
+			otp,
+			validated: false,
+			expiresAt,
+		});
+
+		try {
+			await this.sendOtpEmail(req, session.email, otp);
+		} catch (error) {
+			if (!isProduction) {
+				console.warn("OTP email delivery failed during resend; returning dev OTP fallback.", error);
+				return {
+					status: true,
+					code: 200,
+					message: RESPONSE_MESSAGES.OTP_SENT,
+					data: { sessionId, otp },
+				};
+			}
 			return {
 				status: false,
-				code: 400,
-				message: RESPONSE_MESSAGES.OTP_INVALID_OR_EXPIRED,
+				code: 500,
+				message: RESPONSE_MESSAGES.OTP_DELIVERY_FAILED,
 			};
 		}
 
-		const isValid = await UserVerificationService.validateOTP(sessionId, otp);
+		return {
+			status: true,
+			code: 200,
+			message: RESPONSE_MESSAGES.OTP_SENT,
+			data: { sessionId, otp: isProduction ? undefined : otp },
+		};
+	}
 
+	static async verifyOtp(data: VerifyOtpDTO, purpose: OTP_PURPOSE): Promise<ApiResponse> {
+		const sessionError = await this.getOtpSessionError(data.sessionId, purpose);
+		if (sessionError) {
+			return sessionError;
+		}
+
+		const isValid = await UserVerificationService.validateOTP(data.sessionId, data.otp);
 		if (!isValid) {
 			return { status: false, code: 400, message: RESPONSE_MESSAGES.OTP_INVALID_OR_EXPIRED };
 		}
@@ -143,113 +442,321 @@ export class UserAuthService {
 			status: true,
 			code: 200,
 			message: RESPONSE_MESSAGES.OTP_VERIFIED,
+			data: { sessionId: data.sessionId, purpose },
+		};
+	}
+
+	static async verifyOtpLegacy(sessionId: string, otp: string): Promise<ApiResponse> {
+		return this.verifyOtp({ sessionId, otp }, OTP_PURPOSE.EMAIL_VERIFICATION);
+	}
+
+	static async completeSignup(data: CompleteSignupDTO): Promise<ApiResponse> {
+		const sessionError = await this.getOtpSessionError(data.sessionId, OTP_PURPOSE.EMAIL_VERIFICATION, {
+			requireValidated: true,
+		});
+		if (sessionError) {
+			return sessionError;
+		}
+		const session = await UserVerification.getSession(data.sessionId);
+		if (!session) return { status: false, code: 400, message: RESPONSE_MESSAGES.SESSION_NOT_FOUND };
+
+		if (data.password !== data.confirmPassword) {
+			return { status: false, code: 400, message: "Confirm password must match password" };
+		}
+
+		const pendingPayload = session.payload || {};
+		const role = this.normalizeRole(pendingPayload.role || session.userType);
+		const email = String(pendingPayload.email || session.email).toLowerCase().trim();
+		const whereConditions: Array<{ email: string } | { phoneNumber: string }> = [{ email }];
+		if (pendingPayload.phoneNumber) {
+			whereConditions.push({ phoneNumber: pendingPayload.phoneNumber });
+		}
+
+		const existingUser = await User.findOne({ where: { [Op.or]: whereConditions } });
+		if (existingUser) {
+			const message =
+				existingUser.email?.toLowerCase() === email
+					? this.getExistingAccountMessage()
+					: RESPONSE_MESSAGES.PHONE_ALREADY_REGISTERED;
+
+			return { status: false, code: 400, message };
+		}
+
+		await this.ensureUserType(role);
+
+		const password = await UserAuth.encryptPassword(data.password);
+		const user = await User.createUser({
+			firstName: pendingPayload.firstName,
+			lastName: pendingPayload.lastName,
+			email,
+			phoneNumber: pendingPayload.phoneNumber,
+			userType: role,
+			verificationNumber: pendingPayload.medicalLicenseNumber,
+			medicalLicenseNumber: pendingPayload.medicalLicenseNumber,
+		});
+
+		await UserAuth.new({
+			userId: user.id,
+			identifier: email,
+			password,
+			emailVerified: true,
+		});
+
+		if (role === AUTH_ROLE.CONSUMER) {
+			await UserProfile.createProfile(user.id, {
+				phoneNumber: pendingPayload.phoneNumber,
+				profileCompleted: false,
+				onboardingSkipped: false,
+			});
+		} else {
+			await DoctorProfile.create({
+				userId: user.id,
+				phoneNumber: pendingPayload.phoneNumber,
+				medicalLicenseNumber: pendingPayload.medicalLicenseNumber,
+				onboardingCompleted: false,
+				onboardingStep: 1,
+			});
+		}
+
+		await UserVerificationService.delSession(session.sessionId);
+
+		const hydratedUser = await User.findById(user.id);
+		if (!hydratedUser) {
+			throw new Error(RESPONSE_MESSAGES.USER_NOT_FOUND);
+		}
+
+		const { accessToken, refreshToken } = await this.issueSession(hydratedUser);
+		const responseData = await this.getUserResponse(hydratedUser.id);
+
+		return {
+			status: true,
+			code: 201,
+			message: RESPONSE_MESSAGES.USER_REGISTERED,
 			data: {
-				sessionId,
+				accessToken,
+				refreshToken,
+				...responseData,
 			},
 		};
 	}
 
-	static async generateToken(user: User) {
-		const userType = user.userTypeData;
-		const permissions = userType?.permissions?.map((p) => p.key) || [];
+	static async login(data: LoginDTO): Promise<ApiResponse> {
+		const user = await this.findUserByEmail(data.email);
+		if (!user) {
+			return { status: false, code: 404, message: RESPONSE_MESSAGES.INVALID_CREDENTIALS };
+		}
 
-		console.log(permissions)
+		const requestedRole = this.normalizeRole(data.role);
+		const actualRole = this.normalizeRole(user.userType);
+		if (requestedRole !== actualRole) {
+			return { status: false, code: 401, message: RESPONSE_MESSAGES.INVALID_CREDENTIALS };
+		}
 
-		const payload = {
-			id: user.id,
-			userType: user.userType,
-			permissions,
+		if (!user.isActive || user.status !== USER_STATUS.ACTIVE) {
+			return { status: false, code: 403, message: RESPONSE_MESSAGES.INACTIVE_USER };
+		}
+
+		const authRecord = await UserAuth.findByUserId(user.id);
+		if (!authRecord || !authRecord.password) {
+			return { status: false, code: 404, message: RESPONSE_MESSAGES.AUTH_RECORD_NOT_FOUND };
+		}
+
+		const isValidPassword = await UserAuth.validatePassword(data.password, authRecord.password);
+		if (!isValidPassword) {
+			return { status: false, code: 401, message: RESPONSE_MESSAGES.INVALID_CREDENTIALS };
+		}
+
+		const { accessToken, refreshToken } = await this.issueSession(user);
+		const responseData = await this.getUserResponse(user.id);
+
+		return {
+			status: true,
+			code: 200,
+			message: RESPONSE_MESSAGES.LOGIN_SUCCESSFUL,
+			data: {
+				accessToken,
+				refreshToken,
+				...responseData,
+			},
 		};
-
-		const token = jwt.sign(payload, tokenSecret, { expiresIn: tokenExpirationTime });
-
-		await UserToken.setToken(user.id, token);
-
-		return token;
 	}
 
-	static async setPassword(sessionId: string, password: string): Promise<ApiResponse> {
-		const sessionData = await UserVerification.getSession(sessionId);
-
-		if (!sessionData || !sessionData.validated) {
-			return {
-				status: false,
-				code: 400,
-				message: RESPONSE_MESSAGES.OTP_INVALID_OR_EXPIRED,
-			};
-		}
-
-		const user = await User.findByEmail(sessionData.email, sessionData.userType);
-
+	static async requestForgotPasswordOtp(data: ForgotPasswordRequestOtpDTO, req: Request): Promise<ApiResponse> {
+		const email = data.email.toLowerCase().trim();
+		const user = await this.findUserByEmail(email);
 		if (!user) {
 			return {
-				status: false,
-				code: 404,
-				message: RESPONSE_MESSAGES.USER_NOT_FOUND,
+				status: true,
+				code: 200,
+				message: RESPONSE_MESSAGES.OTP_SENT,
+				data: {},
 			};
 		}
 
-		const context = new AuthContext(sessionData.userType);
+		const otp = genRandomNumber(4);
+		const sessionId = genAlphaNum(16);
 
-		const userContext = await context.setPassword(user, password);
+		await UserVerificationService.setSession({
+			otp,
+			sessionId,
+			email,
+			userType: user.userType,
+			purpose: OTP_PURPOSE.PASSWORD_RESET,
+			path: "/auth/forgot-password/request-otp",
+			payload: {
+				email,
+				role: this.normalizeRole(user.userType),
+				userId: user.id,
+			},
+		});
 
-		if (!userContext || !userContext.status) {
+		try {
+			await this.sendOtpEmail(req, email, otp);
+		} catch (error) {
+			if (!isProduction) {
+				console.warn("OTP email delivery failed during forgot-password request; returning dev OTP fallback.", error);
+				return {
+					status: true,
+					code: 200,
+					message: RESPONSE_MESSAGES.OTP_SENT,
+					data: { sessionId, otp },
+				};
+			}
+			await UserVerificationService.delSession(sessionId);
 			return {
 				status: false,
-				code: userContext.code || 400,
-				message: userContext.message || RESPONSE_MESSAGES.SERVER_ERROR,
+				code: 500,
+				message: RESPONSE_MESSAGES.OTP_DELIVERY_FAILED,
 			};
 		}
 
 		return {
 			status: true,
 			code: 200,
-			message: RESPONSE_MESSAGES.PASSWORD_SET,
-			data: { ...userContext.data },
+			message: RESPONSE_MESSAGES.OTP_SENT,
+			data: { sessionId, otp: isProduction ? undefined : otp },
 		};
-		//delete sessionData
 	}
 
-	static async resetPassword(sessionId: string, newPassword: string): Promise<ApiResponse> {
-		const session = await UserVerification.getSession(sessionId);
-
-		if (!session || !session.validated) {
-			return {
-				status: false,
-				code: 400,
-				message: RESPONSE_MESSAGES.OTP_INVALID_OR_EXPIRED,
-			};
+	static async requestOtp(data: RequestOtpDTO, req: Request): Promise<ApiResponse> {
+		if (data.path && data.path.includes("forgot")) {
+			return this.requestForgotPasswordOtp({ email: data.email }, req);
 		}
-		const email = session.email;
+		return this.requestForgotPasswordOtp({ email: data.email }, req);
+	}
 
-		const user = await User.findByEmail(email, session.userType);
+	static async resetPassword(data: ResetPasswordDTO): Promise<ApiResponse> {
+		const sessionError = await this.getOtpSessionError(data.sessionId, OTP_PURPOSE.PASSWORD_RESET, {
+			requireValidated: true,
+		});
+		if (sessionError) {
+			return sessionError;
+		}
+		const session = await UserVerification.getSession(data.sessionId);
+		if (!session) return { status: false, code: 400, message: RESPONSE_MESSAGES.SESSION_NOT_FOUND };
 
+		if (data.newPassword !== data.confirmPassword) {
+			return { status: false, code: 400, message: "Confirm password must match new password" };
+		}
+
+		const email = String(session.payload?.email || session.email).toLowerCase().trim();
+		const user = await this.findUserByEmail(email);
 		if (!user) {
-			return {
-				status: false,
-				code: 404,
-				message: RESPONSE_MESSAGES.USER_NOT_FOUND,
-			};
+			return { status: false, code: 404, message: RESPONSE_MESSAGES.USER_NOT_FOUND };
 		}
 
-		const ua = await UserAuth.findById(user.id);
-		if (!ua) {
-			return {
-				status: false,
-				code: 404,
-				message: RESPONSE_MESSAGES.USER_NOT_FOUND,
-			};
+		const authRecord = await UserAuth.findByUserId(user.id);
+		if (!authRecord) {
+			return { status: false, code: 404, message: RESPONSE_MESSAGES.AUTH_RECORD_NOT_FOUND };
 		}
 
-		const newPasswordHash = await UserAuth.encryptPassword(newPassword);
+		authRecord.password = await UserAuth.encryptPassword(data.newPassword);
+		authRecord.refreshToken = null as any;
+		await authRecord.save();
+		await UserToken.revokeByUserId(user.id);
+		await UserVerificationService.delSession(session.sessionId);
 
-		ua.password = newPasswordHash;
-		await ua.save();
+		return {
+			status: true,
+			code: 200,
+			message: RESPONSE_MESSAGES.PASSWORD_RESET_SUCCESSFUL,
+		};
+	}
 
+	static async setPassword(sessionId: string, password: string): Promise<ApiResponse> {
+		return this.completeSignup({ sessionId, password, confirmPassword: password });
+	}
+
+	static async resetPasswordLegacy(sessionId: string, newPassword: string): Promise<ApiResponse> {
+		return this.resetPassword({ sessionId, newPassword, confirmPassword: newPassword });
+	}
+
+	static async refreshToken(data: RefreshTokenDTO): Promise<ApiResponse> {
+		let decoded: any;
+		try {
+			decoded = jwt.verify(data.refreshToken, refreshTokenSecret) as Record<string, any>;
+		} catch (_error) {
+			return { status: false, code: 401, message: RESPONSE_MESSAGES.INVALID_REFRESH_TOKEN };
+		}
+
+		const tokenRecord = await UserToken.findByRefreshToken(data.refreshToken);
+		if (!tokenRecord || tokenRecord.userId !== decoded.id) {
+			return { status: false, code: 401, message: RESPONSE_MESSAGES.INVALID_REFRESH_TOKEN };
+		}
+
+		const user = await User.findById(tokenRecord.userId);
+		if (!user) {
+			return { status: false, code: 404, message: RESPONSE_MESSAGES.USER_NOT_FOUND };
+		}
+
+		const { accessToken, refreshToken } = await this.issueSession(user);
+		const responseData = await this.getUserResponse(user.id);
+
+		return {
+			status: true,
+			code: 200,
+			message: RESPONSE_MESSAGES.TOKEN_REFRESHED,
+			data: {
+				accessToken,
+				refreshToken,
+				...responseData,
+			},
+		};
+	}
+
+	static async logout(userId: number, accessToken?: string, refreshToken?: string): Promise<ApiResponse> {
+		if (refreshToken) {
+			await UserToken.revokeByRefreshToken(refreshToken);
+		} else if (accessToken) {
+			await UserToken.remove(accessToken);
+		} else {
+			await UserToken.revokeByUserId(userId);
+		}
+
+		const authRecord = await UserAuth.findByUserId(userId);
+		if (authRecord) {
+			authRecord.refreshToken = null as any;
+			await authRecord.save();
+		}
+
+		return {
+			status: true,
+			code: 200,
+			message: "Logout successful.",
+		};
+	}
+
+	static async me(userId: number): Promise<ApiResponse> {
+		const responseData = await this.getUserResponse(userId);
 		return {
 			status: true,
 			code: 200,
 			message: RESPONSE_MESSAGES.SUCCESSS,
+			data: responseData,
 		};
+	}
+
+	static async generateToken(user: User) {
+		return this.signAccessToken(user);
 	}
 }

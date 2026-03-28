@@ -29,7 +29,7 @@ export default class AwsUtil_s3 {
 
 	async upload(base64: string, contentType: string, filename: string): Promise<IAWS> {
 		try {
-			const data = Buffer.from(base64.replace(/^data:image\/\/w+;base64,/, ""), "base64");
+			const data = Buffer.from(base64.replace(/^data:[^;]+;base64,/, ""), "base64");
 
 			const params = {
 				Bucket: awsOptions.s3BucketName,
@@ -51,6 +51,30 @@ export default class AwsUtil_s3 {
 			};
 		} catch (error) {
 			console.log(error, "Error uploading______________");
+			throw error;
+		}
+	}
+
+	async uploadBuffer(buffer: Buffer, contentType: string, filename: string): Promise<IAWS> {
+		try {
+			const params = {
+				Bucket: awsOptions.s3BucketName,
+				Key: filename,
+				Body: buffer,
+				ContentType: contentType,
+			};
+
+			const command = new PutObjectCommand(params);
+			const result = await this.s3Client.send(command);
+			const location = `https://${params.Bucket}.s3.${awsOptions.region}.amazonaws.com/${params.Key}`;
+
+			return {
+				key: params.Key,
+				location,
+				result,
+			};
+		} catch (error) {
+			console.log(error, "Error uploading buffer______________");
 			throw error;
 		}
 	}

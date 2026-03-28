@@ -13,6 +13,10 @@ export class UserVerificationService {
 		return UserVerification.getSession(sessionId);
 	}
 
+	static async findBySessionId(sessionId: string): Promise<UserVerification | null> {
+		return UserVerification.findBySessionId(sessionId);
+	}
+
 	static async delSession(sessionId: string): Promise<[affectedCount: number]> {
 		return UserVerification.delSession(sessionId);
 	}
@@ -21,7 +25,10 @@ export class UserVerificationService {
 		return UserVerification.validateOTP(sessionId, otp);
 	}
 
-	static async updateSession(sessionId: string, data: Partial<CreateOTPDTO>) {
+	static async updateSession(
+		sessionId: string,
+		data: Partial<CreateOTPDTO> & { validated?: boolean; expiresAt?: Date; isActive?: boolean }
+	) {
 		return UserVerification.updateSession(sessionId, data);
 	}
 }

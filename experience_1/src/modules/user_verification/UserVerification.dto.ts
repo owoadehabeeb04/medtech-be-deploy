@@ -1,3 +1,5 @@
+import { OTP_PURPOSE } from "../../constants/constant";
+
 export interface CreateOTPDTO {
 	otp?: string;
 	sessionId: string;
@@ -6,4 +8,6 @@ export interface CreateOTPDTO {
 	userType?: string;
 	validated?: boolean;
 	path?: string;
+	purpose?: OTP_PURPOSE;
+	payload?: Record<string, any>;
 }

@@ -3,6 +3,8 @@ export interface CreateUserDTO {
 	lastName: string;
 	email: string;
 	verificationNumber?: string;
+	medicalLicenseNumber?: string;
+	phoneNumber?: string;
 	tnc?: boolean;
 	userType?: string;
 	password?: string;
