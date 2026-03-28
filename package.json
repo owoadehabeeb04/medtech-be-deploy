@@ -12,7 +12,7 @@
 	},
 	"scripts": {
 		"build": "npm run build:utils && npm run build:experience_1 && npm run build:merchant",
-		"build:utils": "npx tsc -p utils/tsconfig.json",
+		"build:utils": "npm run build --workspace=utils",
 		"build:experience_1": "npm run build --workspace=experience_1",
 		"build:merchant": "npm run build --workspace=merchant",
 		"start": "npm run start --workspace=merchant",
