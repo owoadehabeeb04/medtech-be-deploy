@@ -14,6 +14,10 @@ import permissionRouter from "../modules/permission/Permission.route";
 import appoinmentRouter from "../modules/appointment/Appointment.route"
 import consumerProfileRouter from "../modules/consumer_profile/ConsumerProfile.route";
 import doctorProfileRouter from "../modules/doctor_profile/DoctorProfile.route";
+import doctorSettingsRouter from "../modules/doctor_settings/DoctorSettings.route";
+import doctorRatesRouter from "../modules/doctor_rates/DoctorRates.route";
+import doctorHealthPackageRouter from "../modules/doctor_health_packages/DoctorHealthPackage.route";
+import doctorReviewRouter from "../modules/doctor_reviews/DoctorReview.route";
 
 export default function (app: Application) {
 	app.use(cors());
@@ -31,6 +35,10 @@ export default function (app: Application) {
 		router.use("/appointments", appoinmentRouter);
 		router.use("/consumer", consumerProfileRouter);
 		router.use("/doctor", doctorProfileRouter);
+		router.use("/doctor", doctorSettingsRouter);
+		router.use("/doctor", doctorRatesRouter);
+		router.use("/doctor", doctorHealthPackageRouter);
+		router.use("/doctor", doctorReviewRouter);
 	});
 
 	app.use(root.export());

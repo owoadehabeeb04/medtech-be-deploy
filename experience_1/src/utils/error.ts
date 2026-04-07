@@ -1,5 +1,4 @@
 
-import { BAD_REQUEST } from "http-status";
 import { applicationConfig } from "../config";
 
 
@@ -11,12 +10,13 @@ export type ApplicationError = {
 };
 
 const { isProduction } = applicationConfig;
+const BAD_REQUEST_STATUS = 400;
 export default class CustomError extends Error {
 	statusCode: number;
 	errors: Record<string, string>;
 	errorCode?: string;
 
-	constructor({ message, statusCode = BAD_REQUEST, errorCode, errors }: ApplicationError) {
+	constructor({ message, statusCode = BAD_REQUEST_STATUS, errorCode, errors }: ApplicationError) {
 		super(message);
 		this.name = "CustomError";
 		this.statusCode = statusCode;

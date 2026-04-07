@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { FORBIDDEN } from "http-status";
 import { ERR_USER } from "../constants/error-codes";
+
+const FORBIDDEN_STATUS = 403;
 
 export default class PermissionMiddleware {
 	/**
@@ -14,7 +15,7 @@ export default class PermissionMiddleware {
 				return next(
 					manageApplicationErrors({
 						message: "Unauthorized: No permissions found",
-						statusCode: FORBIDDEN,
+						statusCode: FORBIDDEN_STATUS,
 						errorCode: errorCode(ERR_USER, "0PA"),
 					})
 				);
@@ -24,7 +25,7 @@ export default class PermissionMiddleware {
 				return next(
 					manageApplicationErrors({
 						message: "Forbidden: You lack required permission",
-						statusCode: FORBIDDEN,
+						statusCode: FORBIDDEN_STATUS,
 						errorCode: errorCode(ERR_USER, "0PB"),
 					})
 				);
@@ -45,7 +46,7 @@ export default class PermissionMiddleware {
 				return next(
 					manageApplicationErrors({
 						message: "Unauthorized: No permissions found",
-						statusCode: FORBIDDEN,
+						statusCode: FORBIDDEN_STATUS,
 						errorCode: errorCode(ERR_USER, "0PA"),
 					})
 				);
@@ -57,7 +58,7 @@ export default class PermissionMiddleware {
 				return next(
 					manageApplicationErrors({
 						message: "Forbidden: You lack required permission",
-						statusCode: FORBIDDEN,
+						statusCode: FORBIDDEN_STATUS,
 						errorCode: errorCode(ERR_USER, "0PB"),
 					})
 				);

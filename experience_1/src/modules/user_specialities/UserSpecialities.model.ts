@@ -2,7 +2,16 @@ import { BelongsTo, Column, DataType, ForeignKey, Min, Model, Table } from "sequ
 import { User } from "../users/User.model";
 import { Speciality } from "../speciality/Speciality.model";
 
-@Table({ tableName: "user_specialities", timestamps: false })
+@Table({
+	tableName: "user_specialities",
+	timestamps: false,
+	indexes: [
+		{
+			name: "user_specialities_user_id_idx",
+			fields: ["user_id"],
+		},
+	],
+})
 export class UserSpeciality extends Model<UserSpeciality> {
 	@ForeignKey(() => User)
 	@Column(DataType.INTEGER)

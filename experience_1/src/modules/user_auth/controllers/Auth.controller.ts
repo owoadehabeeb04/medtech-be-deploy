@@ -2,6 +2,7 @@ import { INTERNAL_SERVER_ERROR, OK } from "http-status";
 import { NextFunction, Request, RequestHandler, Response } from "express";
 import { ERR_USER } from "../../../constants/error-codes";
 import {
+	ChangePasswordSchema,
 	DoctorRegisterSchema,
 	CompleteSignupSchema,
 	ForgotPasswordRequestOtpSchema,
@@ -145,4 +146,11 @@ export const logout: RequestHandler = async (req, res, next) => {
 export const me: RequestHandler = async (req, res, next) => {
 	const { user } = req.context;
 	return handleAuthResponse(req, res, next, UserAuthService.me(user.id), "310");
+};
+
+export const changePassword: RequestHandler = async (req, res, next) => {
+	const { validateSchema, user } = req.context;
+	const payload = validateSchema(ChangePasswordSchema, req.body, next);
+	if (!payload) return;
+	return handleAuthResponse(req, res, next, UserAuthService.changePassword(user.id, payload), "313");
 };

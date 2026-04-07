@@ -13,6 +13,10 @@ import {
 	deleteDoctorEducation,
 	deleteDoctorWorkHistory,
 	getDoctorProfile,
+	getDoctorProfileMe,
+	listDoctorEducationHistory,
+	listDoctorWorkHistory,
+	updateDoctorAccount,
 	updateDoctorAddress,
 	updateDoctorBasicProfile,
 	updateDoctorEducation,
@@ -49,13 +53,18 @@ const uploadDoctorProfileImageFile: RequestHandler = (req, res, next) => {
 };
 
 router.use(verifyToken, requireRole(AUTH_ROLE.DOCTOR));
+router.get("/profile/me", getDoctorProfileMe);
+router.patch("/profile/account", updateDoctorAccount);
 router.post("/profile/basic", createDoctorBasicProfile);
 router.patch("/profile/basic", updateDoctorBasicProfile);
 router.post("/profile/image", uploadDoctorProfileImageFile, updateDoctorImage);
 router.post("/profile/address", updateDoctorAddress);
+router.patch("/profile/address", updateDoctorAddress);
+router.get("/profile/education", listDoctorEducationHistory);
 router.post("/profile/education", createDoctorEducation);
 router.patch("/profile/education/:educationId", updateDoctorEducation);
 router.delete("/profile/education/:educationId", deleteDoctorEducation);
+router.get("/profile/work-history", listDoctorWorkHistory);
 router.post("/profile/work-history", createDoctorWorkHistory);
 router.patch("/profile/work-history/:workId", updateDoctorWorkHistory);
 router.delete("/profile/work-history/:workId", deleteDoctorWorkHistory);
