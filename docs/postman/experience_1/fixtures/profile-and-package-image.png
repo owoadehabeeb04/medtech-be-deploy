@@ -1,0 +1,3 @@
+PNG FIXTURE PLACEHOLDER
+This file is a lightweight local upload fixture for Postman and the smoke runner.
+The verification tooling sends it with an explicit image/png content type.

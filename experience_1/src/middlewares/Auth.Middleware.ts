@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload as DefaultJwtPayload } from "jsonwebtoken";
-import { FORBIDDEN, UNAUTHORIZED } from "http-status";
 import { applicationConfig } from "../config";
 import { ERR_USER } from "../constants/error-codes";
 import { UserToken } from "../modules/user_token/UserToken.model";
@@ -14,6 +13,8 @@ interface JwtPayload extends DefaultJwtPayload {
 	permissions?: string[];
 }
 
+const UNAUTHORIZED_STATUS = 401;
+
 class Authentication {
 	static verifyToken() {
 		return async (req: Request, res: Response, next: NextFunction) => {
@@ -26,7 +27,7 @@ class Authentication {
 					return next(
 						manageApplicationErrors({
 							message: "Authorization header missing or malformed",
-							statusCode: UNAUTHORIZED,
+							statusCode: UNAUTHORIZED_STATUS,
 							errorCode: errorCode(ERR_USER, "01A"),
 						})
 					);
@@ -42,7 +43,7 @@ class Authentication {
 					return next(
 						manageApplicationErrors({
 							message: "Authentication failed",
-							statusCode: UNAUTHORIZED,
+							statusCode: UNAUTHORIZED_STATUS,
 							errorCode: errorCode(ERR_USER, "04A"),
 						})
 					);
@@ -55,7 +56,7 @@ class Authentication {
 					return next(
 						manageApplicationErrors({
 							message: "User not found",
-							statusCode: UNAUTHORIZED,
+							statusCode: UNAUTHORIZED_STATUS,
 							errorCode: errorCode(ERR_USER, "02A"),
 						})
 					);
@@ -76,7 +77,7 @@ class Authentication {
 					return next(
 						manageApplicationErrors({
 							message: "Token expired",
-							statusCode: UNAUTHORIZED,
+							statusCode: UNAUTHORIZED_STATUS,
 							errorCode: errorCode(ERR_USER, "03A"),
 						})
 					);
@@ -85,7 +86,7 @@ class Authentication {
 				return next(
 					manageApplicationErrors({
 						message: "Authentication failed",
-						statusCode: UNAUTHORIZED,
+						statusCode: UNAUTHORIZED_STATUS,
 						errorCode: errorCode(ERR_USER, "04A"),
 					})
 				);

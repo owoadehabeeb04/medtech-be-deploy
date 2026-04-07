@@ -1,9 +1,10 @@
 import { NextFunction, Request, Response } from "express";
-import { FORBIDDEN } from "http-status";
 import { AUTH_ROLE } from "../constants/constant";
 import { ERR_USER } from "../constants/error-codes";
 import { User } from "../modules/users/User.model";
 import { normalizeRole } from "./role.middleware";
+
+const FORBIDDEN_STATUS = 403;
 
 const getDoctorNextStep = (user: User): string | null => {
 	const profile = user.doctorProfile;
@@ -15,45 +16,46 @@ const getDoctorNextStep = (user: User): string | null => {
 	return null;
 };
 
-export const requireDoctorOnboardingCompleted = async (req: Request, _: Response, next: NextFunction) => {
+export const requireDoctorOnboardingCompleted = async (req: Request, res: Response, next: NextFunction) => {
 	try {
-		const { manageApplicationErrors, errorCode, user } = req.context;
+		const { errorCode, user } = req.context;
 		const currentRole = normalizeRole(user?.userType || user?.role);
 
 		if (currentRole !== AUTH_ROLE.DOCTOR) {
-			return next(
-				manageApplicationErrors({
-					message: "Forbidden: You do not have access to this resource",
-					statusCode: FORBIDDEN,
-					errorCode: errorCode(ERR_USER, "0RC"),
-				})
-			);
+			res.status(FORBIDDEN_STATUS).json({
+				message: "Forbidden: You do not have access to this resource",
+				errorCode: errorCode(ERR_USER, "0RC"),
+				statusCode: FORBIDDEN_STATUS,
+				errors: {},
+			});
+			return;
 		}
 
 		const hydratedUser = await User.findById(user.id);
 		if (!hydratedUser) {
-			return next(
-				manageApplicationErrors({
-					message: "User not found",
-					statusCode: FORBIDDEN,
-					errorCode: errorCode(ERR_USER, "0DO"),
-				})
-			);
+			res.status(FORBIDDEN_STATUS).json({
+				message: "User not found",
+				errorCode: errorCode(ERR_USER, "0DO"),
+				statusCode: FORBIDDEN_STATUS,
+				errors: {},
+			});
+			return;
 		}
 
 		const nextStep = getDoctorNextStep(hydratedUser);
 		if (nextStep || !hydratedUser.doctorProfile?.onboardingCompleted) {
-			return next(
-				manageApplicationErrors({
-					message: `Doctor onboarding is incomplete. Next step: ${nextStep || "doctor_profile_image"}`,
-					statusCode: FORBIDDEN,
-					errorCode: errorCode(ERR_USER, "0DP"),
-				})
-			);
+			res.status(FORBIDDEN_STATUS).json({
+				message: `Doctor onboarding is incomplete. Next step: ${nextStep || "doctor_profile_image"}`,
+				errorCode: errorCode(ERR_USER, "0DP"),
+				statusCode: FORBIDDEN_STATUS,
+				errors: {},
+			});
+			return;
 		}
 
 		return next();
 	} catch (error) {
+		console.error("requireDoctorOnboardingCompleted failed", error);
 		return next(error);
 	}
 };

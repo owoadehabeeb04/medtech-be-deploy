@@ -1,7 +1,16 @@
 import { Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
 import { User } from "../users/User.model";
 
-@Table({ tableName: "work_histories", timestamps: true })
+@Table({
+	tableName: "work_histories",
+	timestamps: true,
+	indexes: [
+		{
+			name: "work_histories_user_id_idx",
+			fields: ["user_id"],
+		},
+	],
+})
 export class WorkHistory extends Model<WorkHistory> {
 	@ForeignKey(() => User)
 	@Column(DataType.INTEGER)

@@ -1,6 +1,9 @@
 import express from "express";
 import Auth from "../../middlewares/Auth.Middleware";
+import { AUTH_ROLE } from "../../constants/constant";
+import { requireRole } from "../../middlewares/role.middleware";
 import {
+	changePassword,
 	completeSignup,
 	login,
 	logout,
@@ -32,5 +35,6 @@ router.post("/forgot-password/resend-otp", resendForgotPasswordOtp);
 router.post("/reset-password", resetPassword);
 router.post("/logout", verifyToken, logout);
 router.get("/me", verifyToken, me);
+router.post("/change-password", verifyToken, requireRole(AUTH_ROLE.DOCTOR), changePassword);
 
 export default router;

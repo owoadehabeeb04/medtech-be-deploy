@@ -7,6 +7,7 @@ const hasPermission = PermissionMiddleware.hasPermission;
 
 const router = express.Router();
 
+router.use(verifyToken);
 router.post("/create", createUserType);
 router.get("/all", getAllUserTypes);
 router.get("/id/:userTypeId", getUserTypeById);

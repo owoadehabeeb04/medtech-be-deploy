@@ -1,117 +1,92 @@
-# `experience_1` Postman Collection Guide
+# `experience_1` Endpoint Verification Guide
 
-Use the Postman collection as the primary artifact for the `experience_1` auth and profile flows.
+Use these artifacts for the mounted `experience_1` API under `/api/v1/main`.
 
-## What to Import
+## Primary Verification Paths
 
-Import this file into Postman:
+Native live smoke runner:
 
-`docs/postman/experience_1/experience1-auth-profile.postman_collection.json`
+- `cd experience_1`
+- `npm run verify:endpoints`
 
-Optional Postman environment:
+This is the CI-style path that was used to verify the live API against the local server, PostgreSQL, Redis, and the current upload flow.
 
-`docs/postman/experience_1/experience1-auth-profile.postman_environment.json`
+Optional Newman wrapper:
 
-Optional machine-readable API definition:
+- `cd experience_1`
+- `npm run verify:endpoints:newman`
 
-`docs/postman/experience_1/experience1-auth-profile.openapi.yaml`
+If Newman is not installed globally, rerun with:
 
-Do not paste this Markdown guide into Postman import.
+- `NEWMAN_USE_NPX=true npm run verify:endpoints:newman`
 
-## Collection Style
+## Postman Files
 
-This collection is intentionally structured like the merchant subscription collection:
+Import these files into Postman:
 
-- collection-level bearer auth using `{{token}}`
-- guided request order with numbered request names
-- folder descriptions and request descriptions
-- test scripts that auto-save the next variables you need
+- `docs/postman/experience_1/experience1-auth-profile.postman_collection.json`
+- `docs/postman/experience_1/experience1-auth-profile.postman_environment.json`
 
-## Shared Session Behavior
+Supporting local upload fixtures:
 
-This collection now uses one active auth session:
+- `docs/postman/experience_1/fixtures/profile-and-package-image.png`
+- `docs/postman/experience_1/fixtures/package-attachment.pdf`
+
+Machine-readable API definition:
+
+- `docs/postman/experience_1/experience1-auth-profile.openapi.yaml`
+
+## What The Collection Covers
+
+- `Health`
+- `Auth`
+- `Forgot Password`
+- `Consumer Profile`
+- `Doctor Onboarding`
+- `Doctor Settings`
+- `Doctor Rates`
+- `Doctor Health Packages`
+- `Appointments`
+- `Specialities`
+- `User Types`
+- `Permissions`
+
+The collection persists shared values like:
 
 - `token`
 - `refreshToken`
+- `signup_session_id`
+- `forgot_session_id`
+- `otp_code`
+- `education_id`
+- `work_id`
+- `speciality_id_1`
+- `speciality_id_2`
+- `speciality_id_3`
+- `package_id`
+- `userTypeId`
+- `userTypeId2`
+- `permissionId`
+- `permissionId2`
+- `permissionId3`
 
-Any successful request that authenticates a user will overwrite those values:
+## Regenerating The Postman Assets
 
-- `Complete Consumer Signup`
-- `Register Doctor`
-- `Login as Consumer`
-- `Login as Doctor`
-- `Refresh Token`
+The collection and environment are generated from the repo source script:
 
-That means the most recent successful auth request becomes the active session for all protected requests.
+- `cd experience_1`
+- `npm run postman:generate`
 
-## Recommended Variables
+That command refreshes:
 
-Use the collection variables directly or mirror them in a Postman environment:
-
-| Variable | Example Value |
-|---|---|
-| `baseUrl` | `http://localhost:6200/api/v1/main` |
-| `token` | empty |
-| `refreshToken` | empty |
-| `consumer_email` | `consumer1@example.com` |
-| `consumer_phone` | `+2348012345678` |
-| `consumer_password` | `StrongPass1!` |
-| `doctor_email` | `doctor1@example.com` |
-| `doctor_phone` | `+2348099999999` |
-| `doctor_password` | `StrongPass1!` |
-| `doctor_license` | `LIC-12345` |
-| `signup_session_id` | empty |
-| `forgot_session_id` | empty |
-| `otp_code` | empty |
-| `education_id` | empty |
-| `work_id` | empty |
-| `speciality_id_1` | `1` |
-| `speciality_id_2` | `2` |
-
-## Recommended Request Order
-
-### Consumer Flow
-
-1. `1. Request Consumer Signup OTP`
-2. `2. Verify Signup OTP`
-3. `4. Complete Consumer Signup`
-4. `8. Get Current User`
-5. `1. Create Consumer Profile`
-6. `4. Upload Consumer Profile Image`
-7. `3. Get Consumer Profile`
-
-### Doctor Flow
-
-1. `5. Register Doctor`
-2. `8. Get Current User`
-3. `1. Create Doctor Basic Profile`
-4. `3. Upload Doctor Profile Image`
-5. `4. Add Doctor Address`
-6. `5. Add Education History`
-7. `8. Add Work History`
-8. `11. Create Doctor Specialties`
-9. `13. Complete Doctor Onboarding`
-10. `14. Get Doctor Profile`
+- `docs/postman/experience_1/experience1-auth-profile.postman_collection.json`
+- `docs/postman/experience_1/experience1-auth-profile.postman_environment.json`
 
 ## Practical Notes
 
-- Public auth endpoints are marked `noauth`
-- Protected endpoints rely on collection-level bearer auth
-- Consumer and doctor image uploads use `form-data` with the field name `file`
-- Forgot-password is shared for both account types
-- Consumer signup is OTP-first
-- Doctor signup is direct registration
-
-## Troubleshooting
-
-If requests are failing with auth errors:
-
-- check which login or signup flow ran last
-- confirm `token` was updated in collection variables
-- confirm `refreshToken` was updated before using `Refresh Token` or `Logout`
-
-If Postman import says the format is invalid:
-
-- import `docs/postman/experience_1/experience1-auth-profile.postman_collection.json`
-- or import `docs/postman/experience_1/experience1-auth-profile.openapi.yaml`
-- do not paste this Markdown file into the import box
+- The smoke runner is the authoritative end-to-end verifier.
+- The Postman collection is grouped by route domain and is best used for manual inspection or selective reruns.
+- Upload routes use the fixture files above.
+- In local development, uploads now fall back to the app `asset/uploads/...` directory if S3 is unreachable.
+- Doctor-only routes should reject consumer or unauthenticated access.
+- Appointment booking now self-heals missing consultation-type reference data in non-production so local verification can run end-to-end.

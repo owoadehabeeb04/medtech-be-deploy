@@ -9,12 +9,12 @@ export const CreatePermissionSchema = Joi.object({
 
 export const AssignPermissionToUserSchema = Joi.object({
 	userTypeId: Joi.number().required(),
-	permissionIds: Joi.array().required(),
+	permissionIds: Joi.array().items(Joi.number().required()).min(1).required(),
 });
 
 export const RemovePermissionFromUserSchema = Joi.object({
-	userId: Joi.string().required(),
-	permissionIds: Joi.array().required(),
+	userTypeId: Joi.number().required(),
+	permissionIds: Joi.array().items(Joi.number().required()).min(1).required(),
 });
 
 export const ManageUserPermissionSchema = Joi.object({
@@ -24,7 +24,7 @@ export const ManageUserPermissionSchema = Joi.object({
 });
 
 export const GetUserTypePermissionsSchema = Joi.object({
-	userTypeId: Joi.string().required(),
+	userTypeId: Joi.number().required(),
 });
 
 export const GetUserPermissionsSchema = Joi.object({
@@ -50,7 +50,7 @@ export const BulkAssignPermissionSchema = Joi.object({
 		.items(
 			Joi.object({
 				userTypeId: Joi.number().required(),
-				permissionIds: Joi.array().required(),
+				permissionIds: Joi.array().items(Joi.number().required()).min(1).required(),
 			})
 		)
 		.min(1)
