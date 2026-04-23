@@ -14,6 +14,8 @@ const variables = [
 	["baseUrl", "http://localhost:6200/api/v1/main"],
 	["token", ""],
 	["refreshToken", ""],
+	["consumer_user_id", ""],
+	["doctor_user_id", ""],
 	["consumer_email", "consumer1@example.com"],
 	["consumer_password", "StrongPass1!"],
 	["consumer_reset_password", "StrongerPass2!"],
@@ -34,6 +36,8 @@ const variables = [
 	["speciality_id_2", ""],
 	["speciality_id_3", ""],
 	["package_id", ""],
+	["appointment_id", ""],
+	["review_id", ""],
 	["userTypeId", ""],
 	["userTypeId2", ""],
 	["permissionId", ""],
@@ -139,6 +143,16 @@ const saveTokenLines = [
 	"if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);",
 ];
 
+const saveConsumerSessionLines = [
+	...saveTokenLines,
+	"if (data.user?.id) pm.collectionVariables.set('consumer_user_id', data.user.id);",
+];
+
+const saveDoctorSessionLines = [
+	...saveTokenLines,
+	"if (data.user?.id) pm.collectionVariables.set('doctor_user_id', data.user.id);",
+];
+
 const collection = {
 	info: {
 		name: "experience_1 Full API Verification",
@@ -231,7 +245,7 @@ const collection = {
 						confirmPassword: "{{consumer_password}}",
 					},
 					description: "Complete the consumer signup and persist the shared auth session.",
-					tests: saveTokenLines,
+					tests: saveConsumerSessionLines,
 				}),
 				jsonRequest({
 					name: "Register Doctor",
@@ -249,7 +263,7 @@ const collection = {
 						medicalLicenseNumber: "{{doctor_license}}",
 					},
 					description: "Register a doctor directly and persist the shared auth session.",
-					tests: saveTokenLines,
+					tests: saveDoctorSessionLines,
 				}),
 				jsonRequest({
 					name: "Login as Consumer",
@@ -262,7 +276,7 @@ const collection = {
 						role: "consumer",
 					},
 					description: "Log in as the consumer and overwrite the shared auth session variables.",
-					tests: saveTokenLines,
+					tests: saveConsumerSessionLines,
 				}),
 				jsonRequest({
 					name: "Login as Doctor",
@@ -275,7 +289,7 @@ const collection = {
 						role: "doctor",
 					},
 					description: "Log in as the doctor and overwrite the shared auth session variables.",
-					tests: saveTokenLines,
+					tests: saveDoctorSessionLines,
 				}),
 				jsonRequest({
 					name: "Refresh Token",
@@ -434,6 +448,23 @@ const collection = {
 			description: "Doctor profile and onboarding endpoints.",
 			item: [
 				jsonRequest({
+					name: "Get Doctor Profile Me",
+					method: "GET",
+					path: "/doctor/profile/me",
+					description: "Fetch the authenticated doctor's account and onboarding snapshot.",
+				}),
+				jsonRequest({
+					name: "Update Doctor Account",
+					method: "PATCH",
+					path: "/doctor/profile/account",
+					body: {
+						firstName: "Samuel",
+						lastName: "Allen",
+						phoneNumber: "{{doctor_phone}}",
+					},
+					description: "Update the doctor's account-level details.",
+				}),
+				jsonRequest({
 					name: "Create Doctor Basic Profile",
 					method: "POST",
 					path: "/doctor/profile/basic",
@@ -482,6 +513,26 @@ const collection = {
 					description: "Update the doctor address information.",
 				}),
 				jsonRequest({
+					name: "Patch Doctor Address",
+					method: "PATCH",
+					path: "/doctor/profile/address",
+					body: {
+						addressLine1: "10BroadStreet",
+						addressLine2: "Suite7",
+						city: "Lagos",
+						state: "Lagos",
+						country: "Nigeria",
+						postalCode: "100001",
+					},
+					description: "Patch the doctor address information with the alternate mounted method.",
+				}),
+				jsonRequest({
+					name: "List Doctor Education History",
+					method: "GET",
+					path: "/doctor/profile/education",
+					description: "Fetch all education history entries for the authenticated doctor.",
+				}),
+				jsonRequest({
 					name: "Create Doctor Education History",
 					method: "POST",
 					path: "/doctor/profile/education",
@@ -514,6 +565,12 @@ const collection = {
 					method: "DELETE",
 					path: "/doctor/profile/education/{{education_id}}",
 					description: "Delete a doctor education history record.",
+				}),
+				jsonRequest({
+					name: "List Doctor Work History",
+					method: "GET",
+					path: "/doctor/profile/work-history",
+					description: "Fetch all work history entries for the authenticated doctor.",
 				}),
 				jsonRequest({
 					name: "Create Doctor Work History",
@@ -724,6 +781,33 @@ const collection = {
 			],
 		},
 		{
+			name: "Doctor Reviews",
+			description: "Doctor review listing, summary, and reply endpoints.",
+			item: [
+				jsonRequest({
+					name: "Get Doctor Review Summary",
+					method: "GET",
+					path: "/doctor/reviews/summary",
+					description: "Fetch the authenticated doctor's review aggregate summary.",
+				}),
+				jsonRequest({
+					name: "Get Doctor Reviews",
+					method: "GET",
+					path: "/doctor/reviews",
+					description: "Fetch paginated doctor reviews for the authenticated doctor.",
+				}),
+				jsonRequest({
+					name: "Reply To Doctor Review",
+					method: "POST",
+					path: "/doctor/reviews/{{review_id}}/reply",
+					body: {
+						message: "Thank you for your feedback and trust.",
+					},
+					description: "Reply to a patient review as the doctor.",
+				}),
+			],
+		},
+		{
 			name: "Appointments",
 			description: "Appointment booking and doctor appointment listing.",
 			item: [
@@ -734,18 +818,36 @@ const collection = {
 					body: {
 						age: 31,
 						gender: "female",
-						medicId: 1,
+						medicId: "{{doctor_user_id}}",
 						scheduleDate: 1767225600000,
 						consultationType: "video",
 						appointmentType: "personal",
 					},
 					description: "Book an appointment for the authenticated user.",
+					tests: [
+						...responseSaver,
+						"if (data.id) pm.collectionVariables.set('appointment_id', data.id);",
+					],
 				}),
 				jsonRequest({
 					name: "Get Doctor Appointments",
 					method: "GET",
 					path: "/appointments",
 					description: "Fetch the authenticated doctor's appointments after onboarding is complete.",
+				}),
+				jsonRequest({
+					name: "Create Appointment Review",
+					method: "POST",
+					path: "/appointments/{{appointment_id}}/review",
+					body: {
+						rating: 5,
+						comment: "Helpful and professional consultation.",
+					},
+					description: "Create a patient review for a completed appointment.",
+					tests: [
+						...responseSaver,
+						"if (data.review?.id) pm.collectionVariables.set('review_id', data.review.id);",
+					],
 				}),
 			],
 		},

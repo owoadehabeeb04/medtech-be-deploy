@@ -7,6 +7,7 @@ import { Transaction } from "../transactions/Transaction.model";
 import { Wallet } from "../wallet/Wallet.model";
 import { Merchant } from "../merchant/Merchant.model";
 import { PaystackService } from "../../service/Paystack/Paystack.service";
+import { applicationConfig } from "../../config";
 import {
   PlanTier,
   SubscriptionStatus,
@@ -26,6 +27,33 @@ const PLAN_ORDER: Record<string, number> = {
 };
 
 export class SubscriptionService {
+  private static resolvePaymentReturnUrl(
+    reference: string,
+    flow: "subscribe" | "upgrade",
+    requestedReturnUrl?: string
+  ) {
+    const candidateUrl = (requestedReturnUrl || "").trim();
+    if (!candidateUrl) {
+      return null;
+    }
+
+    let url: URL;
+    try {
+      url = new URL(candidateUrl);
+    } catch {
+      throw new HttpException(400, "Invalid payment return URL.");
+    }
+
+    const allowedOrigins = applicationConfig.allowedPaymentReturnOrigins || [];
+    if (!allowedOrigins.includes(url.origin)) {
+      throw new HttpException(400, "Payment return URL origin is not allowed.");
+    }
+
+    url.searchParams.set("reference", reference);
+    url.searchParams.set("flow", flow);
+    return url.toString();
+  }
+
   /**
    * Get all active subscription plans
    */
@@ -116,7 +144,8 @@ export class SubscriptionService {
   static async subscribe(
     merchantId: string,
     planId: string,
-    paymentMethod: string
+    paymentMethod: string,
+    requestedReturnUrl?: string
   ) {
     const merchant = await Merchant.findByPk(merchantId);
     if (!merchant) {
@@ -159,6 +188,7 @@ export class SubscriptionService {
       paymentMethod === PaymentMethod.BANK_TRANSFER
         ? ["bank_transfer"]
         : ["card"];
+    const returnUrl = this.resolvePaymentReturnUrl(reference, "subscribe", requestedReturnUrl);
 
     // Create pending transaction
     const wallet = await Wallet.findOne({ where: { merchantId } });
@@ -184,11 +214,14 @@ export class SubscriptionService {
         planName: newPlan.name,
         type: "subscription",
       },
-      channels
+      channels,
+      returnUrl || undefined
     );
 
     return {
       authorizationUrl: result.authorizationUrl,
+      redirectUrl: result.authorizationUrl,
+      returnUrl,
       accessCode: result.accessCode,
       reference: result.reference,
       amount: newPlan.price,
@@ -271,7 +304,8 @@ export class SubscriptionService {
   static async upgradePlan(
     merchantId: string,
     planId: string,
-    paymentMethod: string
+    paymentMethod: string,
+    requestedReturnUrl?: string
   ) {
     const subscription = await Subscription.findOne({
       where: { merchantId },
@@ -325,6 +359,7 @@ export class SubscriptionService {
       paymentMethod === PaymentMethod.BANK_TRANSFER
         ? ["bank_transfer"]
         : ["card"];
+    const returnUrl = this.resolvePaymentReturnUrl(reference, "upgrade", requestedReturnUrl);
 
     const wallet = await Wallet.findOne({ where: { merchantId } });
     await Transaction.create({
@@ -349,11 +384,14 @@ export class SubscriptionService {
         planName: newPlan.name,
         type: "upgrade",
       },
-      channels
+      channels,
+      returnUrl || undefined
     );
 
     return {
       authorizationUrl: result.authorizationUrl,
+      redirectUrl: result.authorizationUrl,
+      returnUrl,
       accessCode: result.accessCode,
       reference: result.reference,
       amount: newPlan.price,
