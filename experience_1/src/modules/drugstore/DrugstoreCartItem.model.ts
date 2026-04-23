@@ -6,6 +6,7 @@ import {
 	Default,
 	ForeignKey,
 	Model,
+	PrimaryKey,
 	Table,
 } from "sequelize-typescript";
 import { DrugstoreCart } from "./DrugstoreCart.model";
@@ -19,6 +20,7 @@ import { DrugstoreCart } from "./DrugstoreCart.model";
 	],
 })
 export class DrugstoreCartItem extends Model<DrugstoreCartItem> {
+	@PrimaryKey
 	@Default(DataType.UUIDV4)
 	@Column(DataType.UUID)
 	declare id: string;

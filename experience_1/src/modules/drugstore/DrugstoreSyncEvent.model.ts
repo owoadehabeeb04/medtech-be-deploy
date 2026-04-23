@@ -6,6 +6,7 @@ import {
 	Default,
 	ForeignKey,
 	Model,
+	PrimaryKey,
 	Table,
 	Unique,
 } from "sequelize-typescript";
@@ -20,6 +21,7 @@ import { DrugstoreOrder } from "./DrugstoreOrder.model";
 	],
 })
 export class DrugstoreSyncEvent extends Model<DrugstoreSyncEvent> {
+	@PrimaryKey
 	@Default(DataType.UUIDV4)
 	@Column(DataType.UUID)
 	declare id: string;
