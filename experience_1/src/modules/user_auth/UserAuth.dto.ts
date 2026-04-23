@@ -64,6 +64,12 @@ export interface ResetPasswordDTO {
 	confirmPassword: string;
 }
 
+export interface ChangePasswordDTO {
+	oldPassword: string;
+	newPassword: string;
+	confirmNewPassword: string;
+}
+
 export interface RefreshTokenDTO {
 	refreshToken: string;
 }

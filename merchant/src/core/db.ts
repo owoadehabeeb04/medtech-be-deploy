@@ -15,6 +15,8 @@ import { Subscription } from "../modules/subscriptions/Subscription.model";
 import { ScheduledPlanChange } from "../modules/subscriptions/ScheduledPlanChange.model";
 import { Wallet } from "../modules/wallet/Wallet.model";
 import { Transaction } from "../modules/transactions/Transaction.model";
+import { DrugstoreOrder } from "../modules/drugstore_orders/DrugstoreOrder.model";
+import { DrugstoreOrderItem } from "../modules/drugstore_orders/DrugstoreOrderItem.model";
 import { setupAssociations } from "../modules/associations";
 import { seedPlans } from "../modules/subscriptions/plan-seeds";
 import { runMigrations } from "./migrations";
@@ -44,7 +46,7 @@ const connection = async (): Promise<Sequelize> => {
 		define: {
 			underscored: true,
 		},
-		models: [Merchant, MerchantVerification, StoreDetails, PaymentDetails, MerchantSettings, Product, Discount, Category, RefreshToken, Plan, Subscription, ScheduledPlanChange, Wallet, Transaction],
+		models: [Merchant, MerchantVerification, StoreDetails, PaymentDetails, MerchantSettings, Product, Discount, Category, RefreshToken, Plan, Subscription, ScheduledPlanChange, Wallet, Transaction, DrugstoreOrder, DrugstoreOrderItem],
 	});
 
 	try {

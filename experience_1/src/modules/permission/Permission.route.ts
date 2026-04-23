@@ -13,6 +13,7 @@ const hasPermission = PermissionMiddleware.hasPermission;
 
 const router = express.Router();
 
+router.use(verifyToken);
 router.post("/create", createPermission);
 router.post("/bulk-create", bulkCreatePermission);
 router.get("/all", getAllPermissions);

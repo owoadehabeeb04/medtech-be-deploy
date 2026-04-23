@@ -6,7 +6,11 @@
 		"start": "node dist/app.js",
 		"start:dev": "ts-node --project tsconfig.json src/app.ts",
 		"dev": "nodemon --exec ts-node --project tsconfig.json src/app.ts",
-		"dev:legacy": "nodemon --exec \"ts-node src/app.ts\""
+		"dev:legacy": "nodemon --exec \"ts-node src/app.ts\"",
+		"postman:generate": "node scripts/generate-postman-assets.mjs",
+		"verify:endpoints:smoke": "node scripts/verify-endpoints.mjs",
+		"verify:endpoints:newman": "node scripts/run-newman.mjs",
+		"verify:endpoints": "npm run build && npm run postman:generate && npm run verify:endpoints:smoke"
 	},
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.974.0",

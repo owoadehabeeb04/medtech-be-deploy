@@ -17,6 +17,7 @@ import { WorkHistory } from "../work_history/WorkHistory.model";
 import { UserSpeciality } from "../user_specialities/UserSpecialities.model";
 import { ApiResponse } from "../../utils/common.dto";
 import {
+	ChangePasswordDTO,
 	CompleteSignupDTO,
 	DoctorRegisterDTO,
 	ForgotPasswordRequestOtpDTO,
@@ -39,6 +40,7 @@ type AuthPayload = {
 	id: number;
 	role: string;
 	permissions: string[];
+	sessionId: string;
 };
 
 export class UserAuthService {
@@ -103,23 +105,25 @@ export class UserAuthService {
 		});
 	}
 
-	private static signAccessToken(user: User): string {
+	private static signAccessToken(user: User, sessionId: string): string {
 		const permissions = user.userTypeData?.permissions?.map((permission) => permission.key) || [];
 		const payload: AuthPayload = {
 			id: user.id,
 			role: this.normalizeRole(user.userType),
 			permissions,
+			sessionId,
 		};
 
 		return jwt.sign(payload, tokenSecret, { expiresIn: tokenExpirationTime });
 	}
 
-	private static signRefreshToken(user: User): string {
+	private static signRefreshToken(user: User, sessionId: string): string {
 		return jwt.sign(
 			{
 				id: user.id,
 				role: this.normalizeRole(user.userType),
 				type: "refresh",
+				sessionId,
 			},
 			refreshTokenSecret,
 			{ expiresIn: refreshTokenExpirationTime }
@@ -127,8 +131,9 @@ export class UserAuthService {
 	}
 
 	private static async issueSession(user: User) {
-		const accessToken = this.signAccessToken(user);
-		const refreshToken = this.signRefreshToken(user);
+		const sessionId = genAlphaNum(16);
+		const accessToken = this.signAccessToken(user, sessionId);
+		const refreshToken = this.signRefreshToken(user, sessionId);
 
 		await UserToken.setToken(user.id, accessToken, refreshToken);
 
@@ -683,6 +688,53 @@ export class UserAuthService {
 		};
 	}
 
+	static async changePassword(userId: number, data: ChangePasswordDTO): Promise<ApiResponse> {
+		const user = await User.findById(userId);
+		if (!user) {
+			return { status: false, code: 404, message: RESPONSE_MESSAGES.USER_NOT_FOUND };
+		}
+
+		const authRecord = await UserAuth.findByUserId(userId);
+		if (!authRecord || !authRecord.password) {
+			return { status: false, code: 404, message: RESPONSE_MESSAGES.AUTH_RECORD_NOT_FOUND };
+		}
+
+		const isValidPassword = await UserAuth.validatePassword(data.oldPassword, authRecord.password);
+		if (!isValidPassword) {
+			return {
+				status: false,
+				code: 400,
+				message: "Old password is incorrect. Please enter the correct password.",
+			};
+		}
+
+		if (data.oldPassword === data.newPassword) {
+			return {
+				status: false,
+				code: 400,
+				message: "Password has been used previously. Please enter a new password.",
+			};
+		}
+
+		authRecord.password = await UserAuth.encryptPassword(data.newPassword);
+		authRecord.refreshToken = null as any;
+		await authRecord.save();
+
+		const { accessToken, refreshToken } = await this.issueSession(user);
+		const responseData = await this.getUserResponse(user.id);
+
+		return {
+			status: true,
+			code: 200,
+			message: RESPONSE_MESSAGES.PASSWORD_CHANGED,
+			data: {
+				accessToken,
+				refreshToken,
+				...responseData,
+			},
+		};
+	}
+
 	static async setPassword(sessionId: string, password: string): Promise<ApiResponse> {
 		return this.completeSignup({ sessionId, password, confirmPassword: password });
 	}
@@ -757,6 +809,6 @@ export class UserAuthService {
 	}
 
 	static async generateToken(user: User) {
-		return this.signAccessToken(user);
+		return this.signAccessToken(user, genAlphaNum(16));
 	}
 }

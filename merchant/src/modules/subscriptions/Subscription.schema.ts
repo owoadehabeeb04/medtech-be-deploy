@@ -13,6 +13,14 @@ export const subscribeSchema = Joi.object({
       "any.only": "Invalid payment method. Choose from: wallet, card, or bank_transfer",
       "any.required": "Payment method is required. Select how you'd like to pay.",
     }),
+  returnUrl: Joi.when("paymentMethod", {
+    is: Joi.valid("card", "bank_transfer"),
+    then: Joi.string().trim().uri({ scheme: ["http", "https"] }).required(),
+    otherwise: Joi.string().trim().uri({ scheme: ["http", "https"] }).optional(),
+  }).messages({
+    "any.required": "Return URL is required for Paystack payments.",
+    "string.uri": "Return URL must be a valid http or https URL.",
+  }),
 });
 
 export const upgradePlanSchema = Joi.object({
@@ -27,6 +35,14 @@ export const upgradePlanSchema = Joi.object({
       "any.only": "Invalid payment method. Choose from: wallet, card, or bank_transfer",
       "any.required": "Payment method is required. Select how you'd like to pay.",
     }),
+  returnUrl: Joi.when("paymentMethod", {
+    is: Joi.valid("card", "bank_transfer"),
+    then: Joi.string().trim().uri({ scheme: ["http", "https"] }).required(),
+    otherwise: Joi.string().trim().uri({ scheme: ["http", "https"] }).optional(),
+  }).messages({
+    "any.required": "Return URL is required for Paystack payments.",
+    "string.uri": "Return URL must be a valid http or https URL.",
+  }),
 });
 
 export const downgradePlanSchema = Joi.object({

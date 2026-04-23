@@ -1,3 +1,10 @@
+export interface DoctorAccountDTO {
+	firstName?: string;
+	lastName?: string;
+	phoneNumber?: string;
+	email?: string;
+}
+
 export interface DoctorBasicProfileDTO {
 	firstName?: string;
 	lastName?: string;
@@ -12,24 +19,29 @@ export interface DoctorAddressDTO {
 	addressLine2?: string;
 	city: string;
 	state: string;
+	country?: string | null;
+	postalCode?: string | null;
 }
 
 export interface DoctorEducationDTO {
-	institute: string;
+	institution?: string;
+	institute?: string;
 	certificate: string;
 	startDate: Date;
 	endDate?: Date;
 }
 
 export interface DoctorWorkHistoryDTO {
-	company: string;
+	companyOrInstitution?: string;
+	company?: string;
 	designation: string;
 	startDate: Date;
 	endDate?: Date;
 }
 
 export interface DoctorSpecialtiesDTO {
-	specialityIds: number[];
+	specialityIds?: number[];
+	specialtyIds?: number[];
 	yearsOfExperience?: number;
 	bio?: string;
 }

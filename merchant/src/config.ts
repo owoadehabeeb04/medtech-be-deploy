@@ -4,10 +4,26 @@ import * as path from "path";
 // Load environment variables from .env file
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
+const parsedDrugstoreCommissionRate = Number(
+  process.env.DRUGSTORE_ANALYTICS_COMMISSION_RATE || "0.1"
+);
+const drugstoreCommissionRate = Number.isFinite(parsedDrugstoreCommissionRate)
+  ? Math.min(Math.max(parsedDrugstoreCommissionRate, 0), 1)
+  : 0.1;
+const allowedPaymentReturnOrigins = (
+  process.env.ALLOWED_PAYMENT_RETURN_ORIGINS ||
+  process.env.BASE_APP_URL ||
+  ""
+)
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean);
+
 export const applicationConfig = {
   nodeEnv: process.env.NODE_ENV || "development",
   serverPort: parseInt(process.env.PORT || "3000", 10),
   timezone: process.env.TZ || "Africa/Lagos",
+  allowedPaymentReturnOrigins,
   
   postgres: {
     host: process.env.DB_HOST || "localhost",
@@ -74,6 +90,20 @@ export const applicationConfig = {
   supportEmail: process.env.SUPPORT_EMAIL || "support@meditechhealth.ng",
   supportPhone: process.env.SUPPORT_PHONE || "+2348051114444",
   supportAddress: process.env.SUPPORT_ADDRESS || "14 Haruna Ishola Street, Lagos. Nigeria",
+
+  internalIntegration: {
+    keyId: process.env.MERCHANT_INTERNAL_KEY_ID || "experience_1",
+    secret: process.env.MERCHANT_INTERNAL_SECRET || "",
+    allowedClockSkewSeconds: parseInt(process.env.MERCHANT_INTERNAL_CLOCK_SKEW_SEC || "300", 10),
+  },
+  
+  experience1Integration: {
+    baseUrl: process.env.EXPERIENCE1_INTERNAL_BASE_URL || "",
+  },
+
+  drugstoreAnalytics: {
+    commissionRate: drugstoreCommissionRate,
+  },
   
   isProduction: process.env.NODE_ENV === "production",
 };

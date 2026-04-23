@@ -91,7 +91,7 @@ export const updateUserType: RequestHandler = async (req: Request, res: Response
 
 	if (!payload) return;
 
-	const [error, data] = await manageAsyncOps(UserTypeService.updateUserType(payload.userTypeId, payload.userTypeId));
+	const [error, data] = await manageAsyncOps(UserTypeService.updateUserType(payload.userTypeId, payload));
 
 	if (error) {
 		console.log(error);

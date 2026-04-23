@@ -1,4 +1,4 @@
-import { BelongsTo, Column, DataType, Default, ForeignKey, Model, Table } from "sequelize-typescript";
+import { AllowNull, BelongsTo, Column, DataType, Default, ForeignKey, Model, Table } from "sequelize-typescript";
 import { User } from "../users/User.model";
 
 @Table({ tableName: "doctor_profiles", timestamps: true })
@@ -27,6 +27,14 @@ export class DoctorProfile extends Model<DoctorProfile> {
 
 	@Column(DataType.STRING)
 	declare state: string;
+
+	@AllowNull(true)
+	@Column(DataType.STRING)
+	declare country: string | null;
+
+	@AllowNull(true)
+	@Column(DataType.STRING)
+	declare postalCode: string | null;
 
 	@Column(DataType.STRING)
 	declare medicalLicenseNumber: string;

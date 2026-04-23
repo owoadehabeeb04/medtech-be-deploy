@@ -61,6 +61,25 @@ export type Configuration = {
 		redirectUri: string;
 		javascriptOrigins: string;
 	};
+	merchantIntegration?: {
+		baseUrl: string;
+		keyId: string;
+		secret: string;
+		timeoutMs: number;
+		syncWorker?: {
+			enabled: boolean;
+			pollIntervalMs: number;
+			batchSize: number;
+			maxAttempts: number;
+			baseRetryDelayMs: number;
+			maxRetryDelayMs: number;
+		};
+	};
+	paystack?: {
+		secretKey: string;
+		publicKey?: string;
+		callbackUrl?: string;
+	};
 };
 
 export const applicationConfig: Configuration = {
@@ -121,5 +140,24 @@ export const applicationConfig: Configuration = {
 		clientSecret: process.env.GOOGLE_CLIENT_SECRET,
 		redirectUri: process.env.GOOGLE_REDIRECT_URI,
 		javascriptOrigins: process.env.javascript_origins,
+	},
+	merchantIntegration: {
+		baseUrl: process.env.MERCHANT_INTERNAL_BASE_URL || "http://localhost:3000",
+		keyId: process.env.MERCHANT_INTERNAL_KEY_ID || "experience_1",
+		secret: process.env.MERCHANT_INTERNAL_SECRET || "",
+		timeoutMs: +process.env.MERCHANT_INTERNAL_TIMEOUT_MS || 10000,
+		syncWorker: {
+			enabled: process.env.DRUGSTORE_SYNC_WORKER_ENABLED !== "false",
+			pollIntervalMs: +process.env.DRUGSTORE_SYNC_WORKER_INTERVAL_MS || 15000,
+			batchSize: +process.env.DRUGSTORE_SYNC_WORKER_BATCH_SIZE || 10,
+			maxAttempts: +process.env.DRUGSTORE_SYNC_MAX_ATTEMPTS || 8,
+			baseRetryDelayMs: +process.env.DRUGSTORE_SYNC_BASE_RETRY_MS || 30000,
+			maxRetryDelayMs: +process.env.DRUGSTORE_SYNC_MAX_RETRY_MS || 1800000,
+		},
+	},
+	paystack: {
+		secretKey: process.env.PAYSTACK_SECRET_KEY || "",
+		publicKey: process.env.PAYSTACK_PUBLIC_KEY || "",
+		callbackUrl: process.env.EXPERIENCE1_PAYSTACK_CALLBACK_URL || process.env.BASE_APP_URL || "",
 	},
 };

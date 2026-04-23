@@ -263,7 +263,8 @@ export class PaystackService {
     amount: number,
     reference: string,
     metadata: Record<string, any> = {},
-    channels?: string[]
+    channels?: string[],
+    callbackUrl?: string
   ): Promise<InitializeTransactionResult> {
     try {
       const payload: any = {
@@ -271,8 +272,10 @@ export class PaystackService {
         amount, // in kobo
         reference,
         metadata,
-        callback_url: `${applicationConfig.baseUrl}/api/v1/merchant/subscriptions/confirm-payment`,
       };
+      if (callbackUrl) {
+        payload.callback_url = callbackUrl;
+      }
       if (channels && channels.length > 0) {
         payload.channels = channels;
       }
