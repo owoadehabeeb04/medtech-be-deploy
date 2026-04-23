@@ -9,6 +9,7 @@ import redisInit from "../utils/redisInit";
 import handleApplicationResponses from "./responseContext";
 import rateLimit from "express-rate-limit";
 import eventListeners from "../observers/user.observer";
+import { startDrugstoreSyncWorker } from "../modules/drugstore/DrugstoreSync.worker";
 const timezone = "Africa/Lagos";
 process.env.TZ = timezone;
 
@@ -75,6 +76,7 @@ export const startServer = async (): Promise<void> => {
 
 	if (!listenersBootstrapped) {
 		eventListeners();
+		startDrugstoreSyncWorker();
 		listenersBootstrapped = true;
 	}
 

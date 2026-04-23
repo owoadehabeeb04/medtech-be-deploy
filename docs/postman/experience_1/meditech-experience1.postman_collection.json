@@ -1,8 +1,8 @@
 {
   "info": {
-    "name": "experience_1 Full API Verification",
-    "_postman_id": "experience1-full-api-verification",
-    "description": "Generated collection for the currently mounted experience_1 routes under /api/v1/main.\n\nUse `npm run postman:generate` in `experience_1` to refresh this file.\n\nThis collection mirrors the repo-native smoke runner and persists the IDs, OTP sessions, and auth tokens needed across the auth, onboarding, settings, rates, package, appointment, speciality, user type, and permission flows.",
+    "_postman_id": "meditech-experience1-collection",
+    "name": "Meditech experience_1 API",
+    "description": "Self-contained Postman collection for the currently mounted experience_1 API surface. Use the Auth / Setup flow first, then move into consumer, doctor, and drugstore workflows. Local testing assumes `ENCRYPTION_ENABLED=false` unless you add your own decryption workflow.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -16,6 +16,14 @@
     },
     {
       "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "consumer_user_id",
+      "value": ""
+    },
+    {
+      "key": "doctor_user_id",
       "value": ""
     },
     {
@@ -96,6 +104,14 @@
     },
     {
       "key": "package_id",
+      "value": ""
+    },
+    {
+      "key": "appointment_id",
+      "value": ""
+    },
+    {
+      "key": "review_id",
       "value": ""
     },
     {
@@ -317,7 +333,8 @@
                   "const responseJson = pm.response.json();",
                   "const data = responseJson.data || {};",
                   "if (data.accessToken) pm.collectionVariables.set('token', data.accessToken);",
-                  "if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);"
+                  "if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "if (data.user?.id) pm.collectionVariables.set('consumer_user_id', data.user.id);"
                 ]
               }
             }
@@ -362,7 +379,8 @@
                   "const responseJson = pm.response.json();",
                   "const data = responseJson.data || {};",
                   "if (data.accessToken) pm.collectionVariables.set('token', data.accessToken);",
-                  "if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);"
+                  "if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "if (data.user?.id) pm.collectionVariables.set('doctor_user_id', data.user.id);"
                 ]
               }
             }
@@ -404,10 +422,14 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const responseJson = pm.response.json();",
-                  "const data = responseJson.data || {};",
-                  "if (data.accessToken) pm.collectionVariables.set('token', data.accessToken);",
-                  "if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);"
+                  "pm.test(\"Status is success\", function () { pm.expect(pm.response.code).to.be.below(300); });",
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "if (data.accessToken) pm.environment.set(\"token\", data.accessToken);",
+                  "if (data.refreshToken) pm.environment.set(\"refreshToken\", data.refreshToken);",
+                  "if (data.user?.id) pm.environment.set(\"user_id\", data.user.id);",
+                  "if (data.user?.role || data.user?.userType) pm.environment.set(\"active_role\", data.user.role || data.user.userType);",
+                  "if (!data.accessToken) console.log(\"Token auto-capture requires experience_1 encryption to be disabled in local testing.\");"
                 ]
               }
             }
@@ -448,10 +470,14 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const responseJson = pm.response.json();",
-                  "const data = responseJson.data || {};",
-                  "if (data.accessToken) pm.collectionVariables.set('token', data.accessToken);",
-                  "if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);"
+                  "pm.test(\"Status is success\", function () { pm.expect(pm.response.code).to.be.below(300); });",
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "if (data.accessToken) pm.environment.set(\"token\", data.accessToken);",
+                  "if (data.refreshToken) pm.environment.set(\"refreshToken\", data.refreshToken);",
+                  "if (data.user?.id) pm.environment.set(\"user_id\", data.user.id);",
+                  "if (data.user?.role || data.user?.userType) pm.environment.set(\"active_role\", data.user.role || data.user.userType);",
+                  "if (!data.accessToken) console.log(\"Token auto-capture requires experience_1 encryption to be disabled in local testing.\");"
                 ]
               }
             }
@@ -492,10 +518,14 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const responseJson = pm.response.json();",
-                  "const data = responseJson.data || {};",
-                  "if (data.accessToken) pm.collectionVariables.set('token', data.accessToken);",
-                  "if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);"
+                  "pm.test(\"Status is success\", function () { pm.expect(pm.response.code).to.be.below(300); });",
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "if (data.accessToken) pm.environment.set(\"token\", data.accessToken);",
+                  "if (data.refreshToken) pm.environment.set(\"refreshToken\", data.refreshToken);",
+                  "if (data.user?.id) pm.environment.set(\"user_id\", data.user.id);",
+                  "if (data.user?.role || data.user?.userType) pm.environment.set(\"active_role\", data.user.role || data.user.userType);",
+                  "if (!data.accessToken) console.log(\"Token auto-capture requires experience_1 encryption to be disabled in local testing.\");"
                 ]
               }
             }
@@ -920,6 +950,58 @@
       "description": "Doctor profile and onboarding endpoints.",
       "item": [
         {
+          "name": "Get Doctor Profile Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile",
+                "me"
+              ]
+            },
+            "description": "Fetch the authenticated doctor's account and onboarding snapshot."
+          }
+        },
+        {
+          "name": "Update Doctor Account",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/account",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile",
+                "account"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Samuel\",\n  \"lastName\": \"Allen\",\n  \"phoneNumber\": \"{{doctor_phone}}\"\n}"
+            },
+            "description": "Update the doctor's account-level details."
+          }
+        },
+        {
           "name": "Create Doctor Basic Profile",
           "request": {
             "method": "POST",
@@ -1033,6 +1115,58 @@
           }
         },
         {
+          "name": "Patch Doctor Address",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/address",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile",
+                "address"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"addressLine1\": \"10BroadStreet\",\n  \"addressLine2\": \"Suite7\",\n  \"city\": \"Lagos\",\n  \"state\": \"Lagos\",\n  \"country\": \"Nigeria\",\n  \"postalCode\": \"100001\"\n}"
+            },
+            "description": "Patch the doctor address information with the alternate mounted method."
+          }
+        },
+        {
+          "name": "List Doctor Education History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/education",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile",
+                "education"
+              ]
+            },
+            "description": "Fetch all education history entries for the authenticated doctor."
+          }
+        },
+        {
           "name": "Create Doctor Education History",
           "event": [
             {
@@ -1125,6 +1259,30 @@
               ]
             },
             "description": "Delete a doctor education history record."
+          }
+        },
+        {
+          "name": "List Doctor Work History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/work-history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "profile",
+                "work-history"
+              ]
+            },
+            "description": "Fetch all work history entries for the authenticated doctor."
           }
         },
         {
@@ -1700,11 +1858,106 @@
       ]
     },
     {
+      "name": "Doctor Reviews",
+      "description": "Doctor review listing, summary, and reply endpoints.",
+      "item": [
+        {
+          "name": "Get Doctor Review Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/reviews/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "reviews",
+                "summary"
+              ]
+            },
+            "description": "Fetch the authenticated doctor's review aggregate summary."
+          }
+        },
+        {
+          "name": "Get Doctor Reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "reviews"
+              ]
+            },
+            "description": "Fetch paginated doctor reviews for the authenticated doctor."
+          }
+        },
+        {
+          "name": "Reply To Doctor Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/reviews/{{review_id}}/reply",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctor",
+                "reviews",
+                "{{review_id}}",
+                "reply"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Thank you for your feedback and trust.\"\n}"
+            },
+            "description": "Reply to a patient review as the doctor."
+          }
+        }
+      ]
+    },
+    {
       "name": "Appointments",
       "description": "Appointment booking and doctor appointment listing.",
       "item": [
         {
           "name": "Book Appointment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const responseJson = pm.response.json();",
+                  "const data = responseJson.data || {};",
+                  "if (data.id) pm.collectionVariables.set('appointment_id', data.id);"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -1725,7 +1978,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"age\": 31,\n  \"gender\": \"female\",\n  \"medicId\": 1,\n  \"scheduleDate\": 1767225600000,\n  \"consultationType\": \"video\",\n  \"appointmentType\": \"personal\"\n}"
+              "raw": "{\n  \"age\": 31,\n  \"gender\": \"female\",\n  \"medicId\": \"{{doctor_user_id}}\",\n  \"scheduleDate\": 1767225600000,\n  \"consultationType\": \"video\",\n  \"appointmentType\": \"personal\"\n}"
             },
             "description": "Book an appointment for the authenticated user."
           }
@@ -1750,6 +2003,47 @@
               ]
             },
             "description": "Fetch the authenticated doctor's appointments after onboarding is complete."
+          }
+        },
+        {
+          "name": "Create Appointment Review",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const responseJson = pm.response.json();",
+                  "const data = responseJson.data || {};",
+                  "if (data.review?.id) pm.collectionVariables.set('review_id', data.review.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{appointment_id}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "appointments",
+                "{{appointment_id}}",
+                "review"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Helpful and professional consultation.\"\n}"
+            },
+            "description": "Create a patient review for a completed appointment."
           }
         }
       ]
@@ -2430,6 +2724,858 @@
             },
             "description": "Fetch the permissions currently assigned to a user type."
           }
+        }
+      ]
+    },
+    {
+      "name": "Drugstore",
+      "description": "Drugstore consumer, doctor, and internal integration flows. Run address and pharmacy discovery first, then move into cart, prescription, and order flows.",
+      "item": [
+        {
+          "name": "List Nearby Pharmacies",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/pharmacies/nearby?addressId={{drugstore_address_id}}&search=&page=1&limit=20"
+            },
+            "description": "Discover delivery-capable pharmacies for the selected location.\n\nQuery params:\n- addressId: Saved delivery address to use as the discovery anchor.\n- latitude / longitude: Optional raw coordinates if you are not using a saved address.\n- search: Optional free-text filter for pharmacy name.\n- page / limit: Pagination controls.\n\nConsumption notes:\n- Use this before catalog browsing when your UI starts from pharmacy selection.\n- If the user already has an active cart, the response can include compatibility hints for that cart."
+          }
+        },
+        {
+          "name": "Get Pharmacy Profile",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/pharmacies/{{drugstore_merchant_id}}"
+            },
+            "description": "Fetch the pharmacy profile used by the consumer-facing about screen.\n\nPath params:\n- merchantId: Merchant / pharmacy identifier returned from nearby pharmacy discovery.\n\nConsumption notes:\n- Use this for profile/about sections, operating hours, delivery capability, and top-level pharmacy metadata."
+          }
+        },
+        {
+          "name": "Get Pharmacy Reviews",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/pharmacies/{{drugstore_merchant_id}}/reviews?page=1&limit=20"
+            },
+            "description": "Fetch paginated pharmacy reviews.\n\nQuery params:\n- page: Review page number.\n- limit: Page size.\n\nConsumption notes:\n- Current implementation may return placeholder review data until review persistence is expanded."
+          }
+        },
+        {
+          "name": "List Catalog Products",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/catalog/products?merchantId={{drugstore_merchant_id}}&page=1&limit=20&search=&category=&sortBy=createdAt&sortDirection=desc"
+            },
+            "description": "List pharmacy catalog products.\n\nQuery params:\n- merchantId: Pharmacy whose catalog should be loaded.\n- page / limit: Pagination.\n- search: Optional keyword search.\n- category: Optional category filter.\n- sortBy: createdAt | price | name.\n- sortDirection: asc | desc.\n\nConsumption notes:\n- Use this for the product grid/list after a pharmacy has been selected."
+          }
+        },
+        {
+          "name": "Get Catalog Product",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/catalog/products/{{drugstore_product_id}}?merchantId={{drugstore_merchant_id}}"
+            },
+            "description": "Fetch one product's detailed information.\n\nPath params:\n- productId: Product identifier from the catalog list.\n\nQuery params:\n- merchantId: Required because the drugstore catalog is pharmacy-scoped."
+          }
+        },
+        {
+          "name": "List Catalog Categories",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/catalog/categories?merchantId={{drugstore_merchant_id}}"
+            },
+            "description": "List available catalog categories for a pharmacy.\n\nQuery params:\n- merchantId: Pharmacy identifier whose categories should be loaded."
+          }
+        },
+        {
+          "name": "Validate Catalog Discount",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/catalog/discounts/validate"
+            },
+            "description": "Check whether a discount code applies to the current cart composition.\n\nBody fields:\n- merchantId: Pharmacy / merchant identifier.\n- code: Coupon code in uppercase.\n- orderAmount: Current item subtotal before delivery.\n- productIds: Products currently in cart.\n\nConsumption notes:\n- Use this before order creation if your UI lets the user test a coupon code independently.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"merchantId\": \"{{drugstore_merchant_id}}\",\n  \"code\": \"WELCOME10\",\n  \"orderAmount\": 49000,\n  \"productIds\": [\n    \"{{drugstore_product_id}}\"\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "List Addresses",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/addresses"
+            },
+            "description": "Return the signed-in user's saved delivery addresses.\n\nConsumption notes:\n- Use this to populate the address selection bottom sheet during checkout."
+          }
+        },
+        {
+          "name": "Create Address",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/addresses"
+            },
+            "description": "Create a delivery address.\n\nBody fields:\n- label: Friendly name shown to the user.\n- addressLine1 / addressLine2: Street address lines.\n- city / state: Delivery location fields.\n- recipientName / recipientPhone: Who receives the order.\n- isDefault: Whether this becomes the default address.\n- latitude / longitude: Optional coordinates for location-aware discovery.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Home\",\n  \"addressLine1\": \"6, Solaru Street\",\n  \"addressLine2\": \"Soluyi, Gbagada\",\n  \"city\": \"Lagos\",\n  \"state\": \"Lagos\",\n  \"recipientName\": \"Tamara Ike\",\n  \"recipientPhone\": \"08055713517\",\n  \"isDefault\": true,\n  \"latitude\": 6.5547,\n  \"longitude\": 3.3792\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Address request succeeded\", function () { pm.expect(pm.response.code).to.be.below(300); });",
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "if (data.id) pm.environment.set(\"drugstore_address_id\", data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Address",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/addresses/{{drugstore_address_id}}"
+            },
+            "description": "Update an existing saved address.\n\nPath params:\n- addressId: Address identifier from List/Create Address.\n\nBody fields:\n- Send only the fields you want to change; the schema accepts the same fields as address creation.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"My Main Address\",\n  \"addressLine1\": \"6, Solaru Street\",\n  \"addressLine2\": \"Soluyi, Gbagada\",\n  \"city\": \"Lagos\",\n  \"state\": \"Lagos\",\n  \"recipientName\": \"Tamara Ike\",\n  \"recipientPhone\": \"08055713517\",\n  \"isDefault\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Address request succeeded\", function () { pm.expect(pm.response.code).to.be.below(300); });",
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "if (data.id) pm.environment.set(\"drugstore_address_id\", data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Address",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/addresses/{{drugstore_address_id}}"
+            },
+            "description": "Delete a saved delivery address.\n\nPath params:\n- addressId: Address to remove from the user's address book."
+          }
+        },
+        {
+          "name": "Upload Prescription File",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/prescriptions/upload"
+            },
+            "description": "Upload a prescription file before formal submission.\n\nForm-data fields:\n- file: The prescription image or PDF from the tester's local machine.\n\nConsumption notes:\n- This only uploads the file and creates a draft prescription record. Submit it in the next request to attach patient and pharmacy context.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{drugstore_prescription_file_path}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Prescription request succeeded\", function () { pm.expect(pm.response.code).to.be.below(300); });",
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "if (data.id) pm.environment.set(\"drugstore_prescription_id\", data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Submit Prescription",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/prescriptions/{{drugstore_prescription_id}}/submit"
+            },
+            "description": "Submit an uploaded prescription for merchant review.\n\nPath params:\n- prescriptionId: Draft prescription identifier from the upload step.\n\nBody fields:\n- merchantId: Pharmacy that should review the prescription.\n- cartId: Optional current cart identifier if the prescription is tied to a live cart.\n- patientName: Name on the prescription.\n- prescriptionDate: ISO date string.\n- isForSelf: Whether the order is for the signed-in user.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"merchantId\": \"{{drugstore_merchant_id}}\",\n  \"cartId\": \"{{drugstore_cart_id}}\",\n  \"patientName\": \"Tamara Ike\",\n  \"prescriptionDate\": \"2026-04-23\",\n  \"isForSelf\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Prescription request succeeded\", function () { pm.expect(pm.response.code).to.be.below(300); });",
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "if (data.id) pm.environment.set(\"drugstore_prescription_id\", data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Prescriptions",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/prescriptions"
+            },
+            "description": "List the signed-in user's prescriptions and review states.\n\nConsumption notes:\n- Use this to poll for merchant approval, rejection, or clarification after submission."
+          }
+        },
+        {
+          "name": "Get Prescription By Id",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/prescriptions/{{drugstore_prescription_id}}"
+            },
+            "description": "Fetch a single prescription record with its current workflow state.\n\nPath params:\n- prescriptionId: Identifier captured from upload or list responses."
+          }
+        },
+        {
+          "name": "Get Active Cart",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/cart"
+            },
+            "description": "Return the active single-pharmacy cart for the current user.\n\nConsumption notes:\n- The backend enforces one active pharmacy cart at a time. Use this to restore in-progress cart state on app launch."
+          }
+        },
+        {
+          "name": "Add Cart Item",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/cart/items"
+            },
+            "description": "Add one product to the active cart.\n\nBody fields:\n- merchantId: Pharmacy identifier.\n- merchantProductId: Product identifier from the catalog.\n- quantity: Desired quantity.\n\nConsumption notes:\n- The backend rejects mixing products from multiple pharmacies in one active cart.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"merchantId\": \"{{drugstore_merchant_id}}\",\n  \"merchantProductId\": \"{{drugstore_product_id}}\",\n  \"quantity\": 1\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Cart mutation succeeded\", function () { pm.expect(pm.response.code).to.be.below(300); });",
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "const items = data.items || data.cartItems || [];",
+                  "if (items[0]?.id) pm.environment.set(\"drugstore_cart_item_id\", items[0].id);",
+                  "if (data.id) pm.environment.set(\"drugstore_cart_id\", data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Cart Item Quantity",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/cart/items/{{drugstore_cart_item_id}}"
+            },
+            "description": "Change the quantity of a cart line item.\n\nPath params:\n- itemId: Cart item identifier from the active cart response.\n\nBody fields:\n- quantity: New integer quantity (minimum 1).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 2\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Cart mutation succeeded\", function () { pm.expect(pm.response.code).to.be.below(300); });",
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "const items = data.items || data.cartItems || [];",
+                  "if (items[0]?.id) pm.environment.set(\"drugstore_cart_item_id\", items[0].id);",
+                  "if (data.id) pm.environment.set(\"drugstore_cart_id\", data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Remove Cart Item",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/cart/items/{{drugstore_cart_item_id}}"
+            },
+            "description": "Remove a line item from the active cart.\n\nPath params:\n- itemId: Cart item identifier from Add/Get Cart."
+          }
+        },
+        {
+          "name": "Create Order (Initialize Payment)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/orders"
+            },
+            "description": "Create a pending drugstore order and initialize Paystack payment.\n\nBody fields:\n- paymentMethod: card or bank_transfer for the first-pass flow.\n- couponCode: Optional uppercase coupon code.\n- addressId: Saved delivery address id. Falls back to the default address if omitted and one exists.\n- deliveryNote: Optional note for dispatch.\n- deliveryDate: Optional ISO date string.\n- deliveryTimeSlot: Optional display slot selected by the user.\n- returnUrl: Optional frontend callback URL for the payment redirect flow.\n\nConsumption notes:\n- Delivery totals are computed on the backend.\n- If the cart contains prescription-only items, an approved prescription must already exist.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethod\": \"card\",\n  \"couponCode\": \"WELCOME10\",\n  \"addressId\": \"{{drugstore_address_id}}\",\n  \"deliveryNote\": \"Please call on arrival\",\n  \"deliveryDate\": \"2026-04-24\",\n  \"deliveryTimeSlot\": \"09:00AM - 10:00AM\",\n  \"returnUrl\": \"http://localhost:3001/drugstore/payment-return\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Order creation succeeded\", function () { pm.expect(pm.response.code).to.be.below(300); });",
+                  "const res = pm.response.json();",
+                  "const data = res.data || {};",
+                  "if (data.order?.id) pm.environment.set(\"drugstore_order_id\", data.order.id);",
+                  "if (data.payment?.reference) pm.environment.set(\"drugstore_payment_reference\", data.payment.reference);",
+                  "if (data.payment?.authorizationUrl) pm.environment.set(\"drugstore_payment_url\", data.payment.authorizationUrl);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Confirm Order Payment",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/orders/{{drugstore_order_id}}/payment/confirm"
+            },
+            "description": "Verify the payment reference for a pending order.\n\nPath params:\n- orderId: Pending order id from Create Order.\n\nBody fields:\n- paymentReference: Paystack reference returned from the payment initialization response or callback.\n- providerStatus: Optional UI hint; backend verification is authoritative.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentReference\": \"{{drugstore_payment_reference}}\",\n  \"providerStatus\": \"paid\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List Orders",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/orders?page=1&limit=20&paymentStatus=paid&deliveryStatus=pending&dateRange=last_7_days"
+            },
+            "description": "List the signed-in user's drugstore orders.\n\nQuery params:\n- page / limit: Pagination.\n- paymentStatus: pending | paid | failed.\n- deliveryStatus: pending | picked_up | in_transit | delivered | cancelled.\n- dateRange: today | yesterday | last_7_days | last_30_days.\n- ageBucket: lt_24h | between_24h_48h | gt_48h."
+          }
+        },
+        {
+          "name": "Get Order By Id",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/orders/{{drugstore_order_id}}"
+            },
+            "description": "Fetch a single drugstore order, including computed totals and delivery/prescription linkage.\n\nPath params:\n- orderId: Identifier from Create/List Orders."
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore/orders/{{drugstore_order_id}}/cancel"
+            },
+            "description": "Cancel an order when the current workflow state allows it.\n\nBody fields:\n- reason: Optional human-readable reason for the cancellation request.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Customer no longer needs the medication\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Internal (service-to-service)",
+          "description": "Internal endpoints used by the merchant app for prescription review and fulfillment sync. These routes require HMAC-signed headers. The folder pre-request script calculates the required headers from environment variables.",
+          "item": [
+            {
+              "name": "List Merchant Prescription Queue",
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "x-internal-key-id",
+                    "value": "{{internal_key_id}}"
+                  },
+                  {
+                    "key": "x-internal-timestamp",
+                    "value": "{{internal_timestamp}}"
+                  },
+                  {
+                    "key": "x-internal-nonce",
+                    "value": "{{internal_nonce}}"
+                  },
+                  {
+                    "key": "x-internal-signature",
+                    "value": "{{internal_signature}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/drugstore/internal/prescriptions?merchantId={{drugstore_merchant_id}}&status=submitted"
+                },
+                "description": "Return prescriptions awaiting action for a specific pharmacy.\n\nQuery params:\n- merchantId: Pharmacy / merchant identifier.\n- status: Optional workflow status filter."
+              }
+            },
+            {
+              "name": "Review Prescription For Merchant",
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "x-internal-key-id",
+                    "value": "{{internal_key_id}}"
+                  },
+                  {
+                    "key": "x-internal-timestamp",
+                    "value": "{{internal_timestamp}}"
+                  },
+                  {
+                    "key": "x-internal-nonce",
+                    "value": "{{internal_nonce}}"
+                  },
+                  {
+                    "key": "x-internal-signature",
+                    "value": "{{internal_signature}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/drugstore/internal/prescriptions/{{drugstore_prescription_id}}/review"
+                },
+                "description": "Approve, reject, or request clarification for a submitted prescription.\n\nPath params:\n- prescriptionId: Prescription under review.\n\nBody fields:\n- action: approved | rejected | needs_clarification.\n- note: Optional message shown to the consumer.\n- reviewerName / reviewerId: Optional override fields for audit context.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"action\": \"approved\",\n  \"note\": \"Prescription reviewed and approved.\",\n  \"reviewerName\": \"MiMeds Pharmacy\",\n  \"reviewerId\": \"{{merchant_id}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Sync Merchant Order Status",
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "x-internal-key-id",
+                    "value": "{{internal_key_id}}"
+                  },
+                  {
+                    "key": "x-internal-timestamp",
+                    "value": "{{internal_timestamp}}"
+                  },
+                  {
+                    "key": "x-internal-nonce",
+                    "value": "{{internal_nonce}}"
+                  },
+                  {
+                    "key": "x-internal-signature",
+                    "value": "{{internal_signature}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/drugstore/internal/orders/status-sync"
+                },
+                "description": "Push a merchant-side fulfillment update back into experience_1.\n\nBody fields:\n- merchantOrderId: Merchant app order identifier.\n- sourceOrderId: Original experience_1 order identifier.\n- merchantId: Merchant performing the update.\n- deliveryStatus: pending | picked_up | in_transit | delivered | cancelled.\n- note: Optional status note for timeline/history.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"merchantOrderId\": \"{{merchant_drugstore_order_id}}\",\n  \"sourceOrderId\": \"{{drugstore_order_id}}\",\n  \"merchantId\": \"{{drugstore_merchant_id}}\",\n  \"deliveryStatus\": \"in_transit\",\n  \"note\": \"Courier picked up the package.\"\n}"
+                }
+              }
+            }
+          ],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const method = pm.request.method.toUpperCase();",
+                  "let bodyForHash = \"\";",
+                  "if (![\"GET\", \"DELETE\"].includes(method) && pm.request.body) {",
+                  "  if (pm.request.body.mode === \"raw\") {",
+                  "    const raw = pm.variables.replaceIn(pm.request.body.raw || \"\");",
+                  "    try { bodyForHash = JSON.stringify(JSON.parse(raw)); } catch (_e) { bodyForHash = raw; }",
+                  "  }",
+                  "}",
+                  "const timestamp = Math.floor(Date.now() / 1000).toString();",
+                  "const nonce = `pm-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;",
+                  "const pathWithQuery = pm.request.url.getPathWithQuery();",
+                  "const hash = CryptoJS.SHA256(bodyForHash).toString();",
+                  "const canonical = [method, pathWithQuery, timestamp, nonce, hash].join(\"\\n\");",
+                  "const secret = pm.environment.get(\"internal_secret\") || \"\";",
+                  "const signature = CryptoJS.HmacSHA256(canonical, secret).toString();",
+                  "pm.environment.set(\"internal_timestamp\", timestamp);",
+                  "pm.environment.set(\"internal_nonce\", nonce);",
+                  "pm.environment.set(\"internal_signature\", signature);"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

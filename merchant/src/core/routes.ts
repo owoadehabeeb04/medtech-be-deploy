@@ -18,6 +18,10 @@ import supportRouter from "../modules/support/Support.route";
 import subscriptionRouter from "../modules/subscriptions/Subscription.route";
 import walletRouter from "../modules/wallet/Wallet.route";
 import { authMiddleware } from "../middlewares/Auth.Middleware";
+import drugstoreInternalRouter from "../modules/drugstore_internal/DrugstoreInternal.route";
+import { internalAuthMiddleware } from "../middlewares/internal-auth.middleware";
+import drugstoreOrderRouter from "../modules/drugstore_orders/DrugstoreOrder.route";
+import drugstorePrescriptionRouter from "../modules/drugstore_prescriptions/DrugstorePrescription.route";
 
 export default function (app: Application) {
 	app.use(cors());
@@ -54,6 +58,9 @@ export default function (app: Application) {
 	apiRouter.use("/support", authMiddleware, supportRouter);
 	apiRouter.use("/subscriptions", subscriptionRouter);
 	apiRouter.use("/wallet", authMiddleware, walletRouter);
+	apiRouter.use("/drugstore-orders", authMiddleware, drugstoreOrderRouter);
+	apiRouter.use("/drugstore-prescriptions", authMiddleware, drugstorePrescriptionRouter);
+	apiRouter.use("/internal/drugstore", internalAuthMiddleware, drugstoreInternalRouter);
 
 	app.use("/api/v1/merchant", apiRouter);
 }

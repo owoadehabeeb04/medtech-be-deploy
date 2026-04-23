@@ -123,6 +123,11 @@ export class Product extends Model<Product> {
   @Column(DataType.BOOLEAN)
   declare isActive: boolean; // Merchant can deactivate without deleting
 
+  @AllowNull(false)
+  @Default(false)
+  @Column(DataType.BOOLEAN)
+  declare requiresPrescription: boolean;
+
   // Timestamps
   @CreatedAt
   declare createdAt: Date;

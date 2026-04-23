@@ -25,6 +25,14 @@ import { DoctorHealthPackage } from "../modules/doctor_health_packages/DoctorHea
 import { DoctorReview } from "../modules/doctor_reviews/DoctorReview.model";
 import { DoctorReviewReply } from "../modules/doctor_reviews/DoctorReviewReply.model";
 import { DoctorReviewStat } from "../modules/doctor_reviews/DoctorReviewStat.model";
+import { DrugstoreCart } from "../modules/drugstore/DrugstoreCart.model";
+import { DrugstoreCartItem } from "../modules/drugstore/DrugstoreCartItem.model";
+import { DrugstoreOrder } from "../modules/drugstore/DrugstoreOrder.model";
+import { DrugstoreOrderItem } from "../modules/drugstore/DrugstoreOrderItem.model";
+import { DrugstoreOrderStatusHistory } from "../modules/drugstore/DrugstoreOrderStatusHistory.model";
+import { DrugstoreSyncEvent } from "../modules/drugstore/DrugstoreSyncEvent.model";
+import { DrugstoreAddress } from "../modules/drugstore/DrugstoreAddress.model";
+import { DrugstorePrescription } from "../modules/drugstore/DrugstorePrescription.model";
 import { applicationConfig } from "../config";
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
@@ -35,7 +43,8 @@ const connection = async () => {
 	const medic_mod = [Speciality, UserSpeciality, Appointment, ConsultationType];
 	const doctor_settings_mod = [DoctorSettings, DoctorDeviceToken, DoctorConsultationRate, DoctorSubscriptionPlan, DoctorHealthPackage];
 	const doctor_reviews_mod = [DoctorReview, DoctorReviewReply, DoctorReviewStat];
-	const models = [...user_mod, ...extra_user_mod, ...permission_mod, ...medic_mod, ...doctor_settings_mod, ...doctor_reviews_mod];
+	const drugstore_mod = [DrugstoreCart, DrugstoreCartItem, DrugstoreOrder, DrugstoreOrderItem, DrugstoreOrderStatusHistory, DrugstoreSyncEvent, DrugstoreAddress, DrugstorePrescription];
+	const models = [...user_mod, ...extra_user_mod, ...permission_mod, ...medic_mod, ...doctor_settings_mod, ...doctor_reviews_mod, ...drugstore_mod];
 	const dbHost = process.env.EXPERIENCE1_DB_HOST || process.env.DB_HOST;
 	const dbPort = Number(process.env.EXPERIENCE1_DB_PORT || process.env.DB_PORT || 5432);
 	const dbUsername = process.env.EXPERIENCE1_DB_USERNAME || process.env.DB_USERNAME;

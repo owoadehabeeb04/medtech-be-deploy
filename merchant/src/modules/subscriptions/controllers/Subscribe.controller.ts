@@ -23,7 +23,8 @@ export default async (req: Request, res: Response, next: NextFunction) => {
     const result = await SubscriptionService.subscribe(
       String(user.id),
       value.planId,
-      value.paymentMethod
+      value.paymentMethod,
+      value.returnUrl
     );
 
     res.status(200);

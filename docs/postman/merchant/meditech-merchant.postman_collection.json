@@ -1,0 +1,2404 @@
+{
+  "info": {
+    "_postman_id": "meditech-merchant-collection",
+    "name": "Meditech Merchant API",
+    "description": "Replacement Postman collection for the currently mounted merchant API surface. Start with Auth / Setup, then move through onboarding, catalog management, subscriptions, wallet, and drugstore operational flows. Internal drugstore requests are included in a dedicated signed folder.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1/merchant"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "planId_bronze",
+      "value": ""
+    },
+    {
+      "key": "planId_silver",
+      "value": ""
+    },
+    {
+      "key": "planId_gold",
+      "value": ""
+    },
+    {
+      "key": "paymentReference",
+      "value": ""
+    },
+    {
+      "key": "fundingReference",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Check API and database status."
+          }
+        }
+      ],
+      "description": "Health check endpoint for smoke validation and service monitoring."
+    },
+    {
+      "name": "Auth",
+      "description": "Merchant authentication bootstrap. Use these requests to create a merchant, verify OTP, complete signup, log in, and capture access tokens for the rest of the collection.",
+      "item": [
+        {
+          "name": "1. Signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signup"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{merchant_email}}\",\n  \"name\": \"{{merchant_name}}\"\n}"
+            },
+            "description": "Start signup flow. Returns OTP (visible in dev mode)."
+          }
+        },
+        {
+          "name": "2. Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "verify-otp"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{merchant_email}}\",\n  \"otp\": \"{{merchant_otp}}\"\n}"
+            },
+            "description": "Verify OTP from signup. Use the OTP returned in dev mode."
+          }
+        },
+        {
+          "name": "3. Complete Signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/complete-signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "complete-signup"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{merchant_email}}\",\n  \"businessName\": \"{{merchant_business_name}}\",\n  \"phoneNumber\": \"{{merchant_phone_number}}\",\n  \"password\": \"{{merchant_password}}\",\n  \"confirmPassword\": \"{{merchant_password}}\"\n}"
+            },
+            "description": "Complete signup with business details. Creates merchant, wallet, and Free subscription."
+          }
+        },
+        {
+          "name": "4. Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is success\", function () { pm.expect(pm.response.code).to.be.below(300); });",
+                  "const res = pm.response.json();",
+                  "pm.expect(res).to.have.property(\"data\");",
+                  "if (res.data?.token) pm.environment.set(\"token\", res.data.token);",
+                  "if (res.data?.refreshToken) pm.environment.set(\"refreshToken\", res.data.refreshToken);",
+                  "if (res.data?.merchant?.id) pm.environment.set(\"merchant_id\", res.data.merchant.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{merchant_email}}\",\n  \"password\": \"{{merchant_password}}\"\n}"
+            },
+            "description": "Login and auto-save JWT token to collection variable. All other requests use this token automatically."
+          }
+        },
+        {
+          "name": "5. Refresh Token",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh-token"
+            },
+            "description": "Exchange the current refresh token for a new access token.\n\nBody fields:\n- refreshToken: Refresh token returned from login or a previous refresh.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is success\", function () { pm.expect(pm.response.code).to.be.below(300); });",
+                  "const res = pm.response.json();",
+                  "pm.expect(res).to.have.property(\"data\");",
+                  "if (res.data?.token) pm.environment.set(\"token\", res.data.token);",
+                  "if (res.data?.refreshToken) pm.environment.set(\"refreshToken\", res.data.refreshToken);",
+                  "if (res.data?.merchant?.id) pm.environment.set(\"merchant_id\", res.data.merchant.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6. Forgot Password",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password"
+            },
+            "description": "Start the merchant password-reset flow.\n\nBody fields:\n- email: Merchant email address to receive or generate the OTP.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{merchant_email}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "7. Verify Reset OTP",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-reset-otp"
+            },
+            "description": "Verify the OTP for password reset.\n\nBody fields:\n- email: Merchant email.\n- otp: Reset OTP returned in development or sent by email.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{merchant_email}}\",\n  \"otp\": \"{{merchant_reset_otp}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "8. Reset Password",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password"
+            },
+            "description": "Set a new merchant password after OTP verification.\n\nBody fields:\n- email: Merchant email.\n- newPassword: New password.\n- confirmPassword: Must match newPassword.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{merchant_email}}\",\n  \"newPassword\": \"{{merchant_new_password}}\",\n  \"confirmPassword\": \"{{merchant_new_password}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Onboarding",
+      "description": "Merchant onboarding status checks, bank lookup, file-link submission, and bank-account verification.",
+      "item": [
+        {
+          "name": "Get Onboarding Status",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/onboarding/status"
+            },
+            "description": "Return current merchant onboarding progress and completion status.\n\nConsumption notes:\n- Call this after login to know which onboarding step to show next."
+          }
+        },
+        {
+          "name": "List Supported Banks",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/onboarding/banks"
+            },
+            "description": "List banks supported by the backend / Paystack bank-verification flow.\n\nConsumption notes:\n- Use the returned bank code when calling Verify Bank Account."
+          }
+        },
+        {
+          "name": "Upload Valid ID Link",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/onboarding/upload-valid-id"
+            },
+            "description": "Submit the already-uploaded valid-ID file URL for onboarding.\n\nBody fields:\n- validIdUrl: Public or storage URL of the uploaded identity document.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"validIdUrl\": \"https://example.com/uploads/merchant-valid-id.pdf\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Upload Profile Picture Link",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/onboarding/upload-profile-picture"
+            },
+            "description": "Submit the already-uploaded profile image URL for onboarding.\n\nBody fields:\n- profilePictureUrl: URL of the merchant profile image.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profilePictureUrl\": \"https://example.com/uploads/merchant-profile.png\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Verify Bank Account",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/onboarding/verify-bank"
+            },
+            "description": "Validate bank-account details before storing them.\n\nBody fields:\n- bankCode: Bank code from List Supported Banks.\n- accountNumber: 10-digit account number.\n- accountName: Expected account holder name.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankCode\": \"{{merchant_bank_code}}\",\n  \"accountNumber\": \"{{merchant_account_number}}\",\n  \"accountName\": \"{{merchant_account_name}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Upload",
+      "description": "General upload endpoints for merchant files. These endpoints return file metadata/URLs you can feed into onboarding, product, or settings flows.",
+      "item": [
+        {
+          "name": "Upload Single File",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/upload/single"
+            },
+            "description": "Upload one file to the general merchant upload service.\n\nForm-data fields:\n- file: Local file to upload. Accepted types include jpeg, jpg, png, pdf, and svg.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{merchant_single_upload_path}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Upload Bulk Files",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/upload/bulk"
+            },
+            "description": "Upload up to 10 files in one request.\n\nForm-data fields:\n- files: Repeat the field for each file you want to upload.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "{{merchant_bulk_upload_path_1}}"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "{{merchant_bulk_upload_path_2}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "description": "Authenticated merchant settings endpoints. Use these to manage business profile, banking, store details, notification rules, and store preferences.",
+      "item": [
+        {
+          "name": "Get All Settings",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/settings"
+            },
+            "description": "Fetch the merchant's combined settings payload.\n\nConsumption notes:\n- Use this to hydrate the full settings screen in one request."
+          }
+        },
+        {
+          "name": "Update All Settings",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/settings/all"
+            },
+            "description": "Patch profile, store, payment, notification, and preference fields in one request.\n\nBody fields:\n- Combines the fields from the profile, store, payment, notification, and preference endpoints.\n- If you include payment fields, send bankCode, accountNumber, and accountName together.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\",\n  \"phoneNumber\": \"08012345678\",\n  \"phoneCountryCode\": \"+234\",\n  \"businessName\": \"MiMeds Pharmacy\",\n  \"businessAddress\": \"14 Haruna Ishola Street\",\n  \"city\": \"Lagos\",\n  \"state\": \"Lagos\",\n  \"openHour\": \"08:00\",\n  \"closeHour\": \"20:00\",\n  \"storeDescription\": \"Neighborhood pharmacy and drugstore.\",\n  \"bankCode\": \"{{merchant_bank_code}}\",\n  \"accountNumber\": \"{{merchant_account_number}}\",\n  \"accountName\": \"{{merchant_account_name}}\",\n  \"pushNotificationsEnabled\": true,\n  \"emailNotificationsEnabled\": true,\n  \"storePreferences\": {\n    \"acceptOrdersAutomatically\": false,\n    \"requireManualApprovalForPrescriptions\": true,\n    \"enableInHouseDelivery\": true,\n    \"deliveryFeeType\": \"flat\",\n    \"deliveryFlatFee\": 700\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Profile Settings",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/settings/profile"
+            },
+            "description": "Update the merchant user's personal profile fields.\n\nBody fields:\n- firstName, lastName, phoneNumber, phoneCountryCode.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\",\n  \"phoneNumber\": \"08012345678\",\n  \"phoneCountryCode\": \"+234\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Payment Settings",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/settings/payment"
+            },
+            "description": "Update bank-account payout settings.\n\nBody fields:\n- bankCode: Bank code from onboarding bank list.\n- accountNumber: 10-digit bank account number.\n- accountName: Account holder name.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankCode\": \"{{merchant_bank_code}}\",\n  \"accountNumber\": \"{{merchant_account_number}}\",\n  \"accountName\": \"{{merchant_account_name}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Store Settings",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/settings/store"
+            },
+            "description": "Update business/storefront configuration.\n\nBody fields:\n- businessName, businessUrl, businessAddress, city, state, landmark.\n- openHour / closeHour in HH:MM.\n- vacation / vacationStartDate / vacationEndDate.\n- storeDescription, storeBannerUrl.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessName\": \"{{merchant_business_name}}\",\n  \"businessUrl\": \"https://mimeds.example.com\",\n  \"businessAddress\": \"14 Haruna Ishola Street\",\n  \"city\": \"Lagos\",\n  \"state\": \"Lagos\",\n  \"landmark\": \"Near the junction\",\n  \"openHour\": \"08:00\",\n  \"closeHour\": \"20:00\",\n  \"vacation\": false,\n  \"storeDescription\": \"Neighborhood pharmacy and wellness store.\",\n  \"storeBannerUrl\": \"https://example.com/banners/store-banner.png\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/settings/password"
+            },
+            "description": "Change the merchant password while authenticated.\n\nBody fields:\n- currentPassword: Existing password.\n- newPassword: New password with uppercase, lowercase, digit, and special character.\n- confirmPassword: Must match newPassword.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{merchant_password}}\",\n  \"newPassword\": \"{{merchant_new_password}}\",\n  \"confirmPassword\": \"{{merchant_new_password}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Notification Settings",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/settings/notifications"
+            },
+            "description": "Update global notification toggles and per-event notification channels.\n\nBody fields:\n- pushNotificationsEnabled / emailNotificationsEnabled.\n- notificationPreferences: orderPlaced, lowStock, payoutAlert, supportTicket channel toggles.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pushNotificationsEnabled\": true,\n  \"emailNotificationsEnabled\": true,\n  \"notificationPreferences\": {\n    \"orderPlaced\": {\n      \"email\": true,\n      \"sms\": false,\n      \"desktop\": true\n    },\n    \"lowStock\": {\n      \"email\": true,\n      \"sms\": false,\n      \"desktop\": true\n    }\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Store Preferences",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/settings/preferences"
+            },
+            "description": "Update store-level operational preferences.\n\nBody fields:\n- storePreferences: automatic order handling, prescription approval rules, stock display, pickup/delivery, and delivery pricing controls.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"storePreferences\": {\n    \"acceptOrdersAutomatically\": false,\n    \"requireManualApprovalForPrescriptions\": true,\n    \"allowOutOfStockAlternatives\": false,\n    \"autoHideOutOfStock\": false,\n    \"enablePharmacyPickup\": true,\n    \"enableInHouseDelivery\": true,\n    \"deliveryRadius\": 10,\n    \"deliveryFeeType\": \"flat\",\n    \"deliveryFlatFee\": 700,\n    \"deliveryStartTime\": \"09:00\",\n    \"deliveryEndTime\": \"18:00\",\n    \"lowStockThreshold\": 5,\n    \"showLowStockLabel\": true\n  }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "description": "Catalog management endpoints for merchant-owned products.",
+      "item": [
+        {
+          "name": "Get Product Stats",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/stats"
+            },
+            "description": "Return product-level summary statistics for the signed-in merchant."
+          }
+        },
+        {
+          "name": "Get Low Stock Products",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/low-stock"
+            },
+            "description": "List products currently at or below the configured low-stock threshold."
+          }
+        },
+        {
+          "name": "List Products",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products"
+            },
+            "description": "List all products owned by the signed-in merchant.\n\nConsumption notes:\n- Use this to populate the merchant product table/grid."
+          }
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products"
+            },
+            "description": "Create a catalog product.\n\nBody fields:\n- name, description, category, brand, sku.\n- price, vat, discountPercentage.\n- minQuantity, maxQuantity, inventory.\n- images: 1-3 image objects with url, order, isMain.\n- isActive.\n\nNote:\n- The current model also supports prescription-aware products. Add that from the admin flow if your backend exposes it in the request mapper.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Zithromax 250mg - 4 Caps\",\n  \"description\": \"Antibiotic capsule pack.\",\n  \"category\": \"Antibiotics\",\n  \"brand\": \"Pfizer\",\n  \"sku\": \"ZITH250-4\",\n  \"price\": 8500,\n  \"vat\": 7.5,\n  \"discountPercentage\": 0,\n  \"minQuantity\": 1,\n  \"maxQuantity\": 5,\n  \"inventory\": 20,\n  \"images\": [\n    {\n      \"url\": \"https://example.com/products/zithromax-main.png\",\n      \"order\": 1,\n      \"isMain\": true\n    }\n  ],\n  \"isActive\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Product By Id",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{product_id}}"
+            },
+            "description": "Fetch one product by UUID.\n\nPath params:\n- productId: Product identifier from the list/create response."
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{product_id}}"
+            },
+            "description": "Patch one or more editable product fields.\n\nPath params:\n- productId: Product identifier.\n\nBody fields:\n- Any subset of the create-product payload may be sent.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 9200,\n  \"inventory\": 18,\n  \"isActive\": true,\n  \"description\": \"Updated antibiotic capsule pack description.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Product Stock",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{product_id}}/stock"
+            },
+            "description": "Set the current inventory value for a product.\n\nBody fields:\n- inventory: Non-negative integer stock count.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"inventory\": 25\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{product_id}}"
+            },
+            "description": "Soft-delete a product from the merchant catalog.\n\nPath params:\n- productId: Product identifier."
+          }
+        },
+        {
+          "name": "Restore Product",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{product_id}}/restore"
+            },
+            "description": "Restore a previously deleted product.\n\nPath params:\n- productId: Deleted product identifier."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Discounts",
+      "description": "Discount and promotion management for merchant catalog offers.",
+      "item": [
+        {
+          "name": "List Discounts",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/discounts"
+            },
+            "description": "List discounts created by the signed-in merchant."
+          }
+        },
+        {
+          "name": "Get Discount Stats",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/discounts/stats"
+            },
+            "description": "Return summary metrics for merchant discounts and promotions."
+          }
+        },
+        {
+          "name": "Validate Discount",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/discounts/validate"
+            },
+            "description": "Validate whether a discount code can be applied to the given order composition.\n\nBody fields:\n- code: Discount code.\n- orderAmount: Current order subtotal.\n- productIds or products: Array of product UUIDs.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"WELCOME10\",\n  \"orderAmount\": 49000,\n  \"productIds\": [\n    \"{{product_id}}\"\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Discount",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/discounts"
+            },
+            "description": "Create a discount campaign.\n\nBody fields:\n- code, type, amount.\n- applyToAllProducts or specific applicableProducts/applicableCategories.\n- minOrderAmount, status, startDate, endDate.\n- usageLimit, perUserLimit.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"WELCOME10\",\n  \"type\": \"percentage\",\n  \"amount\": 10,\n  \"applyToAllProducts\": false,\n  \"applicableProducts\": [\n    \"{{product_id}}\"\n  ],\n  \"minOrderAmount\": 5000,\n  \"status\": \"active\",\n  \"startDate\": \"2026-04-23T00:00:00.000Z\",\n  \"endDate\": \"2026-05-23T23:59:59.000Z\",\n  \"usageLimit\": 100,\n  \"perUserLimit\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Discount By Id",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/discounts/{{discount_id}}"
+            },
+            "description": "Fetch one discount by UUID.\n\nPath params:\n- discountId: Identifier from list/create responses."
+          }
+        },
+        {
+          "name": "Update Discount",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/discounts/{{discount_id}}"
+            },
+            "description": "Patch an existing discount.\n\nBody fields:\n- Send any subset of create-discount fields.\n- If type is percentage, amount must not exceed 100.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 15,\n  \"status\": \"active\",\n  \"usageLimit\": 150\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Discount",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/discounts/{{discount_id}}"
+            },
+            "description": "Soft-delete a discount campaign.\n\nPath params:\n- discountId: Discount identifier."
+          }
+        },
+        {
+          "name": "Restore Discount",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/discounts/{{discount_id}}/restore"
+            },
+            "description": "Restore a previously deleted discount.\n\nPath params:\n- discountId: Deleted discount identifier."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "description": "Merchant-facing category management endpoints.",
+      "item": [
+        {
+          "name": "List Categories",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories"
+            },
+            "description": "List categories available to the signed-in merchant."
+          }
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories"
+            },
+            "description": "Create a category.\n\nBody fields:\n- name: Category display name.\n- description: Optional category note.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Antibiotics\",\n  \"description\": \"Prescription and OTC antibiotics.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Category By Id",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories/{{category_id}}"
+            },
+            "description": "Fetch one category by UUID.\n\nPath params:\n- categoryId: Identifier from list/create responses."
+          }
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories/{{category_id}}"
+            },
+            "description": "Patch category fields.\n\nBody fields:\n- name, description, isActive.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Antibiotics\",\n  \"description\": \"Updated description\",\n  \"isActive\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories/{{category_id}}"
+            },
+            "description": "Soft-delete a category.\n\nPath params:\n- categoryId: Category identifier."
+          }
+        },
+        {
+          "name": "Restore Category",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories/{{category_id}}/restore"
+            },
+            "description": "Restore a previously deleted category.\n\nPath params:\n- categoryId: Deleted category identifier."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Support",
+      "description": "Merchant support-contact endpoint.",
+      "item": [
+        {
+          "name": "Contact Support",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/support/contact"
+            },
+            "description": "Submit a support request from the merchant dashboard.\n\nBody fields:\n- subject: Short issue summary.\n- message: Detailed support message.\n- email / phoneNumber: Optional contact override fields if the support form allows them.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Need help with drugstore order status sync\",\n  \"message\": \"Please help verify why one reflected order is still pending on the consumer side.\",\n  \"email\": \"{{merchant_email}}\",\n  \"phoneNumber\": \"{{merchant_phone_number}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subscriptions",
+      "description": "Subscription management including plan discovery, subscription lifecycle actions, and Paystack-backed payment confirmation.",
+      "item": [
+        {
+          "name": "Get All Plans (Public)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && Array.isArray(res.data)) {",
+                  "    res.data.forEach(plan => {",
+                  "        if (plan.name === 'bronze') pm.collectionVariables.set('planId_bronze', plan.id);",
+                  "        if (plan.name === 'silver') pm.collectionVariables.set('planId_silver', plan.id);",
+                  "        if (plan.name === 'gold') pm.collectionVariables.set('planId_gold', plan.id);",
+                  "    });",
+                  "    console.log('✅ Plan IDs saved: bronze=' + pm.collectionVariables.get('planId_bronze'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/plans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "plans"
+              ]
+            },
+            "description": "Get all available subscription plans. No auth required.\n\nPlan IDs are auto-saved to collection variables for use in other requests.\n\n**Plans:**\n- Free (₦0) — 10 products\n- Bronze (₦2,500/mo) — 30 products\n- Silver (₦5,000/mo) — 80 products\n- Gold (₦10,000/mo) — unlimited"
+          }
+        },
+        {
+          "name": "Get My Subscription",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions"
+              ]
+            },
+            "description": "Get the current merchant's subscription details including plan info and any pending plan changes."
+          }
+        },
+        {
+          "name": "Subscribe to Plan (Wallet)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/subscribe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "subscribe"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{planId_bronze}}\",\n  \"paymentMethod\": \"wallet\"\n}"
+            },
+            "description": "Subscribe to a paid plan from Free using wallet balance.\n\nMake sure wallet has enough funds first (Fund Wallet → Confirm Funding)."
+          }
+        },
+        {
+          "name": "Subscribe to Plan (Card)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.reference) {",
+                  "    pm.collectionVariables.set('paymentReference', res.data.reference);",
+                  "    console.log('✅ Reference saved: ' + res.data.reference);",
+                  "    console.log('🔗 Open authorizationUrl in browser to pay: ' + res.data.authorizationUrl);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/subscribe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "subscribe"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{planId_bronze}}\",\n  \"paymentMethod\": \"card\"\n}"
+            },
+            "description": "Subscribe via Paystack card payment.\n\nReturns an `authorizationUrl` — open in browser to complete payment.\nThen call **Confirm Payment** with the reference."
+          }
+        },
+        {
+          "name": "Subscribe to Plan (Bank Transfer)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.reference) {",
+                  "    pm.collectionVariables.set('paymentReference', res.data.reference);",
+                  "    console.log('✅ Reference saved: ' + res.data.reference);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/subscribe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "subscribe"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{planId_bronze}}\",\n  \"paymentMethod\": \"bank_transfer\"\n}"
+            },
+            "description": "Subscribe via Paystack bank transfer.\n\nReturns an `authorizationUrl` — open in browser to complete payment.\nThen call **Confirm Payment** with the reference."
+          }
+        },
+        {
+          "name": "Confirm Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/confirm-payment",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "confirm-payment"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference\": \"{{paymentReference}}\"\n}"
+            },
+            "description": "Confirm a Paystack payment after card/bank_transfer.\n\nUse the reference returned from the Subscribe or Upgrade request."
+          }
+        },
+        {
+          "name": "Upgrade Plan (Wallet)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/upgrade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "upgrade"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{planId_silver}}\",\n  \"paymentMethod\": \"wallet\"\n}"
+            },
+            "description": "Upgrade to a higher plan. Charges the full new plan price.\n\nNew billing cycle starts immediately. Any pending downgrades are cancelled."
+          }
+        },
+        {
+          "name": "Upgrade Plan (Card)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.reference) {",
+                  "    pm.collectionVariables.set('paymentReference', res.data.reference);",
+                  "    console.log('✅ Reference saved. Open authorizationUrl in browser to pay.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/upgrade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "upgrade"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{planId_gold}}\",\n  \"paymentMethod\": \"card\"\n}"
+            },
+            "description": "Upgrade via Paystack card. Open `authorizationUrl` in browser, then call **Confirm Payment**."
+          }
+        },
+        {
+          "name": "Downgrade Plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/downgrade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "downgrade"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{planId_bronze}}\"\n}"
+            },
+            "description": "Schedule a downgrade to a lower plan.\n\n**Deferred** — takes effect at the end of the current billing period.\nNo payment required. Your current plan stays active until then."
+          }
+        },
+        {
+          "name": "Cancel Pending Downgrade",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/cancel-downgrade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "cancel-downgrade"
+              ]
+            },
+            "description": "Cancel a previously scheduled downgrade. Your current plan continues as normal."
+          }
+        },
+        {
+          "name": "Cancel Subscription",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "cancel"
+              ]
+            },
+            "description": "Cancel your subscription. Reverts to the Free plan at the end of the current billing period.\n\nAuto-renewal is disabled. Current plan stays active until period end."
+          }
+        },
+        {
+          "name": "Toggle Auto-Renew (Enable)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/auto-renew",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "auto-renew"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"autoRenew\": true\n}"
+            },
+            "description": "Enable auto-renewal. Plan renews automatically at billing period end."
+          }
+        },
+        {
+          "name": "Toggle Auto-Renew (Disable)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/auto-renew",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "auto-renew"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"autoRenew\": false\n}"
+            },
+            "description": "Disable auto-renewal. Plan expires at the end of current billing period."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wallet",
+      "description": "Wallet balance, funding, and transaction-history flows.",
+      "item": [
+        {
+          "name": "Get Wallet",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/wallet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wallet"
+              ]
+            },
+            "description": "Get wallet balance. Amount is in kobo (÷100 for Naira).\n\n`balanceInNaira` is provided for convenience."
+          }
+        },
+        {
+          "name": "Fund Wallet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.reference) {",
+                  "    pm.collectionVariables.set('fundingReference', res.data.reference);",
+                  "    console.log('✅ Funding reference saved: ' + res.data.reference);",
+                  "    if (res.data.authorizationUrl) {",
+                  "        console.log('🔗 Open in browser: ' + res.data.authorizationUrl);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wallet/fund",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wallet",
+                "fund"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 5000\n}"
+            },
+            "description": "Initialize wallet funding via Paystack.\n\n**Amount is in Naira** (minimum ₦100).\n\nReturns `authorizationUrl` — open in browser to pay with card or bank transfer.\nThen call **Confirm Funding** with the reference."
+          }
+        },
+        {
+          "name": "Confirm Funding",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wallet/confirm-funding",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wallet",
+                "confirm-funding"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference\": \"{{fundingReference}}\"\n}"
+            },
+            "description": "Confirm wallet funding after completing Paystack payment.\n\nUse the reference from the Fund Wallet response."
+          }
+        },
+        {
+          "name": "Get Transactions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/wallet/transactions?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wallet",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Get paginated transaction history.\n\n**Optional filters** (as query params):\n- `type`: `subscription_payment`, `wallet_funding`, `wallet_debit`, `refund`\n- `status`: `pending`, `success`, `failed`"
+          }
+        },
+        {
+          "name": "Get Transactions (Filtered)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/wallet/transactions?page=1&limit=20&type=subscription_payment&status=success",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wallet",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "type",
+                  "value": "subscription_payment"
+                },
+                {
+                  "key": "status",
+                  "value": "success"
+                }
+              ]
+            },
+            "description": "Get transactions filtered by type and status."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Drugstore Orders",
+      "description": "Merchant-side drugstore operational endpoints used by the orders dashboard you showed.",
+      "item": [
+        {
+          "name": "List Drugstore Orders",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore-orders?page=1&limit=20&search=&paymentStatus=paid&deliveryStatus=pending&dateRange=last_7_days"
+            },
+            "description": "List drugstore orders for the signed-in merchant.\n\nQuery params:\n- page / limit: Pagination.\n- search: Search by order id or customer name.\n- paymentStatus: pending | paid | failed.\n- deliveryStatus: pending | picked_up | in_transit | delivered | cancelled.\n- dateRange: today | yesterday | last_7_days | last_30_days.\n- ageBucket: lt_24h | between_24h_48h | gt_48h.\n\nConsumption notes:\n- This is the main table-feed endpoint for the merchant orders screen."
+          }
+        },
+        {
+          "name": "Export Drugstore Orders CSV",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore-orders/export.csv?search=&paymentStatus=paid&deliveryStatus=delivered"
+            },
+            "description": "Download the current filtered drugstore order list as CSV.\n\nConsumption notes:\n- This endpoint returns file content, not JSON.\n- Reuse the same filters you apply in the orders table before export."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CSV export returned a file payload\", function () {",
+                  "  pm.expect(pm.response.code).to.equal(200);",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\") || \"\").to.include(\"text/csv\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Drugstore Order Status",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore-orders/{{merchant_drugstore_order_id}}/status"
+            },
+            "description": "Update a merchant-side delivery status and trigger reverse sync back to experience_1.\n\nPath params:\n- orderId: Merchant-side drugstore order id.\n\nBody fields:\n- deliveryStatus: pending | picked_up | in_transit | delivered | cancelled.\n- note: Optional timeline note or operational comment.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryStatus\": \"in_transit\",\n  \"note\": \"Dispatch rider has left the pharmacy.\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Order status update succeeded\", function () { pm.expect(pm.response.code).to.be.below(300); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Drugstore Prescriptions",
+      "description": "Merchant review queue for prescription-gated drugstore orders.",
+      "item": [
+        {
+          "name": "List Drugstore Prescriptions",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore-prescriptions?status=submitted"
+            },
+            "description": "List submitted prescriptions waiting for merchant action.\n\nQuery params:\n- status: Optional workflow filter such as submitted, approved, rejected, or needs_clarification."
+          }
+        },
+        {
+          "name": "Review Drugstore Prescription",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore-prescriptions/{{drugstore_prescription_id}}/review"
+            },
+            "description": "Approve, reject, or request clarification on a consumer prescription.\n\nPath params:\n- prescriptionId: Prescription identifier from the queue/list response.\n\nBody fields:\n- action: approved | rejected | needs_clarification.\n- note: Optional merchant-facing explanation or instruction to the consumer.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"approved\",\n  \"note\": \"Approved after pharmacist review.\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Internal Drugstore",
+      "description": "Signed internal endpoints consumed by experience_1. These are service-to-service routes and require HMAC headers; the folder pre-request script populates those automatically from environment variables.",
+      "item": [
+        {
+          "name": "Internal List Products",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "x-internal-key-id",
+                "value": "{{internal_key_id}}"
+              },
+              {
+                "key": "x-internal-timestamp",
+                "value": "{{internal_timestamp}}"
+              },
+              {
+                "key": "x-internal-nonce",
+                "value": "{{internal_nonce}}"
+              },
+              {
+                "key": "x-internal-signature",
+                "value": "{{internal_signature}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/internal/drugstore/products?merchantId={{merchant_id}}&page=1&limit=20&search=&category=&sortBy=createdAt&sortDirection=desc"
+            },
+            "description": "Service-to-service catalog listing used by experience_1 drugstore browsing.\n\nQuery params:\n- merchantId: Merchant whose products should be exposed.\n- page / limit / search / category / sortBy / sortDirection: Standard product list controls."
+          }
+        },
+        {
+          "name": "Internal Get Product",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "x-internal-key-id",
+                "value": "{{internal_key_id}}"
+              },
+              {
+                "key": "x-internal-timestamp",
+                "value": "{{internal_timestamp}}"
+              },
+              {
+                "key": "x-internal-nonce",
+                "value": "{{internal_nonce}}"
+              },
+              {
+                "key": "x-internal-signature",
+                "value": "{{internal_signature}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/internal/drugstore/products/{{product_id}}?merchantId={{merchant_id}}"
+            },
+            "description": "Service-to-service product detail lookup.\n\nPath params:\n- productId: Product UUID.\n\nQuery params:\n- merchantId: Owning merchant id."
+          }
+        },
+        {
+          "name": "Internal List Categories",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "x-internal-key-id",
+                "value": "{{internal_key_id}}"
+              },
+              {
+                "key": "x-internal-timestamp",
+                "value": "{{internal_timestamp}}"
+              },
+              {
+                "key": "x-internal-nonce",
+                "value": "{{internal_nonce}}"
+              },
+              {
+                "key": "x-internal-signature",
+                "value": "{{internal_signature}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/internal/drugstore/categories?merchantId={{merchant_id}}"
+            },
+            "description": "Service-to-service category listing for a pharmacy catalog."
+          }
+        },
+        {
+          "name": "Internal List Nearby Pharmacies",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "x-internal-key-id",
+                "value": "{{internal_key_id}}"
+              },
+              {
+                "key": "x-internal-timestamp",
+                "value": "{{internal_timestamp}}"
+              },
+              {
+                "key": "x-internal-nonce",
+                "value": "{{internal_nonce}}"
+              },
+              {
+                "key": "x-internal-signature",
+                "value": "{{internal_signature}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/internal/drugstore/pharmacies/nearby?search=&page=1&limit=20&activeCartMerchantId={{merchant_id}}&activeCartItemCount=2&activeCartSubtotal=49000"
+            },
+            "description": "Service-to-service pharmacy discovery endpoint consumed by experience_1.\n\nQuery params:\n- search: Optional text filter.\n- page / limit: Pagination.\n- activeCartMerchantId / activeCartItemCount / activeCartSubtotal: Optional current cart context for compatibility hints."
+          }
+        },
+        {
+          "name": "Internal Get Pharmacy Profile",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "x-internal-key-id",
+                "value": "{{internal_key_id}}"
+              },
+              {
+                "key": "x-internal-timestamp",
+                "value": "{{internal_timestamp}}"
+              },
+              {
+                "key": "x-internal-nonce",
+                "value": "{{internal_nonce}}"
+              },
+              {
+                "key": "x-internal-signature",
+                "value": "{{internal_signature}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/internal/drugstore/pharmacies/{{merchant_id}}"
+            },
+            "description": "Service-to-service pharmacy profile endpoint used by experience_1 profile/about screens."
+          }
+        },
+        {
+          "name": "Internal Get Pharmacy Reviews",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "x-internal-key-id",
+                "value": "{{internal_key_id}}"
+              },
+              {
+                "key": "x-internal-timestamp",
+                "value": "{{internal_timestamp}}"
+              },
+              {
+                "key": "x-internal-nonce",
+                "value": "{{internal_nonce}}"
+              },
+              {
+                "key": "x-internal-signature",
+                "value": "{{internal_signature}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/internal/drugstore/pharmacies/{{merchant_id}}/reviews?page=1&limit=20"
+            },
+            "description": "Service-to-service pharmacy review feed.\n\nQuery params:\n- page / limit: Pagination."
+          }
+        },
+        {
+          "name": "Internal Validate Discount",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "x-internal-key-id",
+                "value": "{{internal_key_id}}"
+              },
+              {
+                "key": "x-internal-timestamp",
+                "value": "{{internal_timestamp}}"
+              },
+              {
+                "key": "x-internal-nonce",
+                "value": "{{internal_nonce}}"
+              },
+              {
+                "key": "x-internal-signature",
+                "value": "{{internal_signature}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/internal/drugstore/discounts/validate"
+            },
+            "description": "Service-to-service discount validation for experience_1 checkout flows.\n\nBody fields:\n- merchantId, code, orderAmount, productIds.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"merchantId\": \"{{merchant_id}}\",\n  \"code\": \"WELCOME10\",\n  \"orderAmount\": 49000,\n  \"productIds\": [\n    \"{{product_id}}\"\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Internal Reflect Paid Order",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "x-internal-key-id",
+                "value": "{{internal_key_id}}"
+              },
+              {
+                "key": "x-internal-timestamp",
+                "value": "{{internal_timestamp}}"
+              },
+              {
+                "key": "x-internal-nonce",
+                "value": "{{internal_nonce}}"
+              },
+              {
+                "key": "x-internal-signature",
+                "value": "{{internal_signature}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/internal/drugstore/orders/reflect"
+            },
+            "description": "Reflect a paid experience_1 drugstore order into the merchant system.\n\nBody fields:\n- sourceOrderId: Original experience_1 order id.\n- merchantId: Merchant that should receive the order.\n- sourceUserId / sourceUserName: Consumer or doctor identity summary.\n- totals: subtotal, discountAmount, deliveryFee, totalAmount.\n- delivery: address snapshot plus deliveryDate and deliveryTimeSlot.\n- items: Product snapshots and quantities.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceOrderId\": \"{{drugstore_order_id}}\",\n  \"merchantId\": \"{{merchant_id}}\",\n  \"sourceUserId\": \"{{user_id}}\",\n  \"sourceUserName\": \"Tamara Ike\",\n  \"subtotal\": 8500,\n  \"discountAmount\": 0,\n  \"deliveryFee\": 700,\n  \"totalAmount\": 9200,\n  \"paymentStatus\": \"paid\",\n  \"paymentReference\": \"{{drugstore_payment_reference}}\",\n  \"delivery\": {\n    \"addressLine1\": \"6, Solaru Street\",\n    \"addressLine2\": \"Soluyi, Gbagada\",\n    \"city\": \"Lagos\",\n    \"state\": \"Lagos\",\n    \"recipientName\": \"Tamara Ike\",\n    \"recipientPhone\": \"08055713517\",\n    \"deliveryDate\": \"2026-04-24\",\n    \"deliveryTimeSlot\": \"09:00AM - 10:00AM\"\n  },\n  \"items\": [\n    {\n      \"merchantProductId\": \"{{product_id}}\",\n      \"name\": \"Zithromax 250mg - 4 Caps\",\n      \"quantity\": 1,\n      \"unitPrice\": 8500,\n      \"totalPrice\": 8500,\n      \"requiresPrescriptionSnapshot\": false\n    }\n  ]\n}"
+            }
+          }
+        }
+      ],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const method = pm.request.method.toUpperCase();",
+              "let bodyForHash = \"\";",
+              "if (![\"GET\", \"DELETE\"].includes(method) && pm.request.body) {",
+              "  if (pm.request.body.mode === \"raw\") {",
+              "    const raw = pm.variables.replaceIn(pm.request.body.raw || \"\");",
+              "    try { bodyForHash = JSON.stringify(JSON.parse(raw)); } catch (_e) { bodyForHash = raw; }",
+              "  }",
+              "}",
+              "const timestamp = Math.floor(Date.now() / 1000).toString();",
+              "const nonce = `pm-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;",
+              "const pathWithQuery = pm.request.url.getPathWithQuery();",
+              "const hash = CryptoJS.SHA256(bodyForHash).toString();",
+              "const canonical = [method, pathWithQuery, timestamp, nonce, hash].join(\"\\n\");",
+              "const secret = pm.environment.get(\"internal_secret\") || \"\";",
+              "const signature = CryptoJS.HmacSHA256(canonical, secret).toString();",
+              "pm.environment.set(\"internal_timestamp\", timestamp);",
+              "pm.environment.set(\"internal_nonce\", nonce);",
+              "pm.environment.set(\"internal_signature\", signature);"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

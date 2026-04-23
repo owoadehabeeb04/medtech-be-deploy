@@ -18,6 +18,7 @@ import doctorSettingsRouter from "../modules/doctor_settings/DoctorSettings.rout
 import doctorRatesRouter from "../modules/doctor_rates/DoctorRates.route";
 import doctorHealthPackageRouter from "../modules/doctor_health_packages/DoctorHealthPackage.route";
 import doctorReviewRouter from "../modules/doctor_reviews/DoctorReview.route";
+import drugstoreRouter from "../modules/drugstore/Drugstore.route";
 
 export default function (app: Application) {
 	app.use(cors());
@@ -39,6 +40,7 @@ export default function (app: Application) {
 		router.use("/doctor", doctorRatesRouter);
 		router.use("/doctor", doctorHealthPackageRouter);
 		router.use("/doctor", doctorReviewRouter);
+		router.use("/drugstore", drugstoreRouter);
 	});
 
 	app.use(root.export());
