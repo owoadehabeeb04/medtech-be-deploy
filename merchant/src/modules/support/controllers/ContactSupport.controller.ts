@@ -36,7 +36,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
       merchantName,
       value
     );
-
+console.log("Contact Support Result:", result);
     res.status(200);
     res.response = {
       message: result.message,
@@ -47,6 +47,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
     };
     return next();
   } catch (error: any) {
+    console.error("Error in contactSupport controller:", error);
     return next(error);
   }
 };

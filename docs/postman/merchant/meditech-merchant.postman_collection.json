@@ -225,7 +225,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/auth/refresh-token"
+              "raw": "{{baseUrl}}/auth/refresh-token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh-token"
+              ]
             },
             "description": "Exchange the current refresh token for a new access token.\n\nBody fields:\n- refreshToken: Refresh token returned from login or a previous refresh.",
             "body": {
@@ -264,7 +271,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/auth/forgot-password"
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password"
+              ]
             },
             "description": "Start the merchant password-reset flow.\n\nBody fields:\n- email: Merchant email address to receive or generate the OTP.",
             "body": {
@@ -287,7 +301,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/auth/verify-reset-otp"
+              "raw": "{{baseUrl}}/auth/verify-reset-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "verify-reset-otp"
+              ]
             },
             "description": "Verify the OTP for password reset.\n\nBody fields:\n- email: Merchant email.\n- otp: Reset OTP returned in development or sent by email.",
             "body": {
@@ -310,7 +331,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/auth/reset-password"
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
             },
             "description": "Set a new merchant password after OTP verification.\n\nBody fields:\n- email: Merchant email.\n- newPassword: New password.\n- confirmPassword: Must match newPassword.",
             "body": {
@@ -341,7 +369,14 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/onboarding/status"
+              "raw": "{{baseUrl}}/onboarding/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "onboarding",
+                "status"
+              ]
             },
             "description": "Return current merchant onboarding progress and completion status.\n\nConsumption notes:\n- Call this after login to know which onboarding step to show next."
           }
@@ -362,7 +397,14 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/onboarding/banks"
+              "raw": "{{baseUrl}}/onboarding/banks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "onboarding",
+                "banks"
+              ]
             },
             "description": "List banks supported by the backend / Paystack bank-verification flow.\n\nConsumption notes:\n- Use the returned bank code when calling Verify Bank Account."
           }
@@ -388,7 +430,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/onboarding/upload-valid-id"
+              "raw": "{{baseUrl}}/onboarding/upload-valid-id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "onboarding",
+                "upload-valid-id"
+              ]
             },
             "description": "Submit the already-uploaded valid-ID file URL for onboarding.\n\nBody fields:\n- validIdUrl: Public or storage URL of the uploaded identity document.",
             "body": {
@@ -418,7 +467,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/onboarding/upload-profile-picture"
+              "raw": "{{baseUrl}}/onboarding/upload-profile-picture",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "onboarding",
+                "upload-profile-picture"
+              ]
             },
             "description": "Submit the already-uploaded profile image URL for onboarding.\n\nBody fields:\n- profilePictureUrl: URL of the merchant profile image.",
             "body": {
@@ -448,7 +504,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/onboarding/verify-bank"
+              "raw": "{{baseUrl}}/onboarding/verify-bank",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "onboarding",
+                "verify-bank"
+              ]
             },
             "description": "Validate bank-account details before storing them.\n\nBody fields:\n- bankCode: Bank code from List Supported Banks.\n- accountNumber: 10-digit account number.\n- accountName: Expected account holder name.",
             "body": {
@@ -479,7 +542,14 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/upload/single"
+              "raw": "{{baseUrl}}/upload/single",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "upload",
+                "single"
+              ]
             },
             "description": "Upload one file to the general merchant upload service.\n\nForm-data fields:\n- file: Local file to upload. Accepted types include jpeg, jpg, png, pdf, and svg.",
             "body": {
@@ -510,7 +580,14 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/upload/bulk"
+              "raw": "{{baseUrl}}/upload/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "upload",
+                "bulk"
+              ]
             },
             "description": "Upload up to 10 files in one request.\n\nForm-data fields:\n- files: Repeat the field for each file you want to upload.",
             "body": {
@@ -552,7 +629,13 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/settings"
+              "raw": "{{baseUrl}}/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings"
+              ]
             },
             "description": "Fetch the merchant's combined settings payload.\n\nConsumption notes:\n- Use this to hydrate the full settings screen in one request."
           }
@@ -578,7 +661,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/settings/all"
+              "raw": "{{baseUrl}}/settings/all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "all"
+              ]
             },
             "description": "Patch profile, store, payment, notification, and preference fields in one request.\n\nBody fields:\n- Combines the fields from the profile, store, payment, notification, and preference endpoints.\n- If you include payment fields, send bankCode, accountNumber, and accountName together.",
             "body": {
@@ -608,7 +698,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/settings/profile"
+              "raw": "{{baseUrl}}/settings/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "profile"
+              ]
             },
             "description": "Update the merchant user's personal profile fields.\n\nBody fields:\n- firstName, lastName, phoneNumber, phoneCountryCode.",
             "body": {
@@ -638,7 +735,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/settings/payment"
+              "raw": "{{baseUrl}}/settings/payment",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "payment"
+              ]
             },
             "description": "Update bank-account payout settings.\n\nBody fields:\n- bankCode: Bank code from onboarding bank list.\n- accountNumber: 10-digit bank account number.\n- accountName: Account holder name.",
             "body": {
@@ -668,7 +772,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/settings/store"
+              "raw": "{{baseUrl}}/settings/store",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "store"
+              ]
             },
             "description": "Update business/storefront configuration.\n\nBody fields:\n- businessName, businessUrl, businessAddress, city, state, landmark.\n- openHour / closeHour in HH:MM.\n- vacation / vacationStartDate / vacationEndDate.\n- storeDescription, storeBannerUrl.",
             "body": {
@@ -698,7 +809,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/settings/password"
+              "raw": "{{baseUrl}}/settings/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "password"
+              ]
             },
             "description": "Change the merchant password while authenticated.\n\nBody fields:\n- currentPassword: Existing password.\n- newPassword: New password with uppercase, lowercase, digit, and special character.\n- confirmPassword: Must match newPassword.",
             "body": {
@@ -728,7 +846,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/settings/notifications"
+              "raw": "{{baseUrl}}/settings/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "notifications"
+              ]
             },
             "description": "Update global notification toggles and per-event notification channels.\n\nBody fields:\n- pushNotificationsEnabled / emailNotificationsEnabled.\n- notificationPreferences: orderPlaced, lowStock, payoutAlert, supportTicket channel toggles.",
             "body": {
@@ -758,7 +883,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/settings/preferences"
+              "raw": "{{baseUrl}}/settings/preferences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "preferences"
+              ]
             },
             "description": "Update store-level operational preferences.\n\nBody fields:\n- storePreferences: automatic order handling, prescription approval rules, stock display, pickup/delivery, and delivery pricing controls.",
             "body": {
@@ -789,7 +921,14 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/products/stats"
+              "raw": "{{baseUrl}}/products/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "stats"
+              ]
             },
             "description": "Return product-level summary statistics for the signed-in merchant."
           }
@@ -810,7 +949,14 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/products/low-stock"
+              "raw": "{{baseUrl}}/products/low-stock",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "low-stock"
+              ]
             },
             "description": "List products currently at or below the configured low-stock threshold."
           }
@@ -831,7 +977,13 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/products"
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
             },
             "description": "List all products owned by the signed-in merchant.\n\nConsumption notes:\n- Use this to populate the merchant product table/grid."
           }
@@ -857,7 +1009,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/products"
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
             },
             "description": "Create a catalog product.\n\nBody fields:\n- name, description, category, brand, sku.\n- price, vat, discountPercentage.\n- minQuantity, maxQuantity, inventory.\n- images: 1-3 image objects with url, order, isMain.\n- isActive.\n\nNote:\n- The current model also supports prescription-aware products. Add that from the admin flow if your backend exposes it in the request mapper.",
             "body": {
@@ -882,7 +1040,14 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/products/{{product_id}}"
+              "raw": "{{baseUrl}}/products/{{product_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{product_id}}"
+              ]
             },
             "description": "Fetch one product by UUID.\n\nPath params:\n- productId: Product identifier from the list/create response."
           }
@@ -908,7 +1073,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/products/{{product_id}}"
+              "raw": "{{baseUrl}}/products/{{product_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{product_id}}"
+              ]
             },
             "description": "Patch one or more editable product fields.\n\nPath params:\n- productId: Product identifier.\n\nBody fields:\n- Any subset of the create-product payload may be sent.",
             "body": {
@@ -938,7 +1110,15 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/products/{{product_id}}/stock"
+              "raw": "{{baseUrl}}/products/{{product_id}}/stock",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{product_id}}",
+                "stock"
+              ]
             },
             "description": "Set the current inventory value for a product.\n\nBody fields:\n- inventory: Non-negative integer stock count.",
             "body": {
@@ -963,7 +1143,14 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/products/{{product_id}}"
+              "raw": "{{baseUrl}}/products/{{product_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{product_id}}"
+              ]
             },
             "description": "Soft-delete a product from the merchant catalog.\n\nPath params:\n- productId: Product identifier."
           }
@@ -984,7 +1171,15 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/products/{{product_id}}/restore"
+              "raw": "{{baseUrl}}/products/{{product_id}}/restore",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{product_id}}",
+                "restore"
+              ]
             },
             "description": "Restore a previously deleted product.\n\nPath params:\n- productId: Deleted product identifier."
           }
@@ -1011,7 +1206,13 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/discounts"
+              "raw": "{{baseUrl}}/discounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "discounts"
+              ]
             },
             "description": "List discounts created by the signed-in merchant."
           }
@@ -1032,7 +1233,14 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/discounts/stats"
+              "raw": "{{baseUrl}}/discounts/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "discounts",
+                "stats"
+              ]
             },
             "description": "Return summary metrics for merchant discounts and promotions."
           }
@@ -1058,7 +1266,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/discounts/validate"
+              "raw": "{{baseUrl}}/discounts/validate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "discounts",
+                "validate"
+              ]
             },
             "description": "Validate whether a discount code can be applied to the given order composition.\n\nBody fields:\n- code: Discount code.\n- orderAmount: Current order subtotal.\n- productIds or products: Array of product UUIDs.",
             "body": {
@@ -1088,7 +1303,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/discounts"
+              "raw": "{{baseUrl}}/discounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "discounts"
+              ]
             },
             "description": "Create a discount campaign.\n\nBody fields:\n- code, type, amount.\n- applyToAllProducts or specific applicableProducts/applicableCategories.\n- minOrderAmount, status, startDate, endDate.\n- usageLimit, perUserLimit.",
             "body": {
@@ -1113,7 +1334,14 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/discounts/{{discount_id}}"
+              "raw": "{{baseUrl}}/discounts/{{discount_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "discounts",
+                "{{discount_id}}"
+              ]
             },
             "description": "Fetch one discount by UUID.\n\nPath params:\n- discountId: Identifier from list/create responses."
           }
@@ -1139,7 +1367,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/discounts/{{discount_id}}"
+              "raw": "{{baseUrl}}/discounts/{{discount_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "discounts",
+                "{{discount_id}}"
+              ]
             },
             "description": "Patch an existing discount.\n\nBody fields:\n- Send any subset of create-discount fields.\n- If type is percentage, amount must not exceed 100.",
             "body": {
@@ -1164,7 +1399,14 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/discounts/{{discount_id}}"
+              "raw": "{{baseUrl}}/discounts/{{discount_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "discounts",
+                "{{discount_id}}"
+              ]
             },
             "description": "Soft-delete a discount campaign.\n\nPath params:\n- discountId: Discount identifier."
           }
@@ -1185,7 +1427,15 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/discounts/{{discount_id}}/restore"
+              "raw": "{{baseUrl}}/discounts/{{discount_id}}/restore",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "discounts",
+                "{{discount_id}}",
+                "restore"
+              ]
             },
             "description": "Restore a previously deleted discount.\n\nPath params:\n- discountId: Deleted discount identifier."
           }
@@ -1212,7 +1462,13 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/categories"
+              "raw": "{{baseUrl}}/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories"
+              ]
             },
             "description": "List categories available to the signed-in merchant."
           }
@@ -1238,7 +1494,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/categories"
+              "raw": "{{baseUrl}}/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories"
+              ]
             },
             "description": "Create a category.\n\nBody fields:\n- name: Category display name.\n- description: Optional category note.",
             "body": {
@@ -1263,7 +1525,14 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/categories/{{category_id}}"
+              "raw": "{{baseUrl}}/categories/{{category_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "{{category_id}}"
+              ]
             },
             "description": "Fetch one category by UUID.\n\nPath params:\n- categoryId: Identifier from list/create responses."
           }
@@ -1289,7 +1558,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/categories/{{category_id}}"
+              "raw": "{{baseUrl}}/categories/{{category_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "{{category_id}}"
+              ]
             },
             "description": "Patch category fields.\n\nBody fields:\n- name, description, isActive.",
             "body": {
@@ -1314,7 +1590,14 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/categories/{{category_id}}"
+              "raw": "{{baseUrl}}/categories/{{category_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "{{category_id}}"
+              ]
             },
             "description": "Soft-delete a category.\n\nPath params:\n- categoryId: Category identifier."
           }
@@ -1335,7 +1618,15 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/categories/{{category_id}}/restore"
+              "raw": "{{baseUrl}}/categories/{{category_id}}/restore",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "{{category_id}}",
+                "restore"
+              ]
             },
             "description": "Restore a previously deleted category.\n\nPath params:\n- categoryId: Deleted category identifier."
           }
@@ -1367,12 +1658,19 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/support/contact"
+              "raw": "{{baseUrl}}/support/contact",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "support",
+                "contact"
+              ]
             },
-            "description": "Submit a support request from the merchant dashboard.\n\nBody fields:\n- subject: Short issue summary.\n- message: Detailed support message.\n- email / phoneNumber: Optional contact override fields if the support form allows them.",
+            "description": "Submit a support request from the merchant dashboard.\n\nBody fields:\n- name: Merchant contact name.\n- email: Merchant contact email.\n- subject: Short issue summary.\n- message: Detailed support message.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"subject\": \"Need help with drugstore order status sync\",\n  \"message\": \"Please help verify why one reflected order is still pending on the consumer side.\",\n  \"email\": \"{{merchant_email}}\",\n  \"phoneNumber\": \"{{merchant_phone_number}}\"\n}"
+              "raw": "{\n  \"name\": \"{{merchant_name}}\",\n  \"subject\": \"Need help with drugstore order status sync\",\n  \"message\": \"Please help verify why one reflected order is still pending on the consumer side.\",\n  \"email\": \"{{merchant_email}}\"\n}"
             }
           }
         }
@@ -1919,9 +2217,262 @@
       ]
     },
     {
-      "name": "Drugstore Orders",
-      "description": "Merchant-side drugstore operational endpoints used by the orders dashboard you showed.",
+      "name": "Dashboard & Analytics",
+      "description": "Standalone merchant dashboard and analytics endpoints.",
       "item": [
+        {
+          "name": "Get Merchant Dashboard",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard?range=7_days",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard"
+              ],
+              "query": [
+                {
+                  "key": "range",
+                  "value": "7_days"
+                }
+              ]
+            },
+            "description": "Get the full merchant dashboard payload in one request.\n\nQuery params:\n- range: 12_months | 3_months | 30_days | 7_days | 24_hours.\n- startDate / endDate: Optional custom YYYY-MM-DD window. When both are provided, they override range.\n\nResponse sections:\n- filters\n- kpis\n- salesTrend\n- orderBreakdown\n- topSellingProducts\n- recentProductSales"
+          }
+        },
+        {
+          "name": "Get Analytics KPIs",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/analytics/kpis?range=30_days",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "analytics",
+                "kpis"
+              ],
+              "query": [
+                {
+                  "key": "range",
+                  "value": "30_days"
+                }
+              ]
+            },
+            "description": "Get the merchant KPI cards only.\n\nQuery params:\n- range: 12_months | 3_months | 30_days | 7_days | 24_hours.\n- startDate / endDate: Optional custom YYYY-MM-DD window. When both are provided, they override range."
+          }
+        },
+        {
+          "name": "Get Analytics Sales",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/analytics/sales?startDate=2024-01-01&endDate=2024-01-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "analytics",
+                "sales"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-01-31"
+                }
+              ]
+            },
+            "description": "Get the merchant sales trend series.\n\nQuery params:\n- range: 12_months | 3_months | 30_days | 7_days | 24_hours.\n- startDate / endDate: Optional custom YYYY-MM-DD window. When both are provided, they override range."
+          }
+        },
+        {
+          "name": "Get Analytics Order Breakdown",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/analytics/order-breakdown?range=12_months",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "analytics",
+                "order-breakdown"
+              ],
+              "query": [
+                {
+                  "key": "range",
+                  "value": "12_months"
+                }
+              ]
+            },
+            "description": "Get the merchant order breakdown summary.\n\nQuery params:\n- range: 12_months | 3_months | 30_days | 7_days | 24_hours.\n- startDate / endDate: Optional custom YYYY-MM-DD window. When both are provided, they override range."
+          }
+        },
+        {
+          "name": "Get Analytics Top Selling Products",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/analytics/top-selling-products?period=this_week&limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "analytics",
+                "top-selling-products"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "this_week"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Get the top selling products widget data.\n\nQuery params:\n- period: this_week | last_7_days | last_30_days | all_time.\n- limit: Optional max item count.\n- startDate / endDate: Optional custom YYYY-MM-DD window. When both are provided, they override period/range."
+          }
+        },
+        {
+          "name": "Get Analytics Recent Product Sales",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/analytics/recent-product-sales?range=7_days&page=1&limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "analytics",
+                "recent-product-sales"
+              ],
+              "query": [
+                {
+                  "key": "range",
+                  "value": "7_days"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Get the recent product sales table feed.\n\nQuery params:\n- range: 12_months | 3_months | 30_days | 7_days | 24_hours.\n- startDate / endDate: Optional custom YYYY-MM-DD window. When both are provided, they override range.\n- page / limit: Pagination."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Drugstore Orders",
+      "description": "Merchant-side order management endpoints for the signed-in merchant.",
+      "item": [
+        {
+          "name": "Seed Drugstore Orders (Dev/Staging)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugstore-orders/seed",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore-orders",
+                "seed"
+              ]
+            },
+            "description": "Create one-time sample merchant drugstore orders for the signed-in merchant.\n\nNotes:\n- Allowed only in development and staging.\n- Creates sample products first if the merchant has none.\n- Returns 409 if this merchant has already been seeded before.\n- Seeded data is shaped to exercise list/search/filter/export flows."
+          }
+        },
         {
           "name": "List Drugstore Orders",
           "request": {
@@ -1938,9 +2489,45 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/drugstore-orders?page=1&limit=20&search=&paymentStatus=paid&deliveryStatus=pending&dateRange=last_7_days"
+              "raw": "{{baseUrl}}/drugstore-orders?page=1&limit=20&search=&paymentStatus=paid&deliveryStatus=pending&startDate=2024-01-01&endDate=2024-01-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore-orders"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "paymentStatus",
+                  "value": "paid"
+                },
+                {
+                  "key": "deliveryStatus",
+                  "value": "pending"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-01-31"
+                }
+              ]
             },
-            "description": "List drugstore orders for the signed-in merchant.\n\nQuery params:\n- page / limit: Pagination.\n- search: Search by order id or customer name.\n- paymentStatus: pending | paid | failed.\n- deliveryStatus: pending | picked_up | in_transit | delivered | cancelled.\n- dateRange: today | yesterday | last_7_days | last_30_days.\n- ageBucket: lt_24h | between_24h_48h | gt_48h.\n\nConsumption notes:\n- This is the main table-feed endpoint for the merchant orders screen."
+            "description": "List drugstore orders for the signed-in merchant.\n\nQuery params:\n- page / limit: Pagination.\n- search: Search by order id or customer name.\n- paymentStatus: pending | paid | failed.\n- deliveryStatus: pending | picked_up | in_transit | delivered | cancelled.\n- startDate / endDate: Optional custom YYYY-MM-DD window.\n- range: Optional analytics-style preset 12_months | 3_months | 30_days | 7_days | 24_hours.\n- dateRange: Backward-compatible preset today | yesterday | last_7_days | last_30_days.\n- ageBucket: lt_24h | between_24h_48h | gt_48h.\n\nConsumption notes:\n- When startDate and endDate are both provided, they override range and dateRange.\n- This is the main table-feed endpoint for the merchant orders screen."
           }
         },
         {
@@ -1959,9 +2546,38 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/drugstore-orders/export.csv?search=&paymentStatus=paid&deliveryStatus=delivered"
+              "raw": "{{baseUrl}}/drugstore-orders/export.csv?search=&paymentStatus=paid&deliveryStatus=delivered&startDate=2024-01-01&endDate=2024-01-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore-orders",
+                "export.csv"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "paymentStatus",
+                  "value": "paid"
+                },
+                {
+                  "key": "deliveryStatus",
+                  "value": "delivered"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-01-31"
+                }
+              ]
             },
-            "description": "Download the current filtered drugstore order list as CSV.\n\nConsumption notes:\n- This endpoint returns file content, not JSON.\n- Reuse the same filters you apply in the orders table before export."
+            "description": "Download the current filtered drugstore order list as CSV.\n\nConsumption notes:\n- This endpoint returns file content, not JSON.\n- Supports the same date filters as the orders list endpoint.\n- Reuse the same filters you apply in the orders table before export."
           },
           "event": [
             {
@@ -1999,7 +2615,15 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/drugstore-orders/{{merchant_drugstore_order_id}}/status"
+              "raw": "{{baseUrl}}/drugstore-orders/{{merchant_drugstore_order_id}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore-orders",
+                "{{merchant_drugstore_order_id}}",
+                "status"
+              ]
             },
             "description": "Update a merchant-side delivery status and trigger reverse sync back to experience_1.\n\nPath params:\n- orderId: Merchant-side drugstore order id.\n\nBody fields:\n- deliveryStatus: pending | picked_up | in_transit | delivered | cancelled.\n- note: Optional timeline note or operational comment.",
             "body": {
@@ -2041,7 +2665,19 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/drugstore-prescriptions?status=submitted"
+              "raw": "{{baseUrl}}/drugstore-prescriptions?status=submitted",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore-prescriptions"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "submitted"
+                }
+              ]
             },
             "description": "List submitted prescriptions waiting for merchant action.\n\nQuery params:\n- status: Optional workflow filter such as submitted, approved, rejected, or needs_clarification."
           }
@@ -2067,7 +2703,15 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/drugstore-prescriptions/{{drugstore_prescription_id}}/review"
+              "raw": "{{baseUrl}}/drugstore-prescriptions/{{drugstore_prescription_id}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore-prescriptions",
+                "{{drugstore_prescription_id}}",
+                "review"
+              ]
             },
             "description": "Approve, reject, or request clarification on a consumer prescription.\n\nPath params:\n- prescriptionId: Prescription identifier from the queue/list response.\n\nBody fields:\n- action: approved | rejected | needs_clarification.\n- note: Optional merchant-facing explanation or instruction to the consumer.",
             "body": {
@@ -2112,7 +2756,45 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/internal/drugstore/products?merchantId={{merchant_id}}&page=1&limit=20&search=&category=&sortBy=createdAt&sortDirection=desc"
+              "raw": "{{baseUrl}}/internal/drugstore/products?merchantId={{merchant_id}}&page=1&limit=20&search=&category=&sortBy=createdAt&sortDirection=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "drugstore",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "merchantId",
+                  "value": "{{merchant_id}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "category",
+                  "value": ""
+                },
+                {
+                  "key": "sortBy",
+                  "value": "createdAt"
+                },
+                {
+                  "key": "sortDirection",
+                  "value": "desc"
+                }
+              ]
             },
             "description": "Service-to-service catalog listing used by experience_1 drugstore browsing.\n\nQuery params:\n- merchantId: Merchant whose products should be exposed.\n- page / limit / search / category / sortBy / sortDirection: Standard product list controls."
           }
@@ -2147,7 +2829,22 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/internal/drugstore/products/{{product_id}}?merchantId={{merchant_id}}"
+              "raw": "{{baseUrl}}/internal/drugstore/products/{{product_id}}?merchantId={{merchant_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "drugstore",
+                "products",
+                "{{product_id}}"
+              ],
+              "query": [
+                {
+                  "key": "merchantId",
+                  "value": "{{merchant_id}}"
+                }
+              ]
             },
             "description": "Service-to-service product detail lookup.\n\nPath params:\n- productId: Product UUID.\n\nQuery params:\n- merchantId: Owning merchant id."
           }
@@ -2182,7 +2879,21 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/internal/drugstore/categories?merchantId={{merchant_id}}"
+              "raw": "{{baseUrl}}/internal/drugstore/categories?merchantId={{merchant_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "drugstore",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "merchantId",
+                  "value": "{{merchant_id}}"
+                }
+              ]
             },
             "description": "Service-to-service category listing for a pharmacy catalog."
           }
@@ -2217,7 +2928,42 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/internal/drugstore/pharmacies/nearby?search=&page=1&limit=20&activeCartMerchantId={{merchant_id}}&activeCartItemCount=2&activeCartSubtotal=49000"
+              "raw": "{{baseUrl}}/internal/drugstore/pharmacies/nearby?search=&page=1&limit=20&activeCartMerchantId={{merchant_id}}&activeCartItemCount=2&activeCartSubtotal=49000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "drugstore",
+                "pharmacies",
+                "nearby"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "activeCartMerchantId",
+                  "value": "{{merchant_id}}"
+                },
+                {
+                  "key": "activeCartItemCount",
+                  "value": "2"
+                },
+                {
+                  "key": "activeCartSubtotal",
+                  "value": "49000"
+                }
+              ]
             },
             "description": "Service-to-service pharmacy discovery endpoint consumed by experience_1.\n\nQuery params:\n- search: Optional text filter.\n- page / limit: Pagination.\n- activeCartMerchantId / activeCartItemCount / activeCartSubtotal: Optional current cart context for compatibility hints."
           }
@@ -2252,7 +2998,16 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/internal/drugstore/pharmacies/{{merchant_id}}"
+              "raw": "{{baseUrl}}/internal/drugstore/pharmacies/{{merchant_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "drugstore",
+                "pharmacies",
+                "{{merchant_id}}"
+              ]
             },
             "description": "Service-to-service pharmacy profile endpoint used by experience_1 profile/about screens."
           }
@@ -2287,7 +3042,27 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/internal/drugstore/pharmacies/{{merchant_id}}/reviews?page=1&limit=20"
+              "raw": "{{baseUrl}}/internal/drugstore/pharmacies/{{merchant_id}}/reviews?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "drugstore",
+                "pharmacies",
+                "{{merchant_id}}",
+                "reviews"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
             },
             "description": "Service-to-service pharmacy review feed.\n\nQuery params:\n- page / limit: Pagination."
           }
@@ -2322,7 +3097,16 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/internal/drugstore/discounts/validate"
+              "raw": "{{baseUrl}}/internal/drugstore/discounts/validate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "drugstore",
+                "discounts",
+                "validate"
+              ]
             },
             "description": "Service-to-service discount validation for experience_1 checkout flows.\n\nBody fields:\n- merchantId, code, orderAmount, productIds.",
             "body": {
@@ -2361,7 +3145,16 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/internal/drugstore/orders/reflect"
+              "raw": "{{baseUrl}}/internal/drugstore/orders/reflect",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "drugstore",
+                "orders",
+                "reflect"
+              ]
             },
             "description": "Reflect a paid experience_1 drugstore order into the merchant system.\n\nBody fields:\n- sourceOrderId: Original experience_1 order id.\n- merchantId: Merchant that should receive the order.\n- sourceUserId / sourceUserName: Consumer or doctor identity summary.\n- totals: subtotal, discountAmount, deliveryFee, totalAmount.\n- delivery: address snapshot plus deliveryDate and deliveryTimeSlot.\n- items: Product snapshots and quantities.",
             "body": {
