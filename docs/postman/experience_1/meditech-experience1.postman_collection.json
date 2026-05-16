@@ -2747,7 +2747,33 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/pharmacies/nearby?addressId={{drugstore_address_id}}&search=&page=1&limit=20"
+              "raw": "{{baseUrl}}/drugstore/pharmacies/nearby?addressId={{drugstore_address_id}}&search=&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "pharmacies",
+                "nearby"
+              ],
+              "query": [
+                {
+                  "key": "addressId",
+                  "value": "{{drugstore_address_id}}"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
             },
             "description": "Discover delivery-capable pharmacies for the selected location.\n\nQuery params:\n- addressId: Saved delivery address to use as the discovery anchor.\n- latitude / longitude: Optional raw coordinates if you are not using a saved address.\n- search: Optional free-text filter for pharmacy name.\n- page / limit: Pagination controls.\n\nConsumption notes:\n- Use this before catalog browsing when your UI starts from pharmacy selection.\n- If the user already has an active cart, the response can include compatibility hints for that cart."
           }
@@ -2768,7 +2794,15 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/pharmacies/{{drugstore_merchant_id}}"
+              "raw": "{{baseUrl}}/drugstore/pharmacies/{{drugstore_merchant_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "pharmacies",
+                "{{drugstore_merchant_id}}"
+              ]
             },
             "description": "Fetch the pharmacy profile used by the consumer-facing about screen.\n\nPath params:\n- merchantId: Merchant / pharmacy identifier returned from nearby pharmacy discovery.\n\nConsumption notes:\n- Use this for profile/about sections, operating hours, delivery capability, and top-level pharmacy metadata."
           }
@@ -2789,7 +2823,26 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/pharmacies/{{drugstore_merchant_id}}/reviews?page=1&limit=20"
+              "raw": "{{baseUrl}}/drugstore/pharmacies/{{drugstore_merchant_id}}/reviews?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "pharmacies",
+                "{{drugstore_merchant_id}}",
+                "reviews"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
             },
             "description": "Fetch paginated pharmacy reviews.\n\nQuery params:\n- page: Review page number.\n- limit: Page size.\n\nConsumption notes:\n- Current implementation may return placeholder review data until review persistence is expanded."
           }
@@ -2810,7 +2863,45 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/catalog/products?merchantId={{drugstore_merchant_id}}&page=1&limit=20&search=&category=&sortBy=createdAt&sortDirection=desc"
+              "raw": "{{baseUrl}}/drugstore/catalog/products?merchantId={{drugstore_merchant_id}}&page=1&limit=20&search=&category=&sortBy=createdAt&sortDirection=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "catalog",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "merchantId",
+                  "value": "{{drugstore_merchant_id}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "category",
+                  "value": ""
+                },
+                {
+                  "key": "sortBy",
+                  "value": "createdAt"
+                },
+                {
+                  "key": "sortDirection",
+                  "value": "desc"
+                }
+              ]
             },
             "description": "List pharmacy catalog products.\n\nQuery params:\n- merchantId: Pharmacy whose catalog should be loaded.\n- page / limit: Pagination.\n- search: Optional keyword search.\n- category: Optional category filter.\n- sortBy: createdAt | price | name.\n- sortDirection: asc | desc.\n\nConsumption notes:\n- Use this for the product grid/list after a pharmacy has been selected."
           }
@@ -2831,7 +2922,22 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/catalog/products/{{drugstore_product_id}}?merchantId={{drugstore_merchant_id}}"
+              "raw": "{{baseUrl}}/drugstore/catalog/products/{{drugstore_product_id}}?merchantId={{drugstore_merchant_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "catalog",
+                "products",
+                "{{drugstore_product_id}}"
+              ],
+              "query": [
+                {
+                  "key": "merchantId",
+                  "value": "{{drugstore_merchant_id}}"
+                }
+              ]
             },
             "description": "Fetch one product's detailed information.\n\nPath params:\n- productId: Product identifier from the catalog list.\n\nQuery params:\n- merchantId: Required because the drugstore catalog is pharmacy-scoped."
           }
@@ -2852,7 +2958,21 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/catalog/categories?merchantId={{drugstore_merchant_id}}"
+              "raw": "{{baseUrl}}/drugstore/catalog/categories?merchantId={{drugstore_merchant_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "catalog",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "merchantId",
+                  "value": "{{drugstore_merchant_id}}"
+                }
+              ]
             },
             "description": "List available catalog categories for a pharmacy.\n\nQuery params:\n- merchantId: Pharmacy identifier whose categories should be loaded."
           }
@@ -2878,7 +2998,16 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/catalog/discounts/validate"
+              "raw": "{{baseUrl}}/drugstore/catalog/discounts/validate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "catalog",
+                "discounts",
+                "validate"
+              ]
             },
             "description": "Check whether a discount code applies to the current cart composition.\n\nBody fields:\n- merchantId: Pharmacy / merchant identifier.\n- code: Coupon code in uppercase.\n- orderAmount: Current item subtotal before delivery.\n- productIds: Products currently in cart.\n\nConsumption notes:\n- Use this before order creation if your UI lets the user test a coupon code independently.",
             "body": {
@@ -2903,7 +3032,14 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/addresses"
+              "raw": "{{baseUrl}}/drugstore/addresses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "addresses"
+              ]
             },
             "description": "Return the signed-in user's saved delivery addresses.\n\nConsumption notes:\n- Use this to populate the address selection bottom sheet during checkout."
           }
@@ -2929,7 +3065,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/addresses"
+              "raw": "{{baseUrl}}/drugstore/addresses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "addresses"
+              ]
             },
             "description": "Create a delivery address.\n\nBody fields:\n- label: Friendly name shown to the user.\n- addressLine1 / addressLine2: Street address lines.\n- city / state: Delivery location fields.\n- recipientName / recipientPhone: Who receives the order.\n- isDefault: Whether this becomes the default address.\n- latitude / longitude: Optional coordinates for location-aware discovery.",
             "body": {
@@ -2973,7 +3116,15 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/addresses/{{drugstore_address_id}}"
+              "raw": "{{baseUrl}}/drugstore/addresses/{{drugstore_address_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "addresses",
+                "{{drugstore_address_id}}"
+              ]
             },
             "description": "Update an existing saved address.\n\nPath params:\n- addressId: Address identifier from List/Create Address.\n\nBody fields:\n- Send only the fields you want to change; the schema accepts the same fields as address creation.",
             "body": {
@@ -3012,7 +3163,15 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/addresses/{{drugstore_address_id}}"
+              "raw": "{{baseUrl}}/drugstore/addresses/{{drugstore_address_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "addresses",
+                "{{drugstore_address_id}}"
+              ]
             },
             "description": "Delete a saved delivery address.\n\nPath params:\n- addressId: Address to remove from the user's address book."
           }
@@ -3033,7 +3192,15 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/prescriptions/upload"
+              "raw": "{{baseUrl}}/drugstore/prescriptions/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "prescriptions",
+                "upload"
+              ]
             },
             "description": "Upload a prescription file before formal submission.\n\nForm-data fields:\n- file: The prescription image or PDF from the tester's local machine.\n\nConsumption notes:\n- This only uploads the file and creates a draft prescription record. Submit it in the next request to attach patient and pharmacy context.",
             "body": {
@@ -3083,7 +3250,16 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/prescriptions/{{drugstore_prescription_id}}/submit"
+              "raw": "{{baseUrl}}/drugstore/prescriptions/{{drugstore_prescription_id}}/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "prescriptions",
+                "{{drugstore_prescription_id}}",
+                "submit"
+              ]
             },
             "description": "Submit an uploaded prescription for merchant review.\n\nPath params:\n- prescriptionId: Draft prescription identifier from the upload step.\n\nBody fields:\n- merchantId: Pharmacy that should review the prescription.\n- cartId: Optional current cart identifier if the prescription is tied to a live cart.\n- patientName: Name on the prescription.\n- prescriptionDate: ISO date string.\n- isForSelf: Whether the order is for the signed-in user.",
             "body": {
@@ -3122,7 +3298,14 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/prescriptions"
+              "raw": "{{baseUrl}}/drugstore/prescriptions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "prescriptions"
+              ]
             },
             "description": "List the signed-in user's prescriptions and review states.\n\nConsumption notes:\n- Use this to poll for merchant approval, rejection, or clarification after submission."
           }
@@ -3143,7 +3326,15 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/prescriptions/{{drugstore_prescription_id}}"
+              "raw": "{{baseUrl}}/drugstore/prescriptions/{{drugstore_prescription_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "prescriptions",
+                "{{drugstore_prescription_id}}"
+              ]
             },
             "description": "Fetch a single prescription record with its current workflow state.\n\nPath params:\n- prescriptionId: Identifier captured from upload or list responses."
           }
@@ -3164,7 +3355,14 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/cart"
+              "raw": "{{baseUrl}}/drugstore/cart",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "cart"
+              ]
             },
             "description": "Return the active single-pharmacy cart for the current user.\n\nConsumption notes:\n- The backend enforces one active pharmacy cart at a time. Use this to restore in-progress cart state on app launch."
           }
@@ -3190,7 +3388,15 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/cart/items"
+              "raw": "{{baseUrl}}/drugstore/cart/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "cart",
+                "items"
+              ]
             },
             "description": "Add one product to the active cart.\n\nBody fields:\n- merchantId: Pharmacy identifier.\n- merchantProductId: Product identifier from the catalog.\n- quantity: Desired quantity.\n\nConsumption notes:\n- The backend rejects mixing products from multiple pharmacies in one active cart.",
             "body": {
@@ -3236,7 +3442,16 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/cart/items/{{drugstore_cart_item_id}}"
+              "raw": "{{baseUrl}}/drugstore/cart/items/{{drugstore_cart_item_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "cart",
+                "items",
+                "{{drugstore_cart_item_id}}"
+              ]
             },
             "description": "Change the quantity of a cart line item.\n\nPath params:\n- itemId: Cart item identifier from the active cart response.\n\nBody fields:\n- quantity: New integer quantity (minimum 1).",
             "body": {
@@ -3277,7 +3492,16 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/cart/items/{{drugstore_cart_item_id}}"
+              "raw": "{{baseUrl}}/drugstore/cart/items/{{drugstore_cart_item_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "cart",
+                "items",
+                "{{drugstore_cart_item_id}}"
+              ]
             },
             "description": "Remove a line item from the active cart.\n\nPath params:\n- itemId: Cart item identifier from Add/Get Cart."
           }
@@ -3303,7 +3527,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/orders"
+              "raw": "{{baseUrl}}/drugstore/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "orders"
+              ]
             },
             "description": "Create a pending drugstore order and initialize Paystack payment.\n\nBody fields:\n- paymentMethod: card or bank_transfer for the first-pass flow.\n- couponCode: Optional uppercase coupon code.\n- addressId: Saved delivery address id. Falls back to the default address if omitted and one exists.\n- deliveryNote: Optional note for dispatch.\n- deliveryDate: Optional ISO date string.\n- deliveryTimeSlot: Optional display slot selected by the user.\n- returnUrl: Optional frontend callback URL for the payment redirect flow.\n\nConsumption notes:\n- Delivery totals are computed on the backend.\n- If the cart contains prescription-only items, an approved prescription must already exist.",
             "body": {
@@ -3349,7 +3580,17 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/orders/{{drugstore_order_id}}/payment/confirm"
+              "raw": "{{baseUrl}}/drugstore/orders/{{drugstore_order_id}}/payment/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "orders",
+                "{{drugstore_order_id}}",
+                "payment",
+                "confirm"
+              ]
             },
             "description": "Verify the payment reference for a pending order.\n\nPath params:\n- orderId: Pending order id from Create Order.\n\nBody fields:\n- paymentReference: Paystack reference returned from the payment initialization response or callback.\n- providerStatus: Optional UI hint; backend verification is authoritative.",
             "body": {
@@ -3374,7 +3615,36 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/orders?page=1&limit=20&paymentStatus=paid&deliveryStatus=pending&dateRange=last_7_days"
+              "raw": "{{baseUrl}}/drugstore/orders?page=1&limit=20&paymentStatus=paid&deliveryStatus=pending&dateRange=last_7_days",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "paymentStatus",
+                  "value": "paid"
+                },
+                {
+                  "key": "deliveryStatus",
+                  "value": "pending"
+                },
+                {
+                  "key": "dateRange",
+                  "value": "last_7_days"
+                }
+              ]
             },
             "description": "List the signed-in user's drugstore orders.\n\nQuery params:\n- page / limit: Pagination.\n- paymentStatus: pending | paid | failed.\n- deliveryStatus: pending | picked_up | in_transit | delivered | cancelled.\n- dateRange: today | yesterday | last_7_days | last_30_days.\n- ageBucket: lt_24h | between_24h_48h | gt_48h."
           }
@@ -3395,7 +3665,15 @@
             },
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/orders/{{drugstore_order_id}}"
+              "raw": "{{baseUrl}}/drugstore/orders/{{drugstore_order_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "orders",
+                "{{drugstore_order_id}}"
+              ]
             },
             "description": "Fetch a single drugstore order, including computed totals and delivery/prescription linkage.\n\nPath params:\n- orderId: Identifier from Create/List Orders."
           }
@@ -3421,7 +3699,16 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/drugstore/orders/{{drugstore_order_id}}/cancel"
+              "raw": "{{baseUrl}}/drugstore/orders/{{drugstore_order_id}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drugstore",
+                "orders",
+                "{{drugstore_order_id}}",
+                "cancel"
+              ]
             },
             "description": "Cancel an order when the current workflow state allows it.\n\nBody fields:\n- reason: Optional human-readable reason for the cancellation request.",
             "body": {
@@ -3464,7 +3751,25 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/drugstore/internal/prescriptions?merchantId={{drugstore_merchant_id}}&status=submitted"
+                  "raw": "{{baseUrl}}/drugstore/internal/prescriptions?merchantId={{drugstore_merchant_id}}&status=submitted",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "drugstore",
+                    "internal",
+                    "prescriptions"
+                  ],
+                  "query": [
+                    {
+                      "key": "merchantId",
+                      "value": "{{drugstore_merchant_id}}"
+                    },
+                    {
+                      "key": "status",
+                      "value": "submitted"
+                    }
+                  ]
                 },
                 "description": "Return prescriptions awaiting action for a specific pharmacy.\n\nQuery params:\n- merchantId: Pharmacy / merchant identifier.\n- status: Optional workflow status filter."
               }
@@ -3499,7 +3804,17 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/drugstore/internal/prescriptions/{{drugstore_prescription_id}}/review"
+                  "raw": "{{baseUrl}}/drugstore/internal/prescriptions/{{drugstore_prescription_id}}/review",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "drugstore",
+                    "internal",
+                    "prescriptions",
+                    "{{drugstore_prescription_id}}",
+                    "review"
+                  ]
                 },
                 "description": "Approve, reject, or request clarification for a submitted prescription.\n\nPath params:\n- prescriptionId: Prescription under review.\n\nBody fields:\n- action: approved | rejected | needs_clarification.\n- note: Optional message shown to the consumer.\n- reviewerName / reviewerId: Optional override fields for audit context.",
                 "body": {
@@ -3538,7 +3853,16 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/drugstore/internal/orders/status-sync"
+                  "raw": "{{baseUrl}}/drugstore/internal/orders/status-sync",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "drugstore",
+                    "internal",
+                    "orders",
+                    "status-sync"
+                  ]
                 },
                 "description": "Push a merchant-side fulfillment update back into experience_1.\n\nBody fields:\n- merchantOrderId: Merchant app order identifier.\n- sourceOrderId: Original experience_1 order identifier.\n- merchantId: Merchant performing the update.\n- deliveryStatus: pending | picked_up | in_transit | delivered | cancelled.\n- note: Optional status note for timeline/history.",
                 "body": {

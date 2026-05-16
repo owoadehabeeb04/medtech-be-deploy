@@ -36,6 +36,7 @@ export class SupportService {
         supportAddress: applicationConfig.supportAddress,
       });
     } catch (error) {
+      console.error("Failed to send confirmation email to merchant:", error);
     }
 
     return {

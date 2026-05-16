@@ -20,6 +20,8 @@ import walletRouter from "../modules/wallet/Wallet.route";
 import { authMiddleware } from "../middlewares/Auth.Middleware";
 import drugstoreInternalRouter from "../modules/drugstore_internal/DrugstoreInternal.route";
 import { internalAuthMiddleware } from "../middlewares/internal-auth.middleware";
+import drugstoreAnalyticsRouter from "../modules/drugstore_orders/DrugstoreAnalytics.route";
+import drugstoreDashboardRouter from "../modules/drugstore_orders/DrugstoreDashboard.route";
 import drugstoreOrderRouter from "../modules/drugstore_orders/DrugstoreOrder.route";
 import drugstorePrescriptionRouter from "../modules/drugstore_prescriptions/DrugstorePrescription.route";
 
@@ -58,6 +60,8 @@ export default function (app: Application) {
 	apiRouter.use("/support", authMiddleware, supportRouter);
 	apiRouter.use("/subscriptions", subscriptionRouter);
 	apiRouter.use("/wallet", authMiddleware, walletRouter);
+	apiRouter.use("/dashboard", authMiddleware, drugstoreDashboardRouter);
+	apiRouter.use("/analytics", authMiddleware, drugstoreAnalyticsRouter);
 	apiRouter.use("/drugstore-orders", authMiddleware, drugstoreOrderRouter);
 	apiRouter.use("/drugstore-prescriptions", authMiddleware, drugstorePrescriptionRouter);
 	apiRouter.use("/internal/drugstore", internalAuthMiddleware, drugstoreInternalRouter);

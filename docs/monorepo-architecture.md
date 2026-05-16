@@ -12,12 +12,11 @@ meditech-be-github/
 │   ├── monorepo-architecture.md
 │   └── postman/
 │       ├── experience_1/
-│       │   ├── experience1-auth-postman-checklist.md
-│       │   ├── experience1-auth-profile.openapi.yaml
-│       │   ├── experience1-auth-profile.postman_collection.json
-│       │   └── experience1-auth-profile.postman_environment.json
+│       │   ├── meditech-experience1.postman_collection.json
+│       │   └── meditech-experience1.postman_environment.json
 │       └── merchant/
-│           └── Meditech_Merchant_Subscription.postman_collection.json
+│           ├── meditech-merchant.postman_collection.json
+│           └── meditech-merchant.postman_environment.json
 ├── package.json
 ├── package-lock.json
 ├── tsconfig.base.json

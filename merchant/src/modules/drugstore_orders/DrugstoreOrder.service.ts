@@ -1,9 +1,12 @@
-import { Op } from "sequelize";
+import { HttpException } from "@medtech/utils";
+import { randomUUID } from "crypto";
+import { Op, Transaction } from "sequelize";
 import { DrugstoreOrder } from "./DrugstoreOrder.model";
 import { DrugstoreOrderItem } from "./DrugstoreOrderItem.model";
 import { Product } from "../products/Product.model";
 import { applicationConfig } from "../../config";
 import { ExperienceOneInternalClient } from "../drugstore_internal/ExperienceOneInternalClient";
+import { ProductStatus } from "../../constants/enums";
 
 type PaymentStatus = "pending" | "paid" | "failed";
 type DeliveryStatus = "pending" | "picked_up" | "in_transit" | "delivered" | "cancelled";
@@ -11,6 +14,9 @@ type DateRange = "today" | "yesterday" | "last_7_days" | "last_30_days";
 type AgeBucket = "lt_24h" | "between_24h_48h" | "gt_48h";
 type AnalyticsRange = "12_months" | "3_months" | "30_days" | "7_days" | "24_hours";
 type TopSellingPeriod = "this_week" | "last_7_days" | "last_30_days" | "all_time";
+type RangeWindowKind = AnalyticsRange | "custom";
+type TimeBucketGranularity = "hour" | "day" | "month";
+type LegacyOrderStatus = "new" | "processing" | "ready" | "delivered" | "cancelled";
 
 type AnalyticsOrderRow = {
   placedAt: Date | string;
@@ -29,16 +35,27 @@ type AnalyticsBucket = {
 };
 
 type RangeWindow = {
-  range: AnalyticsRange;
+  range: RangeWindowKind;
+  isCustom: boolean;
   start: Date;
   end: Date;
   previousStart: Date;
   previousEnd: Date;
   bucketCount: number;
-  bucketGranularity: "hour" | "day" | "month";
+  bucketGranularity: TimeBucketGranularity;
 };
 
-type ListOrderInput = {
+type DateFilterInput = {
+  range?: string;
+  startDate?: string;
+  endDate?: string;
+};
+
+type TopSellingInput = DateFilterInput & {
+  period?: string;
+};
+
+type ListOrderInput = DateFilterInput & {
   merchantId: string;
   page?: number;
   limit?: number;
@@ -138,7 +155,13 @@ const TOP_SELLING_PERIOD_MAP: Record<string, TopSellingPeriod> = {
   alltime: "all_time",
 };
 
+const MERCHANT_MANUAL_SEED_SOURCE = "merchant_manual_seed";
+const MERCHANT_MANUAL_SEED_VERSION = 1;
+const ALLOWED_MANUAL_SEED_ENVS = new Set(["development", "staging"]);
+
 const LEGACY_STATUS_VALUES = new Set(["new", "processing", "ready", "delivered", "cancelled"]);
+const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+const APP_TIMEZONE = applicationConfig.timezone || "Africa/Lagos";
 
 const mapValuesFromDict = <T extends string>(
   values: string[] | undefined,
@@ -170,6 +193,120 @@ const resolveAnalyticsRange = (value?: string): AnalyticsRange => {
 const resolveTopSellingPeriod = (value?: string): TopSellingPeriod => {
   if (!value) return "this_week";
   return TOP_SELLING_PERIOD_MAP[toCanonicalValue(value)] || "this_week";
+};
+
+const parseDateOnlyParts = (value: string): { year: number; month: number; day: number } | null => {
+  const match = DATE_ONLY_PATTERN.exec(String(value || "").trim());
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const probe = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    probe.getUTCFullYear() !== year ||
+    probe.getUTCMonth() !== month - 1 ||
+    probe.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return { year, month, day };
+};
+
+const getTimeZoneOffsetMs = (date: Date, timeZone: string): number => {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  });
+
+  const parts = formatter.formatToParts(date).reduce<Record<string, string>>((acc, part) => {
+    if (part.type !== "literal") acc[part.type] = part.value;
+    return acc;
+  }, {});
+
+  const utcTimestamp = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second)
+  );
+
+  return utcTimestamp - date.getTime();
+};
+
+const zonedDateTimeToUtc = (
+  dateParts: { year: number; month: number; day: number },
+  timeParts: { hour: number; minute: number; second: number; millisecond: number },
+  timeZone: string
+): Date => {
+  const utcGuess = Date.UTC(
+    dateParts.year,
+    dateParts.month - 1,
+    dateParts.day,
+    timeParts.hour,
+    timeParts.minute,
+    timeParts.second,
+    timeParts.millisecond
+  );
+
+  const firstOffset = getTimeZoneOffsetMs(new Date(utcGuess), timeZone);
+  let adjustedTimestamp = utcGuess - firstOffset;
+  const secondOffset = getTimeZoneOffsetMs(new Date(adjustedTimestamp), timeZone);
+  if (secondOffset !== firstOffset) {
+    adjustedTimestamp = utcGuess - secondOffset;
+  }
+
+  return new Date(adjustedTimestamp);
+};
+
+const parseBoundaryDate = (value: string, boundary: "start" | "end"): Date => {
+  const dateParts = parseDateOnlyParts(value);
+  if (!dateParts) {
+    throw new HttpException(400, "startDate and endDate must use YYYY-MM-DD format");
+  }
+
+  return zonedDateTimeToUtc(
+    dateParts,
+    boundary === "start"
+      ? { hour: 0, minute: 0, second: 0, millisecond: 0 }
+      : { hour: 23, minute: 59, second: 59, millisecond: 999 },
+    APP_TIMEZONE
+  );
+};
+
+const resolveExplicitDateRange = (
+  startDate?: string,
+  endDate?: string
+): { start: Date; end: Date } | undefined => {
+  const normalizedStartDate = String(startDate || "").trim();
+  const normalizedEndDate = String(endDate || "").trim();
+  const hasStartDate = Boolean(normalizedStartDate);
+  const hasEndDate = Boolean(normalizedEndDate);
+
+  if (hasStartDate !== hasEndDate) {
+    throw new HttpException(400, "startDate and endDate must both be provided");
+  }
+
+  if (!hasStartDate) return undefined;
+
+  const start = parseBoundaryDate(normalizedStartDate, "start");
+  const end = parseBoundaryDate(normalizedEndDate, "end");
+
+  if (start.getTime() > end.getTime()) {
+    throw new HttpException(400, "startDate cannot be after endDate");
+  }
+
+  return { start, end };
 };
 
 const toNumber = (value: unknown): number => {
@@ -241,7 +378,7 @@ const addMonths = (value: Date, amount: number): Date => {
   return result;
 };
 
-const formatBucketKey = (date: Date, granularity: "hour" | "day" | "month"): string => {
+const formatBucketKey = (date: Date, granularity: TimeBucketGranularity): string => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -252,7 +389,7 @@ const formatBucketKey = (date: Date, granularity: "hour" | "day" | "month"): str
   return `${year}-${month}-${day}T${hour}`;
 };
 
-const formatBucketLabel = (date: Date, granularity: "hour" | "day" | "month"): string => {
+const formatBucketLabel = (date: Date, granularity: TimeBucketGranularity): string => {
   if (granularity === "month") {
     return date.toLocaleString("en-US", { month: "short", year: "numeric" });
   }
@@ -262,7 +399,7 @@ const formatBucketLabel = (date: Date, granularity: "hour" | "day" | "month"): s
   return date.toLocaleString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
 };
 
-const getRangeWindow = (range: AnalyticsRange): RangeWindow => {
+const buildPresetRangeWindow = (range: AnalyticsRange): RangeWindow => {
   const now = new Date();
 
   if (range === "12_months") {
@@ -271,6 +408,7 @@ const getRangeWindow = (range: AnalyticsRange): RangeWindow => {
     const previousEnd = new Date(start.getTime() - 1);
     return {
       range,
+      isCustom: false,
       start,
       end: now,
       previousStart,
@@ -286,6 +424,7 @@ const getRangeWindow = (range: AnalyticsRange): RangeWindow => {
     const previousEnd = new Date(start.getTime() - 1);
     return {
       range,
+      isCustom: false,
       start,
       end: now,
       previousStart,
@@ -301,6 +440,7 @@ const getRangeWindow = (range: AnalyticsRange): RangeWindow => {
     const previousEnd = new Date(start.getTime() - 1);
     return {
       range,
+      isCustom: false,
       start,
       end: now,
       previousStart,
@@ -316,6 +456,7 @@ const getRangeWindow = (range: AnalyticsRange): RangeWindow => {
     const previousEnd = new Date(start.getTime() - 1);
     return {
       range,
+      isCustom: false,
       start,
       end: now,
       previousStart,
@@ -330,6 +471,7 @@ const getRangeWindow = (range: AnalyticsRange): RangeWindow => {
   const previousEnd = new Date(start.getTime() - 1);
   return {
     range,
+    isCustom: false,
     start,
     end: now,
     previousStart,
@@ -337,6 +479,64 @@ const getRangeWindow = (range: AnalyticsRange): RangeWindow => {
     bucketCount: 24,
     bucketGranularity: "hour",
   };
+};
+
+const inferCustomBucketSettings = (
+  start: Date,
+  end: Date
+): { bucketCount: number; bucketGranularity: TimeBucketGranularity } => {
+  const hourMs = 60 * 60 * 1000;
+  const dayMs = 24 * hourMs;
+  const durationMs = Math.max(hourMs, end.getTime() - start.getTime() + 1);
+
+  if (durationMs <= dayMs) {
+    return {
+      bucketCount: Math.max(1, Math.ceil(durationMs / hourMs)),
+      bucketGranularity: "hour",
+    };
+  }
+
+  if (durationMs <= 31 * dayMs) {
+    return {
+      bucketCount: Math.max(1, Math.ceil(durationMs / dayMs)),
+      bucketGranularity: "day",
+    };
+  }
+
+  const startMonthIndex = start.getFullYear() * 12 + start.getMonth();
+  const endMonthIndex = end.getFullYear() * 12 + end.getMonth();
+
+  return {
+    bucketCount: Math.max(1, endMonthIndex - startMonthIndex + 1),
+    bucketGranularity: "month",
+  };
+};
+
+const buildCustomRangeWindow = (start: Date, end: Date): RangeWindow => {
+  const durationMs = end.getTime() - start.getTime() + 1;
+  const previousEnd = new Date(start.getTime() - 1);
+  const previousStart = new Date(previousEnd.getTime() - durationMs + 1);
+  const { bucketCount, bucketGranularity } = inferCustomBucketSettings(start, end);
+
+  return {
+    range: "custom",
+    isCustom: true,
+    start,
+    end,
+    previousStart,
+    previousEnd,
+    bucketCount,
+    bucketGranularity,
+  };
+};
+
+const resolveAnalyticsWindow = (filters: DateFilterInput = {}): RangeWindow => {
+  const explicitRange = resolveExplicitDateRange(filters.startDate, filters.endDate);
+  if (explicitRange) {
+    return buildCustomRangeWindow(explicitRange.start, explicitRange.end);
+  }
+
+  return buildPresetRangeWindow(resolveAnalyticsRange(filters.range));
 };
 
 const buildSeriesBuckets = (window: RangeWindow): Array<{ key: string; label: string; date: Date }> => {
@@ -418,6 +618,23 @@ const getDateRange = (range?: string): { start?: Date; end?: Date } => {
   return {};
 };
 
+const resolveOrderFilterWindow = (input: Pick<ListOrderInput, "range" | "startDate" | "endDate" | "dateRange">) => {
+  const explicitRange = resolveExplicitDateRange(input.startDate, input.endDate);
+  if (explicitRange) {
+    return explicitRange;
+  }
+
+  if (input.range) {
+    const analyticsWindow = buildPresetRangeWindow(resolveAnalyticsRange(input.range));
+    return {
+      start: analyticsWindow.start,
+      end: analyticsWindow.end,
+    };
+  }
+
+  return getDateRange(resolveDateRange(input.dateRange));
+};
+
 const getAgeBucketWhere = (bucket?: string) => {
   if (!bucket) return {};
   const now = Date.now();
@@ -478,9 +695,9 @@ const buildWhereClause = (input: ListOrderInput): any => {
     andClauses.push({ status: { [Op.in]: legacyStatuses } });
   }
 
-  const dateRange = getDateRange(resolveDateRange(input.dateRange));
-  if (dateRange.start && dateRange.end) {
-    andClauses.push({ placedAt: { [Op.between]: [dateRange.start, dateRange.end] } });
+  const orderFilterWindow = resolveOrderFilterWindow(input);
+  if (orderFilterWindow.start && orderFilterWindow.end) {
+    andClauses.push({ placedAt: { [Op.between]: [orderFilterWindow.start, orderFilterWindow.end] } });
   }
 
   const ageBucketWhere = getAgeBucketWhere(resolveAgeBucket(input.ageBucket));
@@ -528,7 +745,385 @@ const fetchAnalyticsOrders = async (merchantId: string, start: Date, end: Date):
   return rows as AnalyticsOrderRow[];
 };
 
+const buildFilterSummary = (window: RangeWindow) => ({
+  range: window.isCustom ? null : window.range,
+  isCustom: window.isCustom,
+  startAt: window.start.toISOString(),
+  endAt: window.end.toISOString(),
+  previousStartAt: window.previousStart.toISOString(),
+  previousEndAt: window.previousEnd.toISOString(),
+});
+
+const resolveLegacyStatusFromDeliveryStatus = (deliveryStatus: DeliveryStatus): LegacyOrderStatus => {
+  if (deliveryStatus === "delivered") return "delivered";
+  if (deliveryStatus === "cancelled") return "cancelled";
+  if (deliveryStatus === "picked_up" || deliveryStatus === "in_transit") return "ready";
+  if (deliveryStatus === "pending") return "processing";
+  return "new";
+};
+
+const createSeedDate = (daysAgo: number, hour: number, minute = 0): Date => {
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+  date.setHours(hour, minute, 0, 0);
+  return date;
+};
+
+const addDaysToDate = (date: Date, days: number): Date => {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+};
+
+const toDateOnly = (date: Date): string => date.toISOString().slice(0, 10);
+
+const buildSeedProducts = async (merchantId: string, transaction: Transaction): Promise<Product[]> => {
+  const sampleProducts = [
+    {
+      merchantId,
+      name: "Paracetamol 500mg Tablets",
+      description: "Pain relief tablet pack for quick merchant order demos.",
+      category: "Pain Relief",
+      brand: "Emzor",
+      sku: `SEED-PARA-${merchantId.slice(0, 8)}`,
+      price: 2500,
+      vat: 187.5,
+      discountPercentage: 0,
+      minQuantity: 1,
+      maxQuantity: 10,
+      inventory: 40,
+      status: ProductStatus.IN_STOCK,
+      images: [
+        {
+          url: "https://example.com/products/seed-paracetamol.png",
+          order: 1,
+          isMain: true,
+        },
+      ],
+      isActive: true,
+      requiresPrescription: false,
+    },
+    {
+      merchantId,
+      name: "Amoxicillin 500mg Capsules",
+      description: "Prescription antibiotic sample product for seeded drugstore orders.",
+      category: "Antibiotics",
+      brand: "M&G",
+      sku: `SEED-AMOX-${merchantId.slice(0, 8)}`,
+      price: 7200,
+      vat: 540,
+      discountPercentage: 5,
+      minQuantity: 1,
+      maxQuantity: 5,
+      inventory: 18,
+      status: ProductStatus.IN_STOCK,
+      images: [
+        {
+          url: "https://example.com/products/seed-amoxicillin.png",
+          order: 1,
+          isMain: true,
+        },
+      ],
+      isActive: true,
+      requiresPrescription: true,
+    },
+    {
+      merchantId,
+      name: "Vitamin C 1000mg",
+      description: "Supplement sample product used for seeded merchant order rows.",
+      category: "Vitamins & Nutrition",
+      brand: "Nature Made",
+      sku: `SEED-VITC-${merchantId.slice(0, 8)}`,
+      price: 4800,
+      vat: 360,
+      discountPercentage: 10,
+      minQuantity: 1,
+      maxQuantity: 8,
+      inventory: 12,
+      status: ProductStatus.LOW_STOCK,
+      images: [
+        {
+          url: "https://example.com/products/seed-vitamin-c.png",
+          order: 1,
+          isMain: true,
+        },
+      ],
+      isActive: true,
+      requiresPrescription: false,
+    },
+  ];
+
+  return Product.bulkCreate(sampleProducts as any, {
+    transaction,
+    returning: true,
+  });
+};
+
 export class DrugstoreOrderService {
+  static async seedMerchantOrders(merchantId: string) {
+    const nodeEnv = String(applicationConfig.nodeEnv || "development").trim().toLowerCase();
+    if (!ALLOWED_MANUAL_SEED_ENVS.has(nodeEnv)) {
+      throw new HttpException(403, "Drugstore order seed is only available in development and staging");
+    }
+
+    const existingSeed = await DrugstoreOrder.findOne({
+      where: {
+        merchantId,
+        metadata: {
+          [Op.contains]: {
+            seedSource: MERCHANT_MANUAL_SEED_SOURCE,
+            seedVersion: MERCHANT_MANUAL_SEED_VERSION,
+          },
+        },
+      } as any,
+    });
+
+    if (existingSeed) {
+      throw new HttpException(409, "Sample merchant orders have already been seeded for this account");
+    }
+
+    const sequelize = DrugstoreOrder.sequelize;
+    if (!sequelize) {
+      throw new HttpException(500, "Database not initialized");
+    }
+
+    return sequelize.transaction(async (transaction) => {
+      let products = await Product.findAll({
+        where: {
+          merchantId,
+          isActive: true,
+        },
+        order: [["createdAt", "ASC"]],
+        limit: 3,
+        transaction,
+      });
+
+      let productsCreated = 0;
+      if (products.length === 0) {
+        products = await buildSeedProducts(merchantId, transaction);
+        productsCreated = products.length;
+      }
+
+      const primaryProduct = products[0];
+      const secondaryProduct = products[1] || primaryProduct;
+      const tertiaryProduct = products[2] || secondaryProduct || primaryProduct;
+
+      const orderBlueprints = [
+        {
+          recipientName: "Tamara Ike",
+          recipientPhone: "08055713517",
+          sourceUserId: 4101,
+          sourceUserRole: "consumer" as const,
+          paymentStatus: "paid" as PaymentStatus,
+          deliveryStatus: "pending" as DeliveryStatus,
+          placedAt: createSeedDate(0, 9, 15),
+          deliveryFee: 700,
+          deliveryTimeSlot: "09:00AM - 10:00AM",
+          note: "Awaiting pharmacist confirmation.",
+          items: [
+            { product: primaryProduct, quantity: 1 },
+            { product: secondaryProduct, quantity: 1 },
+          ],
+        },
+        {
+          recipientName: "Kunle Bamidele",
+          recipientPhone: "08030001122",
+          sourceUserId: 4102,
+          sourceUserRole: "consumer" as const,
+          paymentStatus: "pending" as PaymentStatus,
+          deliveryStatus: "pending" as DeliveryStatus,
+          placedAt: createSeedDate(0, 14, 5),
+          deliveryFee: 900,
+          deliveryTimeSlot: "02:00PM - 04:00PM",
+          note: "Payment is still pending confirmation.",
+          items: [{ product: tertiaryProduct, quantity: 2 }],
+        },
+        {
+          recipientName: "Chiamaka Udeh",
+          recipientPhone: "08120006789",
+          sourceUserId: 4103,
+          sourceUserRole: "doctor" as const,
+          paymentStatus: "paid" as PaymentStatus,
+          deliveryStatus: "picked_up" as DeliveryStatus,
+          placedAt: createSeedDate(1, 11, 20),
+          deliveryFee: 600,
+          deliveryTimeSlot: "11:00AM - 01:00PM",
+          note: "Rider picked up from the pharmacy.",
+          items: [{ product: secondaryProduct, quantity: 1 }],
+        },
+        {
+          recipientName: "Femi Akinola",
+          recipientPhone: "07045556677",
+          sourceUserId: 4104,
+          sourceUserRole: "consumer" as const,
+          paymentStatus: "paid" as PaymentStatus,
+          deliveryStatus: "in_transit" as DeliveryStatus,
+          placedAt: createSeedDate(3, 16, 40),
+          deliveryFee: 750,
+          deliveryTimeSlot: "04:00PM - 06:00PM",
+          note: "Dispatch rider is on the way.",
+          items: [
+            { product: primaryProduct, quantity: 2 },
+            { product: tertiaryProduct, quantity: 1 },
+          ],
+        },
+        {
+          recipientName: "Aisha Lawal",
+          recipientPhone: "08094445566",
+          sourceUserId: 4105,
+          sourceUserRole: "consumer" as const,
+          paymentStatus: "failed" as PaymentStatus,
+          deliveryStatus: "cancelled" as DeliveryStatus,
+          placedAt: createSeedDate(6, 10, 10),
+          deliveryFee: 500,
+          deliveryTimeSlot: "10:00AM - 12:00PM",
+          note: "Payment failure cancelled the order.",
+          items: [{ product: primaryProduct, quantity: 1 }],
+        },
+        {
+          recipientName: "Bola Ojo",
+          recipientPhone: "09051234567",
+          sourceUserId: 4106,
+          sourceUserRole: "doctor" as const,
+          paymentStatus: "paid" as PaymentStatus,
+          deliveryStatus: "delivered" as DeliveryStatus,
+          placedAt: createSeedDate(14, 13, 30),
+          deliveryFee: 800,
+          deliveryTimeSlot: "01:00PM - 03:00PM",
+          note: "Delivered successfully within the last 30 days.",
+          items: [
+            { product: secondaryProduct, quantity: 1 },
+            { product: tertiaryProduct, quantity: 1 },
+          ],
+        },
+        {
+          recipientName: "Ngozi Eze",
+          recipientPhone: "08135558899",
+          sourceUserId: 4107,
+          sourceUserRole: "consumer" as const,
+          paymentStatus: "paid" as PaymentStatus,
+          deliveryStatus: "delivered" as DeliveryStatus,
+          placedAt: createSeedDate(35, 8, 45),
+          deliveryFee: 650,
+          deliveryTimeSlot: "08:00AM - 10:00AM",
+          note: "Delivered outside the 30-day window for custom date filter checks.",
+          items: [{ product: tertiaryProduct, quantity: 3 }],
+        },
+      ];
+
+      const sampleOrderIds: string[] = [];
+
+      for (const [index, blueprint] of orderBlueprints.entries()) {
+        const builtItems = blueprint.items.map(({ product, quantity }) => {
+          const unitPriceSnapshot = roundMoney(toNumber(product.price));
+          const vatSnapshot = roundMoney(toNumber(product.vat));
+          const discountPercentageSnapshot = roundMoney(toNumber(product.discountPercentage));
+          const lineSubtotal = roundMoney(unitPriceSnapshot * quantity);
+          const lineVatTotal = roundMoney(vatSnapshot * quantity);
+          const lineDiscountTotal = roundMoney((lineSubtotal * discountPercentageSnapshot) / 100);
+          const lineTotal = roundMoney(lineSubtotal + lineVatTotal - lineDiscountTotal);
+
+          return {
+            merchantProductId: product.id,
+            skuSnapshot: product.sku || null,
+            productNameSnapshot: product.name,
+            descriptionSnapshot: product.description || null,
+            brandSnapshot: product.brand || null,
+            categorySnapshot: product.category || null,
+            imageUrlSnapshot: product.mainImage || null,
+            unitPriceSnapshot,
+            vatSnapshot,
+            discountPercentageSnapshot,
+            requiresPrescriptionSnapshot: Boolean(product.requiresPrescription),
+            quantity,
+            lineSubtotal,
+            lineVatTotal,
+            lineDiscountTotal,
+            lineTotal,
+          };
+        });
+
+        const subtotal = roundMoney(builtItems.reduce((sum, item) => sum + item.lineSubtotal, 0));
+        const vatTotal = roundMoney(builtItems.reduce((sum, item) => sum + item.lineVatTotal, 0));
+        const discountTotal = roundMoney(
+          builtItems.reduce((sum, item) => sum + item.lineDiscountTotal, 0)
+        );
+        const totalAmount = roundMoney(subtotal + vatTotal - discountTotal + blueprint.deliveryFee);
+        const paymentVerifiedAt =
+          blueprint.paymentStatus === "paid"
+            ? new Date(blueprint.placedAt.getTime() + 30 * 60 * 1000)
+            : blueprint.placedAt;
+        const sourceOrderId = randomUUID();
+        const sourceSyncKey = `merchant-seed-${merchantId}-${index + 1}-${randomUUID()}`;
+        const paymentReference = `seed-pay-${merchantId.slice(0, 8)}-${index + 1}-${Date.now()}`;
+        const deliveryDate = toDateOnly(addDaysToDate(blueprint.placedAt, 1));
+
+        const order = await DrugstoreOrder.create(
+          {
+            merchantId,
+            sourceOrderId,
+            sourceSyncKey,
+            paymentReference,
+            sourceUserId: blueprint.sourceUserId,
+            sourceUserRole: blueprint.sourceUserRole,
+            paymentVerifiedAt,
+            paymentStatus: blueprint.paymentStatus,
+            deliveryStatus: blueprint.deliveryStatus,
+            placedAt: blueprint.placedAt,
+            subtotal,
+            vatTotal,
+            discountTotal,
+            deliveryFee: blueprint.deliveryFee,
+            totalAmount,
+            currency: "NGN",
+            discountCode: null,
+            discountId: null,
+            recipientName: blueprint.recipientName,
+            recipientPhone: blueprint.recipientPhone,
+            addressLine1: `${index + 6} Solaru Street`,
+            addressLine2: "Soluyi, Gbagada",
+            city: "Lagos",
+            state: "Lagos",
+            landmark: "Near the junction",
+            deliveryNote: blueprint.note,
+            deliveryDate,
+            deliveryTimeSlot: blueprint.deliveryTimeSlot,
+            status: resolveLegacyStatusFromDeliveryStatus(blueprint.deliveryStatus),
+            metadata: {
+              seedSource: MERCHANT_MANUAL_SEED_SOURCE,
+              seedVersion: MERCHANT_MANUAL_SEED_VERSION,
+              seedLabel: `sample-order-${index + 1}`,
+              seededAt: new Date().toISOString(),
+              seededByMerchantId: merchantId,
+              placedAt: blueprint.placedAt.toISOString(),
+            },
+            createdAt: blueprint.placedAt,
+            updatedAt: blueprint.placedAt,
+          },
+          { transaction }
+        );
+
+        await DrugstoreOrderItem.bulkCreate(
+          builtItems.map((item) => ({
+            orderId: order.id,
+            ...item,
+          })) as any,
+          { transaction }
+        );
+
+        sampleOrderIds.push(order.id);
+      }
+
+      return {
+        merchantId,
+        seeded: true,
+        productsCreated,
+        ordersCreated: sampleOrderIds.length,
+        sampleOrderIds,
+      };
+    });
+  }
+
   static async listOrders(input: ListOrderInput) {
     const page = Math.max(1, Number(input.page || 1));
     const limit = Math.max(1, Math.min(100, Number(input.limit || 20)));
@@ -662,9 +1257,8 @@ export class DrugstoreOrderService {
     return order;
   }
 
-  static async getAnalyticsKpis(merchantId: string, rangeValue?: string) {
-    const range = resolveAnalyticsRange(rangeValue);
-    const window = getRangeWindow(range);
+  static async getAnalyticsKpis(merchantId: string, filters: DateFilterInput = {}) {
+    const window = resolveAnalyticsWindow(filters);
 
     const [currentOrders, previousOrders, currentProducts, previousProducts] = await Promise.all([
       fetchAnalyticsOrders(merchantId, window.start, window.end),
@@ -707,13 +1301,8 @@ export class DrugstoreOrderService {
     const previousTotalOrders = previousOrders.length;
 
     return {
-      range,
-      timeWindow: {
-        startAt: window.start.toISOString(),
-        endAt: window.end.toISOString(),
-        previousStartAt: window.previousStart.toISOString(),
-        previousEndAt: window.previousEnd.toISOString(),
-      },
+      range: window.range,
+      timeWindow: buildFilterSummary(window),
       commissionRate,
       metrics: {
         totalEarned: {
@@ -736,9 +1325,8 @@ export class DrugstoreOrderService {
     };
   }
 
-  static async getAnalyticsSalesSeries(merchantId: string, rangeValue?: string) {
-    const range = resolveAnalyticsRange(rangeValue);
-    const window = getRangeWindow(range);
+  static async getAnalyticsSalesSeries(merchantId: string, filters: DateFilterInput = {}) {
+    const window = resolveAnalyticsWindow(filters);
     const rows = await fetchAnalyticsOrders(merchantId, window.start, window.end);
 
     const buckets = buildSeriesBuckets(window);
@@ -783,10 +1371,9 @@ export class DrugstoreOrderService {
     });
 
     return {
-      range,
+      range: window.range,
       timeWindow: {
-        startAt: window.start.toISOString(),
-        endAt: window.end.toISOString(),
+        ...buildFilterSummary(window),
       },
       series,
       totals: {
@@ -802,9 +1389,8 @@ export class DrugstoreOrderService {
     };
   }
 
-  static async getAnalyticsOrderBreakdown(merchantId: string, rangeValue?: string) {
-    const range = resolveAnalyticsRange(rangeValue);
-    const window = getRangeWindow(range);
+  static async getAnalyticsOrderBreakdown(merchantId: string, filters: DateFilterInput = {}) {
+    const window = resolveAnalyticsWindow(filters);
     const rows = await fetchAnalyticsOrders(merchantId, window.start, window.end);
 
     const counts = {
@@ -826,10 +1412,9 @@ export class DrugstoreOrderService {
     };
 
     return {
-      range,
+      range: window.range,
       timeWindow: {
-        startAt: window.start.toISOString(),
-        endAt: window.end.toISOString(),
+        ...buildFilterSummary(window),
       },
       totalOrders: rows.length,
       trackedTotal,
@@ -842,9 +1427,17 @@ export class DrugstoreOrderService {
     };
   }
 
-  static async getAnalyticsTopSellingProducts(merchantId: string, periodValue?: string, limitValue?: number) {
-    const period = resolveTopSellingPeriod(periodValue);
-    const window = getTopSellingWindow(period);
+  static async getAnalyticsTopSellingProducts(
+    merchantId: string,
+    filters: TopSellingInput = {},
+    limitValue?: number
+  ) {
+    const explicitRange = resolveExplicitDateRange(filters.startDate, filters.endDate);
+    const analyticsWindow = explicitRange || filters.range ? resolveAnalyticsWindow(filters) : null;
+    const period = analyticsWindow ? null : resolveTopSellingPeriod(filters.period);
+    const window = analyticsWindow
+      ? { start: analyticsWindow.start, end: analyticsWindow.end }
+      : getTopSellingWindow(period!);
     const limit = Math.max(1, Math.min(50, Number(limitValue || 5)));
 
     const orderWhere: any = { merchantId };
@@ -922,6 +1515,7 @@ export class DrugstoreOrderService {
 
     return {
       period,
+      range: analyticsWindow?.range || null,
       startAt: window.start ? window.start.toISOString() : null,
       endAt: window.end ? window.end.toISOString() : null,
       items,
@@ -930,12 +1524,11 @@ export class DrugstoreOrderService {
 
   static async getAnalyticsRecentProductSales(
     merchantId: string,
-    rangeValue?: string,
+    filters: DateFilterInput = {},
     pageValue?: number,
     limitValue?: number
   ) {
-    const range = resolveAnalyticsRange(rangeValue);
-    const window = getRangeWindow(range);
+    const window = resolveAnalyticsWindow(filters);
     const page = Math.max(1, Number(pageValue || 1));
     const limit = Math.max(1, Math.min(100, Number(limitValue || 20)));
     const offset = (page - 1) * limit;
@@ -979,10 +1572,9 @@ export class DrugstoreOrderService {
     const total = Number(count);
 
     return {
-      range,
+      range: window.range,
       timeWindow: {
-        startAt: window.start.toISOString(),
-        endAt: window.end.toISOString(),
+        ...buildFilterSummary(window),
       },
       items,
       pagination: {
@@ -991,6 +1583,26 @@ export class DrugstoreOrderService {
         limit,
         totalPages: Math.ceil(total / limit),
       },
+    };
+  }
+
+  static async getDashboard(merchantId: string, filters: DateFilterInput = {}) {
+    const window = resolveAnalyticsWindow(filters);
+    const [kpis, salesTrend, orderBreakdown, topSellingProducts, recentProductSales] = await Promise.all([
+      this.getAnalyticsKpis(merchantId, filters),
+      this.getAnalyticsSalesSeries(merchantId, filters),
+      this.getAnalyticsOrderBreakdown(merchantId, filters),
+      this.getAnalyticsTopSellingProducts(merchantId, filters, 5),
+      this.getAnalyticsRecentProductSales(merchantId, filters, 1, 5),
+    ]);
+
+    return {
+      filters: buildFilterSummary(window),
+      kpis: kpis.metrics,
+      salesTrend,
+      orderBreakdown,
+      topSellingProducts,
+      recentProductSales,
     };
   }
 }

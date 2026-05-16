@@ -28,11 +28,18 @@ const getMerchantId = (req: Request): string => {
   return merchantId;
 };
 
+const getDateFilters = (req: Request) => ({
+  range: req.query.range ? String(req.query.range) : undefined,
+  startDate: req.query.startDate ? String(req.query.startDate) : undefined,
+  endDate: req.query.endDate ? String(req.query.endDate) : undefined,
+});
+
 export const listDrugstoreOrders = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const merchantId = getMerchantId(req);
     const data = await DrugstoreOrderService.listOrders({
       merchantId,
+      ...getDateFilters(req),
       page: Number(req.query.page || 1),
       limit: Number(req.query.limit || 20),
       status: req.query.status as string | string[] | undefined,
@@ -55,11 +62,29 @@ export const listDrugstoreOrders = async (req: Request, res: Response, next: Nex
   }
 };
 
+export const seedDrugstoreOrders = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const merchantId = getMerchantId(req);
+    const data = await DrugstoreOrderService.seedMerchantOrders(merchantId);
+
+    res.status(200);
+    res.response = {
+      statusCode: 200,
+      message: "Drugstore sample orders seeded successfully",
+      data,
+    };
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const exportDrugstoreOrdersCsv = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const merchantId = getMerchantId(req);
     const csv = await DrugstoreOrderService.exportOrdersCsv({
       merchantId,
+      ...getDateFilters(req),
       status: req.query.status as string | string[] | undefined,
       paymentStatus: parseQueryArray(req.query.paymentStatus),
       deliveryStatus: parseQueryArray(req.query.deliveryStatus),
@@ -138,10 +163,27 @@ export const updateDrugstoreOrderStatus = async (req: Request, res: Response, ne
   }
 };
 
+export const getDrugstoreOrdersDashboard = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const merchantId = getMerchantId(req);
+    const data = await DrugstoreOrderService.getDashboard(merchantId, getDateFilters(req));
+
+    res.status(200);
+    res.response = {
+      statusCode: 200,
+      message: "Drugstore dashboard retrieved successfully",
+      data,
+    };
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const getDrugstoreOrderAnalyticsKpis = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const merchantId = getMerchantId(req);
-    const data = await DrugstoreOrderService.getAnalyticsKpis(merchantId, req.query.range as string | undefined);
+    const data = await DrugstoreOrderService.getAnalyticsKpis(merchantId, getDateFilters(req));
 
     res.status(200);
     res.response = {
@@ -158,10 +200,7 @@ export const getDrugstoreOrderAnalyticsKpis = async (req: Request, res: Response
 export const getDrugstoreOrderAnalyticsSales = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const merchantId = getMerchantId(req);
-    const data = await DrugstoreOrderService.getAnalyticsSalesSeries(
-      merchantId,
-      req.query.range as string | undefined
-    );
+    const data = await DrugstoreOrderService.getAnalyticsSalesSeries(merchantId, getDateFilters(req));
 
     res.status(200);
     res.response = {
@@ -182,10 +221,7 @@ export const getDrugstoreOrderAnalyticsOrderBreakdown = async (
 ) => {
   try {
     const merchantId = getMerchantId(req);
-    const data = await DrugstoreOrderService.getAnalyticsOrderBreakdown(
-      merchantId,
-      req.query.range as string | undefined
-    );
+    const data = await DrugstoreOrderService.getAnalyticsOrderBreakdown(merchantId, getDateFilters(req));
 
     res.status(200);
     res.response = {
@@ -208,7 +244,10 @@ export const getDrugstoreOrderAnalyticsTopSellingProducts = async (
     const merchantId = getMerchantId(req);
     const data = await DrugstoreOrderService.getAnalyticsTopSellingProducts(
       merchantId,
-      req.query.period as string | undefined,
+      {
+        ...getDateFilters(req),
+        period: req.query.period ? String(req.query.period) : undefined,
+      },
       Number(req.query.limit || 5)
     );
 
@@ -233,7 +272,7 @@ export const getDrugstoreOrderAnalyticsRecentProductSales = async (
     const merchantId = getMerchantId(req);
     const data = await DrugstoreOrderService.getAnalyticsRecentProductSales(
       merchantId,
-      req.query.range as string | undefined,
+      getDateFilters(req),
       Number(req.query.page || 1),
       Number(req.query.limit || 20)
     );
