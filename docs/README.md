@@ -2,5 +2,7 @@
 
 - [Monorepo Architecture](./monorepo-architecture.md)
 - [experience_1 Current State](./experience_1-current-state.md)
-- [experience_1 Auth Postman Checklist](./postman/experience_1/experience1-auth-postman-checklist.md)
-- [Merchant Subscription Postman Collection](./postman/merchant/Meditech_Merchant_Subscription.postman_collection.json)
+- [experience_1 Postman Collection](./postman/experience_1/meditech-experience1.postman_collection.json)
+- [experience_1 Postman Environment](./postman/experience_1/meditech-experience1.postman_environment.json)
+- [Merchant Postman Collection](./postman/merchant/meditech-merchant.postman_collection.json)
+- [Merchant Postman Environment](./postman/merchant/meditech-merchant.postman_environment.json)

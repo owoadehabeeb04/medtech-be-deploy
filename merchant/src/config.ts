@@ -1,8 +1,16 @@
 import * as dotenv from "dotenv";
+import * as fs from "fs";
 import * as path from "path";
 
-// Load environment variables from .env file
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
+const envCandidates = [
+  path.resolve(process.cwd(), "merchant/.env"),
+  path.resolve(process.cwd(), ".env"),
+  path.resolve(__dirname, "../../.env"),
+  path.resolve(__dirname, "../.env"),
+];
+
+const envPath = envCandidates.find((candidate) => fs.existsSync(candidate));
+dotenv.config(envPath ? { path: envPath } : undefined);
 
 const parsedDrugstoreCommissionRate = Number(
   process.env.DRUGSTORE_ANALYTICS_COMMISSION_RATE || "0.1"

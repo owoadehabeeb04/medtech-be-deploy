@@ -6,8 +6,10 @@ Contains isolated domains (merchant backend, experience_1 backend or service, sh
 ## Documentation
 
 - [Monorepo architecture](./docs/monorepo-architecture.md)
-- [experience_1 auth Postman checklist](./docs/postman/experience_1/experience1-auth-postman-checklist.md)
-- [Merchant subscription Postman collection](./docs/postman/merchant/Meditech_Merchant_Subscription.postman_collection.json)
+- [experience_1 Postman collection](./docs/postman/experience_1/meditech-experience1.postman_collection.json)
+- [experience_1 Postman environment](./docs/postman/experience_1/meditech-experience1.postman_environment.json)
+- [Merchant Postman collection](./docs/postman/merchant/meditech-merchant.postman_collection.json)
+- [Merchant Postman environment](./docs/postman/merchant/meditech-merchant.postman_environment.json)
 
 ## Project Structure
 
