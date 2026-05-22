@@ -5,6 +5,7 @@ import { Subscription } from "./Subscription.model";
 import { ScheduledPlanChange } from "./ScheduledPlanChange.model";
 import { Transaction } from "../transactions/Transaction.model";
 import { Wallet } from "../wallet/Wallet.model";
+import { WalletService } from "../wallet/Wallet.service";
 import { Merchant } from "../merchant/Merchant.model";
 import { PaystackService } from "../../service/Paystack/Paystack.service";
 import { applicationConfig } from "../../config";
@@ -613,6 +614,11 @@ export class SubscriptionService {
         break;
       case "invoice.payment_failed":
         await this.handlePaymentFailed(data);
+        break;
+      case "transfer.success":
+      case "transfer.failed":
+      case "transfer.reversed":
+        await WalletService.handleTransferWebhook(event, data);
         break;
       default:
         break;

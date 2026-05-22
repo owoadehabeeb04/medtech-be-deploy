@@ -13,6 +13,27 @@ export const fundWalletSchema = Joi.object({
     }),
 });
 
+export const withdrawWalletSchema = Joi.object({
+  amount: Joi.number()
+    .integer()
+    .min(100)
+    .required()
+    .messages({
+      "number.base": "Amount must be a number",
+      "number.integer": "Withdrawal amount must be a whole number (in Naira)",
+      "number.min": "Minimum withdrawal amount is ₦100",
+      "any.required": "Amount is required. Enter how much you'd like to withdraw.",
+    }),
+  reason: Joi.string()
+    .trim()
+    .max(150)
+    .allow("")
+    .optional()
+    .messages({
+      "string.max": "Withdrawal narration cannot exceed 150 characters",
+    }),
+});
+
 export const confirmFundingSchema = Joi.object({
   reference: Joi.string().trim().required().messages({
     "any.required": "Payment reference is required to verify your wallet funding.",
