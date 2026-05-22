@@ -2169,9 +2169,9 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 2500,\n  \"reason\": \"Weekly payout to store account\"\n}"
+              "raw": "{\n  \"amount\": 2500\n}"
             },
-            "description": "Withdraw money from wallet to the merchant's verified bank account.\n\n**Amount is in Naira** (minimum ₦100).\n\nRequirements:\n- Merchant must have verified payout bank details in **Settings → Payment**\n- Wallet must have enough balance\n\nResponse may be:\n- `success`: wallet was debited and payout completed immediately\n- `pending`: wallet was debited and payout is queued; final outcome is reconciled by Paystack webhook events\n\nIf Paystack transfer OTP is enabled on the business account, this request will fail until OTP requirement is disabled or a finalize-OTP flow is added."
+            "description": "Withdraw money from wallet to the merchant's verified bank account.\n\n**Amount is in Naira** (minimum ₦100).\n\n`reason` is optional. If omitted, the backend uses a default narration.\n\nRequirements:\n- Merchant must have verified payout bank details in **Settings → Payment**\n- Wallet must have enough balance\n\nResponse may be:\n- `success`: wallet was debited and payout completed immediately\n- `pending`: wallet was debited and payout is queued; final outcome is reconciled by Paystack webhook events\n\nIf Paystack transfer OTP is enabled on the business account, this request will fail until OTP requirement is disabled or a finalize-OTP flow is added."
           }
         },
         {
