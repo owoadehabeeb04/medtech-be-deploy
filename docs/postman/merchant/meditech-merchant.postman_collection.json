@@ -33,6 +33,10 @@
     {
       "key": "fundingReference",
       "value": ""
+    },
+    {
+      "key": "withdrawalReference",
+      "value": ""
     }
   ],
   "auth": {
@@ -2062,7 +2066,7 @@
     },
     {
       "name": "Wallet",
-      "description": "Wallet balance, funding, and transaction-history flows.",
+      "description": "Wallet balance, funding, withdrawal, and transaction-history flows.",
       "item": [
         {
           "name": "Get Wallet",
@@ -2126,6 +2130,51 @@
           }
         },
         {
+          "name": "Withdraw Wallet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.reference) {",
+                  "    pm.collectionVariables.set('withdrawalReference', res.data.reference);",
+                  "    console.log('✅ Withdrawal reference saved: ' + res.data.reference);",
+                  "}",
+                  "if (res.data && res.data.transferCode) {",
+                  "    console.log('🏦 Transfer code: ' + res.data.transferCode);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wallet/withdraw",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wallet",
+                "withdraw"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 2500,\n  \"reason\": \"Weekly payout to store account\"\n}"
+            },
+            "description": "Withdraw money from wallet to the merchant's verified bank account.\n\n**Amount is in Naira** (minimum ₦100).\n\nRequirements:\n- Merchant must have verified payout bank details in **Settings → Payment**\n- Wallet must have enough balance\n\nResponse may be:\n- `success`: wallet was debited and payout completed immediately\n- `pending`: wallet was debited and payout is queued; final outcome is reconciled by Paystack webhook events\n\nIf Paystack transfer OTP is enabled on the business account, this request will fail until OTP requirement is disabled or a finalize-OTP flow is added."
+          }
+        },
+        {
           "name": "Confirm Funding",
           "request": {
             "method": "POST",
@@ -2184,7 +2233,7 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/wallet/transactions?page=1&limit=20&type=subscription_payment&status=success",
+              "raw": "{{baseUrl}}/wallet/transactions?page=1&limit=20&type=wallet_debit&status=success",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -2203,7 +2252,7 @@
                 },
                 {
                   "key": "type",
-                  "value": "subscription_payment"
+                  "value": "wallet_debit"
                 },
                 {
                   "key": "status",
@@ -2211,7 +2260,7 @@
                 }
               ]
             },
-            "description": "Get transactions filtered by type and status."
+            "description": "Get transactions filtered by type and status.\n\nThis example is useful for checking withdrawal records after calling **Withdraw Wallet**."
           }
         }
       ]
