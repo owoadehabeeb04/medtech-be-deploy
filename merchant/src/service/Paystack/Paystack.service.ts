@@ -44,6 +44,26 @@ interface VerifyTransactionResult {
   metadata: Record<string, any>;
 }
 
+interface TransferRecipientResult {
+  recipientCode: string;
+  name: string;
+  active: boolean;
+  details: {
+    accountNumber: string | null;
+    bankCode: string | null;
+    bankName: string | null;
+  };
+}
+
+interface InitiateTransferResult {
+  status: string;
+  reference: string;
+  transferCode: string;
+  amount: number;
+  currency: string;
+  reason: string | null;
+}
+
 interface PaystackCustomer {
   customerCode: string;
   email: string;
@@ -341,6 +361,98 @@ export class PaystackService {
       throw new Error("Transaction verification failed");
     } catch (error: any) {
       const msg = error.response?.data?.message || error.message || "Transaction verification failed";
+      throw new Error(msg);
+    }
+  }
+
+  /**
+   * Create or retrieve a transfer recipient for payouts
+   */
+  static async createTransferRecipient(params: {
+    name: string;
+    accountNumber: string;
+    bankCode: string;
+    description?: string;
+  }): Promise<TransferRecipientResult> {
+    try {
+      const response = await axios.post(
+        `${this.BASE_URL}/transferrecipient`,
+        {
+          type: "nuban",
+          name: params.name,
+          account_number: params.accountNumber,
+          bank_code: params.bankCode,
+          currency: "NGN",
+          description: params.description,
+        },
+        { headers: this.getHeaders() }
+      );
+
+      if (response.data.status && response.data.data) {
+        const recipient = response.data.data;
+        return {
+          recipientCode: recipient.recipient_code,
+          name: recipient.name,
+          active: Boolean(recipient.active),
+          details: {
+            accountNumber: recipient.details?.account_number || null,
+            bankCode: recipient.details?.bank_code || null,
+            bankName: recipient.details?.bank_name || null,
+          },
+        };
+      }
+
+      throw new Error("Failed to create transfer recipient");
+    } catch (error: any) {
+      const msg =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to create transfer recipient";
+      throw new Error(msg);
+    }
+  }
+
+  /**
+   * Initiate a transfer from your Paystack balance to a recipient
+   */
+  static async initiateTransfer(params: {
+    recipientCode: string;
+    amount: number;
+    reference: string;
+    reason?: string;
+  }): Promise<InitiateTransferResult> {
+    try {
+      const response = await axios.post(
+        `${this.BASE_URL}/transfer`,
+        {
+          source: "balance",
+          amount: params.amount,
+          recipient: params.recipientCode,
+          reference: params.reference,
+          reason: params.reason,
+          currency: "NGN",
+        },
+        { headers: this.getHeaders() }
+      );
+
+      if (response.data.status && response.data.data) {
+        const transfer = response.data.data;
+        return {
+          status: transfer.status,
+          reference: transfer.reference,
+          transferCode: transfer.transfer_code,
+          amount: transfer.amount,
+          currency: transfer.currency,
+          reason: transfer.reason || null,
+        };
+      }
+
+      throw new Error("Failed to initiate transfer");
+    } catch (error: any) {
+      const msg =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to initiate transfer";
       throw new Error(msg);
     }
   }
