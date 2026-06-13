@@ -6,6 +6,7 @@ import {
 	Default,
 	ForeignKey,
 	Model,
+	PrimaryKey,
 	Table,
 } from "sequelize-typescript";
 import { DrugstoreOrder } from "./DrugstoreOrder.model";
@@ -16,6 +17,7 @@ import { DrugstoreOrder } from "./DrugstoreOrder.model";
 	indexes: [{ fields: ["order_id"] }, { fields: ["merchant_id"] }, { fields: ["merchant_product_id"] }],
 })
 export class DrugstoreOrderItem extends Model<DrugstoreOrderItem> {
+	@PrimaryKey
 	@Default(DataType.UUIDV4)
 	@Column(DataType.UUID)
 	declare id: string;
