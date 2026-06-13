@@ -6,6 +6,7 @@ import {
 	Default,
 	ForeignKey,
 	Model,
+	PrimaryKey,
 	Table,
 } from "sequelize-typescript";
 import { User } from "../users/User.model";
@@ -16,6 +17,7 @@ import { User } from "../users/User.model";
 	indexes: [{ fields: ["user_id"] }, { fields: ["user_id", "is_default"] }],
 })
 export class DrugstoreAddress extends Model<DrugstoreAddress> {
+	@PrimaryKey
 	@Default(DataType.UUIDV4)
 	@Column(DataType.UUID)
 	declare id: string;

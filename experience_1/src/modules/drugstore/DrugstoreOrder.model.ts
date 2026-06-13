@@ -7,6 +7,7 @@ import {
 	ForeignKey,
 	HasMany,
 	Model,
+	PrimaryKey,
 	Table,
 	Unique,
 } from "sequelize-typescript";
@@ -30,6 +31,7 @@ import { DrugstorePrescription } from "./DrugstorePrescription.model";
 	],
 })
 export class DrugstoreOrder extends Model<DrugstoreOrder> {
+	@PrimaryKey
 	@Default(DataType.UUIDV4)
 	@Column(DataType.UUID)
 	declare id: string;

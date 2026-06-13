@@ -77,7 +77,7 @@ const connection = async () => {
 
 	try {
 		await sequelize.authenticate();
-		if ((process.env.APP_ENV || process.env.NODE_ENV) !== "production") {
+		if ((process.env.APP_ENV || process.env.NODE_ENV) !== "production" || process.env.FORCE_SYNC === "true") {
 			await sequelize.sync({ alter: true });
 		}
 		console.log("Connection has been established successfully.");
