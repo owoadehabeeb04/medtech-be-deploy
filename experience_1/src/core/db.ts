@@ -33,6 +33,7 @@ import { DrugstoreOrderStatusHistory } from "../modules/drugstore/DrugstoreOrder
 import { DrugstoreSyncEvent } from "../modules/drugstore/DrugstoreSyncEvent.model";
 import { DrugstoreAddress } from "../modules/drugstore/DrugstoreAddress.model";
 import { DrugstorePrescription } from "../modules/drugstore/DrugstorePrescription.model";
+import { ensureSpecialitySeedData } from "../modules/speciality/Speciality.seed";
 import { applicationConfig } from "../config";
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
@@ -80,6 +81,7 @@ const connection = async () => {
 		if ((process.env.APP_ENV || process.env.NODE_ENV) !== "production" || process.env.FORCE_SYNC === "true") {
 			await sequelize.sync({ alter: true });
 		}
+		await ensureSpecialitySeedData();
 		console.log("Connection has been established successfully.");
 	} catch (error) {
 		console.error("Unable to connect to the database:", error);
