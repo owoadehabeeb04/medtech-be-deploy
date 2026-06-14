@@ -14,11 +14,17 @@ const DEFAULT_SPECIALITIES: Array<{ name: string; key: string; isActive: boolean
 ];
 
 export const ensureSpecialitySeedData = async (): Promise<void> => {
-	const existingCount = await Speciality.count();
+	const seedKeys = DEFAULT_SPECIALITIES.map((item) => item.key);
+	const existingSpecialities = await Speciality.findAll({
+		where: { key: seedKeys },
+	});
 
-	if (existingCount > 0) {
+	const existingKeys = new Set(existingSpecialities.map((item) => item.key));
+	const missingSpecialities = DEFAULT_SPECIALITIES.filter((item) => !existingKeys.has(item.key));
+
+	if (missingSpecialities.length === 0) {
 		return;
 	}
 
-	await Speciality.bulkCreate(DEFAULT_SPECIALITIES);
+	await Speciality.bulkCreate(missingSpecialities);
 };
