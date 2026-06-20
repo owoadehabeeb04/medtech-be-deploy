@@ -9,7 +9,7 @@ import {
 	logout,
 	me,
 	refreshToken,
-	registerDoctor,
+	register,
 	requestForgotPasswordOtp,
 	requestSignupOtp,
 	resendForgotPasswordOtp,
@@ -22,7 +22,7 @@ import {
 const router = express.Router();
 const verifyToken = Auth.verifyToken();
 
-router.post("/signup/register", registerDoctor);
+router.post("/signup/register", register);
 router.post("/signup/request-otp", requestSignupOtp);
 router.post("/signup/verify-otp", verifySignupOtp);
 router.post("/signup/resend-otp", resendSignupOtp);
