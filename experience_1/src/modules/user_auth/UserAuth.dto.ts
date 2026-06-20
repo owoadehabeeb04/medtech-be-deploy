@@ -13,7 +13,7 @@ export interface SignupRequestOtpDTO {
 	role: string;
 }
 
-export interface DoctorRegisterDTO {
+export interface RegisterDTO {
 	firstName: string;
 	lastName: string;
 	email: string;

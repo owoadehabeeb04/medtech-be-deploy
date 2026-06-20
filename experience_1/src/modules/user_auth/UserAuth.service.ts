@@ -19,7 +19,7 @@ import { ApiResponse } from "../../utils/common.dto";
 import {
 	ChangePasswordDTO,
 	CompleteSignupDTO,
-	DoctorRegisterDTO,
+	RegisterDTO,
 	ForgotPasswordRequestOtpDTO,
 	LoginDTO,
 	RequestOtpDTO,
@@ -313,11 +313,8 @@ export class UserAuthService {
 		return this.requestSignupOtp(data, req);
 	}
 
-	static async registerDoctor(data: DoctorRegisterDTO): Promise<ApiResponse> {
+	static async register(data: RegisterDTO): Promise<ApiResponse> {
 		const role = this.normalizeRole(data.role);
-		if (role !== AUTH_ROLE.DOCTOR) {
-			return { status: false, code: 400, message: "Only doctor registration is supported on this endpoint" };
-		}
 
 		if (data.password !== data.confirmPassword) {
 			return { status: false, code: 400, message: "Confirm password must match password" };
@@ -325,7 +322,8 @@ export class UserAuthService {
 
 		const email = data.email.toLowerCase().trim();
 		const phoneNumber = data.phoneNumber.trim();
-		const medicalLicenseNumber = (data.medicalLicenseNumber || data.verificationNumber || "").trim();
+		const medicalLicenseNumber =
+			role === AUTH_ROLE.DOCTOR ? (data.medicalLicenseNumber || data.verificationNumber || "").trim() : undefined;
 
 		const [existingByEmail, existingByPhone] = await Promise.all([
 			User.findOne({ where: { email } }),
@@ -360,13 +358,21 @@ export class UserAuthService {
 			emailVerified: true,
 		});
 
-		await DoctorProfile.create({
-			userId: user.id,
-			phoneNumber,
-			medicalLicenseNumber,
-			onboardingCompleted: false,
-			onboardingStep: 1,
-		});
+		if (role === AUTH_ROLE.CONSUMER) {
+			await UserProfile.createProfile(user.id, {
+				phoneNumber,
+				profileCompleted: false,
+				onboardingSkipped: false,
+			});
+		} else {
+			await DoctorProfile.create({
+				userId: user.id,
+				phoneNumber,
+				medicalLicenseNumber,
+				onboardingCompleted: false,
+				onboardingStep: 1,
+			});
+		}
 
 		const hydratedUser = await User.findById(user.id);
 		if (!hydratedUser) {
