@@ -20,7 +20,7 @@ export const SignupRequestOtpSchema = Joi.object({
 	role: Joi.string().valid(USER_TYPE.CUSTOMER, AUTH_ROLE.CONSUMER).required(),
 });
 
-export const DoctorRegisterSchema = Joi.object({
+export const RegisterSchema = Joi.object({
 	firstName: Joi.string().min(2).max(40).required(),
 	lastName: Joi.string().min(2).max(40).required(),
 	email: Joi.string().email().required(),
@@ -29,8 +29,14 @@ export const DoctorRegisterSchema = Joi.object({
 	confirmPassword: Joi.string().valid(Joi.ref("password")).required().messages({
 		"any.only": "Confirm password must match password",
 	}),
-	role: Joi.string().valid(USER_TYPE.MEDIC, AUTH_ROLE.DOCTOR).required(),
-	medicalLicenseNumber: Joi.string().min(3).max(100).required(),
+	role: Joi.string()
+		.valid(USER_TYPE.CUSTOMER, USER_TYPE.MEDIC, AUTH_ROLE.CONSUMER, AUTH_ROLE.DOCTOR)
+		.required(),
+	medicalLicenseNumber: Joi.when("role", {
+		is: Joi.valid(USER_TYPE.MEDIC, AUTH_ROLE.DOCTOR),
+		then: Joi.string().min(3).max(100).required(),
+		otherwise: Joi.string().min(3).max(100).optional(),
+	}),
 	verificationNumber: Joi.string().optional().allow("", null),
 });
 

@@ -248,7 +248,7 @@ const collection = {
 					tests: saveConsumerSessionLines,
 				}),
 				jsonRequest({
-					name: "Register Doctor",
+					name: "Register User (Doctor Example)",
 					method: "POST",
 					path: "/auth/signup/register",
 					noAuth: true,
@@ -262,7 +262,8 @@ const collection = {
 						role: "doctor",
 						medicalLicenseNumber: "{{doctor_license}}",
 					},
-					description: "Register a doctor directly and persist the shared auth session.",
+					description:
+						"Register a consumer or doctor directly. medicalLicenseNumber is required only when role is doctor.",
 					tests: saveDoctorSessionLines,
 				}),
 				jsonRequest({

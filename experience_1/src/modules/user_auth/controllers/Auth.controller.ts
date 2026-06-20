@@ -3,7 +3,7 @@ import { NextFunction, Request, RequestHandler, Response } from "express";
 import { ERR_USER } from "../../../constants/error-codes";
 import {
 	ChangePasswordSchema,
-	DoctorRegisterSchema,
+	RegisterSchema,
 	CompleteSignupSchema,
 	ForgotPasswordRequestOtpSchema,
 	LoginSchema,
@@ -63,11 +63,11 @@ export const requestSignupOtp: RequestHandler = async (req, res, next) => {
 	return handleAuthResponse(req, res, next, UserAuthService.requestSignupOtp(payload, req), "301");
 };
 
-export const registerDoctor: RequestHandler = async (req, res, next) => {
+export const register: RequestHandler = async (req, res, next) => {
 	const { validateSchema } = req.context;
-	const payload = validateSchema(DoctorRegisterSchema, req.body, next);
+	const payload = validateSchema(RegisterSchema, req.body, next);
 	if (!payload) return;
-	return handleAuthResponse(req, res, next, UserAuthService.registerDoctor(payload), "301A");
+	return handleAuthResponse(req, res, next, UserAuthService.register(payload), "301A");
 };
 
 export const verifySignupOtp: RequestHandler = async (req, res, next) => {
