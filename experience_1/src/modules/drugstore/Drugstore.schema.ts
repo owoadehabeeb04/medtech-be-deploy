@@ -5,9 +5,21 @@ export const getCatalogProductsQuerySchema = Joi.object({
 	limit: Joi.number().integer().min(1).max(100).default(20),
 	search: Joi.string().trim().allow(""),
 	category: Joi.string().trim(),
-	merchantId: Joi.string().uuid(),
+	merchantId: Joi.string().uuid().optional().description("Omit to browse/search across every pharmacy instead of one."),
+	brand: Joi.alternatives().try(Joi.array().items(Joi.string().trim()), Joi.string().trim()),
+	priceMin: Joi.number().min(0),
+	priceMax: Joi.number().min(0),
 	sortBy: Joi.string().valid("createdAt", "price", "name").default("createdAt"),
 	sortDirection: Joi.string().valid("asc", "desc").default("desc"),
+});
+
+export const catalogBrandsQuerySchema = Joi.object({
+	category: Joi.string().trim().optional(),
+	merchantId: Joi.string().uuid().optional(),
+});
+
+export const topSellingProductsQuerySchema = Joi.object({
+	limit: Joi.number().integer().min(1).max(50).default(20),
 });
 
 export const nearbyPharmaciesQuerySchema = Joi.object({
@@ -50,14 +62,23 @@ export const updateCartItemSchema = Joi.object({
 });
 
 export const createOrderSchema = Joi.object({
-	paymentMethod: Joi.string().valid("card", "bank_transfer").required(),
+	paymentMethod: Joi.string().valid("card", "bank_transfer", "wallet", "pay_in_store").required(),
+	fulfillmentMethod: Joi.string().valid("delivery", "pickup").default("delivery"),
+	merchantId: Joi.string().uuid().optional().description("Which pharmacy's active cart to check out. Required if the caller has active carts at more than one pharmacy simultaneously."),
 	couponCode: Joi.string().trim().uppercase().optional(),
-	addressId: Joi.string().uuid().optional(),
+	addressId: Joi.string().uuid().optional().description("Ignored for pickup orders — pickup has no delivery destination."),
 	deliveryNote: Joi.string().trim().max(500).allow(""),
 	deliveryDate: Joi.string().isoDate().optional(),
 	deliveryTimeSlot: Joi.string().trim().max(60).optional(),
 	returnUrl: Joi.string().uri({ scheme: ["http", "https"] }).optional(),
-});
+	savedCardId: Joi.string().uuid().optional().description("Pay with a previously saved card instead of a new redirect-based card payment. Only used when paymentMethod is card."),
+	saveCard: Joi.boolean().optional().description("Save the card used for this payment for future reuse. Only relevant when paymentMethod is card and savedCardId is not supplied."),
+}).custom((value, helpers) => {
+	if (value.paymentMethod === "pay_in_store" && value.fulfillmentMethod !== "pickup") {
+		return helpers.message({ custom: "pay_in_store is only valid when fulfillmentMethod is pickup" });
+	}
+	return value;
+}, "pay_in_store requires pickup");
 
 export const confirmOrderPaymentSchema = Joi.object({
 	paymentReference: Joi.string().trim().min(4).max(120).required(),
@@ -85,6 +106,11 @@ export const listOrdersQuerySchema = Joi.object({
 
 export const productIdParamSchema = Joi.object({
 	productId: Joi.string().uuid().required(),
+});
+
+export const productAvailabilityQuerySchema = Joi.object({
+	merchantId: Joi.string().uuid().required(),
+	quantity: Joi.number().integer().min(1).default(1),
 });
 
 export const itemIdParamSchema = Joi.object({

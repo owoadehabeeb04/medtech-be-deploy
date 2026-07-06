@@ -46,6 +46,12 @@ export interface CompleteSignupDTO {
 	sessionId: string;
 	password: string;
 	confirmPassword: string;
+	// Optional here (not on CompleteSignupSchema, which requires them for the live endpoint) so the
+	// legacy setPassword() wrapper — which has no access to these — still type-checks.
+	firstName?: string;
+	lastName?: string;
+	email?: string;
+	phoneNumber?: string;
 }
 
 export interface ForgotPasswordRequestOtpDTO {

@@ -80,6 +80,9 @@ export type Configuration = {
 		publicKey?: string;
 		callbackUrl?: string;
 	};
+	cardEncryption?: {
+		key: string;
+	};
 };
 
 export const applicationConfig: Configuration = {
@@ -159,5 +162,8 @@ export const applicationConfig: Configuration = {
 		secretKey: process.env.PAYSTACK_SECRET_KEY || "",
 		publicKey: process.env.PAYSTACK_PUBLIC_KEY || "",
 		callbackUrl: process.env.EXPERIENCE1_PAYSTACK_CALLBACK_URL || process.env.BASE_APP_URL || "",
+	},
+	cardEncryption: {
+		key: process.env.DRUGSTORE_CARD_ENCRYPTION_KEY || "",
 	},
 };

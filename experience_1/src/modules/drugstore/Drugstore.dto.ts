@@ -6,6 +6,9 @@ export interface GetCatalogProductsQueryDTO {
 	search?: string;
 	category?: string;
 	merchantId?: string;
+	brand?: string | string[];
+	priceMin?: number;
+	priceMax?: number;
 	sortBy?: "createdAt" | "price" | "name";
 	sortDirection?: SortDirection;
 }
@@ -28,13 +31,17 @@ export interface UpdateCartItemDTO {
 }
 
 export interface CreateOrderDTO {
-	paymentMethod: "card" | "bank_transfer";
+	paymentMethod: "card" | "bank_transfer" | "wallet" | "pay_in_store";
+	fulfillmentMethod?: "delivery" | "pickup";
+	merchantId?: string;
 	couponCode?: string;
 	addressId?: string;
 	deliveryNote?: string;
 	deliveryDate?: string;
 	deliveryTimeSlot?: string;
 	returnUrl?: string;
+	savedCardId?: string;
+	saveCard?: boolean;
 }
 
 export interface ConfirmOrderPaymentDTO {

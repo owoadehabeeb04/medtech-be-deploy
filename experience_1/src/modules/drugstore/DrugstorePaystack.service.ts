@@ -7,6 +7,16 @@ type InitializeTransactionResult = {
 	reference: string;
 };
 
+export type PaystackAuthorization = {
+	authorizationCode: string;
+	last4: string;
+	expMonth: string;
+	expYear: string;
+	cardType: string | null;
+	bank: string | null;
+	reusable: boolean;
+};
+
 type VerifyTransactionResult = {
 	status: string;
 	reference: string;
@@ -15,6 +25,20 @@ type VerifyTransactionResult = {
 	channel: string;
 	paidAt: string;
 	metadata: Record<string, any>;
+	authorization: PaystackAuthorization | null;
+};
+
+const mapAuthorization = (authorization: any): PaystackAuthorization | null => {
+	if (!authorization?.authorization_code) return null;
+	return {
+		authorizationCode: authorization.authorization_code,
+		last4: authorization.last4,
+		expMonth: authorization.exp_month,
+		expYear: authorization.exp_year,
+		cardType: authorization.card_type || null,
+		bank: authorization.bank || null,
+		reusable: Boolean(authorization.reusable),
+	};
 };
 
 export class DrugstorePaystackService {
@@ -91,12 +115,54 @@ export class DrugstorePaystackService {
 					channel: data.channel,
 					paidAt: data.paid_at,
 					metadata: data.metadata || {},
+					authorization: mapAuthorization(data.authorization),
 				};
 			}
 
 			throw new Error("Transaction verification failed");
 		} catch (error: any) {
 			const msg = error.response?.data?.message || error.message || "Transaction verification failed";
+			throw new Error(msg);
+		}
+	}
+
+	static async chargeAuthorization(
+		email: string,
+		amount: number,
+		authorizationCode: string,
+		reference: string,
+		metadata: Record<string, any> = {}
+	): Promise<VerifyTransactionResult> {
+		try {
+			const response = await axios.post(
+				`${this.BASE_URL}/transaction/charge_authorization`,
+				{
+					email,
+					amount,
+					authorization_code: authorizationCode,
+					reference,
+					metadata,
+				},
+				{ headers: this.getHeaders() }
+			);
+
+			if (response.data.status && response.data.data) {
+				const data = response.data.data;
+				return {
+					status: data.status,
+					reference: data.reference,
+					amount: data.amount,
+					currency: data.currency,
+					channel: data.channel,
+					paidAt: data.paid_at,
+					metadata: data.metadata || {},
+					authorization: mapAuthorization(data.authorization),
+				};
+			}
+
+			throw new Error("Failed to charge saved card");
+		} catch (error: any) {
+			const msg = error.response?.data?.message || error.message || "Failed to charge saved card";
 			throw new Error(msg);
 		}
 	}

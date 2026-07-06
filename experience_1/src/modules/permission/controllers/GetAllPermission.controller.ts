@@ -3,6 +3,26 @@ import { INTERNAL_SERVER_ERROR, OK } from "http-status";
 import { ERR_USER } from "../../../constants/error-codes";
 import { PermissionService } from "../Permission.service";
 
+/**
+ * @swagger
+ * /api/v1/main/permissions/all:
+ *   get:
+ *     summary: List all permissions
+ *     description: Returns every permission ordered by module, then name.
+ *     tags: [Permissions]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string, example: "Success." }
+ *                 data: { type: array, items: { $ref: '#/components/schemas/PermissionResponse' } }
+ *       401: { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+ */
 export const getAllPermissions: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
 	const { manageApplicationErrors, manageAsyncOps, errorCode, encrypt } = req.context;
 
