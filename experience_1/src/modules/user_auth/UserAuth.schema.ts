@@ -51,6 +51,10 @@ export const ResendOtpSchema = Joi.object({
 
 export const CompleteSignupSchema = Joi.object({
 	sessionId: Joi.string().required(),
+	firstName: Joi.string().trim().min(2).max(40).required(),
+	lastName: Joi.string().trim().min(2).max(40).required(),
+	email: Joi.string().email().required().description("Must match the email address the OTP session verified."),
+	phoneNumber: Joi.string().trim().min(7).max(20).required(),
 	password: passwordSchema.required(),
 	confirmPassword: Joi.string().valid(Joi.ref("password")).required().messages({
 		"any.only": "Confirm password must match password",

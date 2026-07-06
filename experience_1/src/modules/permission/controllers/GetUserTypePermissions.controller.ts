@@ -4,6 +4,31 @@ import { ERR_USER } from "../../../constants/error-codes";
 import { GetUserTypePermissionsSchema } from "../Permission.schema";
 import { PermissionService } from "../Permission.service";
 
+/**
+ * @swagger
+ * /api/v1/main/permissions/user-type/{userTypeId}:
+ *   get:
+ *     summary: Get all permissions for a user type
+ *     tags: [Permissions]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - name: userTypeId
+ *         in: path
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: User type permissions retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string, example: "User type permissions retrieved successfully" }
+ *                 data: { $ref: '#/components/schemas/UserTypePermissionsResponse' }
+ *       401: { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+ *       404: { description: User type not found, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+ */
 export const getUserTypePermissions: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
 	const { manageApplicationErrors, manageAsyncOps, validateSchema, sanitizeBody, errorCode, encrypt } = req.context;
 

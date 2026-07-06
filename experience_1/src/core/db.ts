@@ -33,7 +33,12 @@ import { DrugstoreOrderStatusHistory } from "../modules/drugstore/DrugstoreOrder
 import { DrugstoreSyncEvent } from "../modules/drugstore/DrugstoreSyncEvent.model";
 import { DrugstoreAddress } from "../modules/drugstore/DrugstoreAddress.model";
 import { DrugstorePrescription } from "../modules/drugstore/DrugstorePrescription.model";
+import { DrugstoreWallet } from "../modules/drugstore/DrugstoreWallet.model";
+import { DrugstoreWalletTransaction } from "../modules/drugstore/DrugstoreWalletTransaction.model";
+import { DrugstoreSavedCard } from "../modules/drugstore/DrugstoreSavedCard.model";
+import { DrugstoreCategoryGroup } from "../modules/drugstore/DrugstoreCategoryGroup.model";
 import { ensureSpecialitySeedData } from "../modules/speciality/Speciality.seed";
+import { ensureDrugstoreCategoryGroupSeedData } from "../modules/drugstore/DrugstoreCategoryGroup.seed";
 import { applicationConfig } from "../config";
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
@@ -44,7 +49,20 @@ const connection = async () => {
 	const medic_mod = [Speciality, UserSpeciality, Appointment, ConsultationType];
 	const doctor_settings_mod = [DoctorSettings, DoctorDeviceToken, DoctorConsultationRate, DoctorSubscriptionPlan, DoctorHealthPackage];
 	const doctor_reviews_mod = [DoctorReview, DoctorReviewReply, DoctorReviewStat];
-	const drugstore_mod = [DrugstoreCart, DrugstoreCartItem, DrugstoreOrder, DrugstoreOrderItem, DrugstoreOrderStatusHistory, DrugstoreSyncEvent, DrugstoreAddress, DrugstorePrescription];
+	const drugstore_mod = [
+		DrugstoreCart,
+		DrugstoreCartItem,
+		DrugstoreOrder,
+		DrugstoreOrderItem,
+		DrugstoreOrderStatusHistory,
+		DrugstoreSyncEvent,
+		DrugstoreAddress,
+		DrugstorePrescription,
+		DrugstoreWallet,
+		DrugstoreWalletTransaction,
+		DrugstoreSavedCard,
+		DrugstoreCategoryGroup,
+	];
 	const models = [...user_mod, ...extra_user_mod, ...permission_mod, ...medic_mod, ...doctor_settings_mod, ...doctor_reviews_mod, ...drugstore_mod];
 	const dbHost = process.env.EXPERIENCE1_DB_HOST || process.env.DB_HOST;
 	const dbPort = Number(process.env.EXPERIENCE1_DB_PORT || process.env.DB_PORT || 5432);
@@ -82,6 +100,7 @@ const connection = async () => {
 			await sequelize.sync({ alter: true });
 		}
 		await ensureSpecialitySeedData();
+		await ensureDrugstoreCategoryGroupSeedData();
 		console.log("Connection has been established successfully.");
 	} catch (error) {
 		console.error("Unable to connect to the database:", error);

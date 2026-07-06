@@ -93,6 +93,20 @@ export class DrugstoreAddressService {
 		return response({ id: addressId }, "Address deleted successfully");
 	}
 
+	static async setDefault(userId: number, addressId: string): Promise<ApiResponse> {
+		const address = await DrugstoreAddress.findOne({ where: { id: addressId, userId } });
+		if (!address) {
+			return { status: false, code: 404, message: "Address not found" };
+		}
+
+		if (!address.isDefault) {
+			await DrugstoreAddress.update({ isDefault: false }, { where: { userId } });
+			await address.update({ isDefault: true });
+		}
+
+		return response(address, "Default address updated successfully");
+	}
+
 	static async getDefault(userId: number): Promise<DrugstoreAddress | null> {
 		return DrugstoreAddress.findOne({
 			where: { userId, isDefault: true },

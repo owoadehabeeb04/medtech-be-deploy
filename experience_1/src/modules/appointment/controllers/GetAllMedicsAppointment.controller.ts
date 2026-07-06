@@ -4,6 +4,40 @@ import { ERR_USER } from "../../../constants/error-codes";
 import { BookAppointmentSchema } from "../Appointment.schema";
 import { AppointmentService } from "../Appointment.service";
 
+/**
+ * @swagger
+ * /api/v1/main/appointments:
+ *   get:
+ *     summary: List the doctor's appointments
+ *     description: Requires the doctor's onboarding to be complete. Supports pagination plus optional status/date filters.
+ *     tags: [Appointments]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - name: page
+ *         in: query
+ *         schema: { type: integer, default: 1 }
+ *       - name: limit
+ *         in: query
+ *         schema: { type: integer, default: 20 }
+ *       - name: status
+ *         in: query
+ *         schema: { type: string, enum: [pending, confirmed, cancelled, checked-in, in-progress, completed, no-show] }
+ *       - name: date
+ *         in: query
+ *         schema: { type: string, format: date }
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string, example: "Success." }
+ *                 data: { $ref: '#/components/schemas/AppointmentListResponse' }
+ *       401: { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+ *       403: { description: Forbidden — caller is not a doctor, or doctor onboarding is incomplete, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+ */
 export const getAllMedicAppointments: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
 	const { manageApplicationErrors, manageAsyncOps, validateSchema, sanitizeBody, errorCode, encrypt, user } = req.context;
 

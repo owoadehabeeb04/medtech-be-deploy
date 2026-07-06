@@ -4,6 +4,32 @@ import { ERR_USER } from "../../../constants/error-codes";
 import { BulkCreatePermissionSchema } from "../Permission.schema";
 import { PermissionService } from "../Permission.service";
 
+/**
+ * @swagger
+ * /api/v1/main/permissions/bulk-create:
+ *   post:
+ *     summary: Bulk create permissions
+ *     description: Silently skips any entries whose key already exists rather than failing the whole request.
+ *     tags: [Permissions]
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { $ref: '#/components/schemas/BulkPermissionRequest' }
+ *     responses:
+ *       200:
+ *         description: Permissions processed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string, example: "Permissions processed successfully" }
+ *                 data: { $ref: '#/components/schemas/BulkPermissionResponse' }
+ *       400: { description: Validation failed, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+ *       401: { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+ */
 export const bulkCreatePermission: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
 	const { manageApplicationErrors, manageAsyncOps, validateSchema, sanitizeBody, errorCode, encrypt } = req.context;
 

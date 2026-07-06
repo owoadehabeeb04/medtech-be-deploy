@@ -10,9 +10,23 @@ const requiredQuery = (req: Request, key: string): string => {
   return value;
 };
 
+const parseBrands = (value: unknown): string[] | undefined => {
+  if (Array.isArray(value)) return value.map((v) => String(v)).filter(Boolean);
+  if (typeof value === "string" && value.trim()) {
+    return value
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
+  }
+  return undefined;
+};
+
 export const listProducts = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const merchantId = requiredQuery(req, "merchantId");
+    // merchantId is optional here on purpose: omitting it browses/searches across every
+    // pharmacy (used by the consumer app's global search and category drill-down), while
+    // supplying it scopes the listing to a single pharmacy's catalog as before.
+    const merchantId = req.query.merchantId ? String(req.query.merchantId).trim() : undefined;
 
     const data = await DrugstoreInternalService.listProducts({
       merchantId,
@@ -20,6 +34,9 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
       limit: Number(req.query.limit || 20),
       search: req.query.search ? String(req.query.search) : undefined,
       category: req.query.category ? String(req.query.category) : undefined,
+      brands: parseBrands(req.query.brand),
+      priceMin: req.query.priceMin !== undefined ? Number(req.query.priceMin) : undefined,
+      priceMax: req.query.priceMax !== undefined ? Number(req.query.priceMax) : undefined,
       sortBy: req.query.sortBy ? (String(req.query.sortBy) as any) : undefined,
       sortDirection: req.query.sortDirection ? (String(req.query.sortDirection) as any) : undefined,
     });
@@ -58,6 +75,41 @@ export const getProduct = async (req: Request, res: Response, next: NextFunction
   }
 };
 
+export const getDistinctBrands = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const category = req.query.category ? String(req.query.category) : undefined;
+    const merchantId = req.query.merchantId ? String(req.query.merchantId).trim() : undefined;
+    const data = await DrugstoreInternalService.getDistinctBrands({ category, merchantId });
+
+    res.status(200);
+    res.response = {
+      statusCode: 200,
+      message: "Brands retrieved successfully",
+      data,
+    };
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getTopSellingProducts = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const limit = Math.max(1, Math.min(50, Number(req.query.limit || 20)));
+    const data = await DrugstoreInternalService.getTopSellingProducts(limit);
+
+    res.status(200);
+    res.response = {
+      statusCode: 200,
+      message: "Top selling products retrieved successfully",
+      data,
+    };
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const listCategories = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const merchantId = requiredQuery(req, "merchantId");
@@ -75,15 +127,32 @@ export const listCategories = async (req: Request, res: Response, next: NextFunc
   }
 };
 
+const parseActiveCarts = (value: unknown): Array<{ merchantId: string; itemCount: number; subtotal: number }> => {
+  if (typeof value !== "string" || !value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((entry) => entry && typeof entry.merchantId === "string")
+      .map((entry) => ({
+        merchantId: entry.merchantId,
+        itemCount: Number(entry.itemCount || 0),
+        subtotal: Number(entry.subtotal || 0),
+      }));
+  } catch (_error) {
+    return [];
+  }
+};
+
 export const listNearbyPharmacies = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = await DrugstoreInternalService.listNearbyPharmacies({
       search: req.query.search ? String(req.query.search) : undefined,
       page: Number(req.query.page || 1),
       limit: Number(req.query.limit || 20),
-      activeCartMerchantId: req.query.activeCartMerchantId ? String(req.query.activeCartMerchantId) : undefined,
-      activeCartItemCount: req.query.activeCartItemCount ? Number(req.query.activeCartItemCount) : undefined,
-      activeCartSubtotal: req.query.activeCartSubtotal ? Number(req.query.activeCartSubtotal) : undefined,
+      // A caller can have one active cart per pharmacy simultaneously, so this is a list, JSON-encoded
+      // by experience_1's DrugstoreMerchantClient which only carries flat query values otherwise.
+      activeCarts: parseActiveCarts(req.query.activeCarts),
     });
 
     res.status(200);
@@ -98,11 +167,19 @@ export const listNearbyPharmacies = async (req: Request, res: Response, next: Ne
   }
 };
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const getPharmacyProfile = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const merchantId = String(req.params.merchantId || "").trim();
     if (!merchantId) {
       throw new HttpException(400, "merchantId param is required");
+    }
+    // /pharmacies/nearby is registered ahead of this route, but its handler completes via next()
+    // rather than ending the response, so Express keeps matching — a non-UUID merchantId here
+    // means some other /pharmacies/* route's path segment fell through to this one.
+    if (!UUID_PATTERN.test(merchantId)) {
+      throw new HttpException(404, "Pharmacy not found");
     }
 
     const data = await DrugstoreInternalService.getPharmacyProfile(merchantId);
@@ -124,6 +201,9 @@ export const getPharmacyReviews = async (req: Request, res: Response, next: Next
     const merchantId = String(req.params.merchantId || "").trim();
     if (!merchantId) {
       throw new HttpException(400, "merchantId param is required");
+    }
+    if (!UUID_PATTERN.test(merchantId)) {
+      throw new HttpException(404, "Pharmacy not found");
     }
 
     const data = await DrugstoreInternalService.getPharmacyReviews(
