@@ -12,11 +12,14 @@ import { Merchant } from "../merchant/Merchant.model";
 import { StoreDetails } from "../store_details/StoreDetails.model";
 
 type ListProductsInput = {
-  merchantId: string;
+  merchantId?: string;
   page?: number;
   limit?: number;
   search?: string;
   category?: string;
+  brands?: string[];
+  priceMin?: number;
+  priceMax?: number;
   sortBy?: "createdAt" | "price" | "name";
   sortDirection?: "asc" | "desc";
 };
@@ -32,6 +35,7 @@ type ReflectOrderPayload = {
   paymentStatus?: string;
   deliveryStatus?: string;
   merchantId: string;
+  fulfillmentMethod?: "delivery" | "pickup";
   user: { id: number; role: "consumer" | "doctor" };
   amounts: {
     subtotal: number;
@@ -143,10 +147,10 @@ export class DrugstoreInternalService {
     const limit = Math.max(1, Math.min(100, Number(input.limit || 20)));
     const offset = (page - 1) * limit;
 
-    const where: any = {
-      merchantId: input.merchantId,
-      isActive: true,
-    };
+    const where: any = { isActive: true };
+    if (input.merchantId) {
+      where.merchantId = input.merchantId;
+    }
 
     if (input.search) {
       where[Op.or] = [
@@ -158,6 +162,16 @@ export class DrugstoreInternalService {
 
     if (input.category) {
       where.category = input.category;
+    }
+
+    if (input.brands && input.brands.length > 0) {
+      where.brand = { [Op.in]: input.brands };
+    }
+
+    if (input.priceMin !== undefined || input.priceMax !== undefined) {
+      where.price = {};
+      if (input.priceMin !== undefined) where.price[Op.gte] = input.priceMin;
+      if (input.priceMax !== undefined) where.price[Op.lte] = input.priceMax;
     }
 
     const sortBy = input.sortBy || "createdAt";
@@ -194,13 +208,44 @@ export class DrugstoreInternalService {
     return product;
   }
 
+  static async getDistinctBrands(input: { category?: string; merchantId?: string }) {
+    const where: any = { isActive: true, brand: { [Op.ne]: null } };
+    if (input.category) where.category = input.category;
+    if (input.merchantId) where.merchantId = input.merchantId;
+
+    const rows = await Product.findAll({
+      where,
+      attributes: ["brand"],
+      group: ["brand"],
+      order: [["brand", "ASC"]],
+    });
+
+    return { brands: rows.map((row) => row.brand).filter(Boolean) };
+  }
+
+  /**
+   * Cross-pharmacy top-selling products, ranked by cumulative purchaseCount. No merchantId
+   * filter — products is a single shared table across all merchants, so this is a plain
+   * top-N query rather than a fan-out across pharmacies.
+   */
+  static async getTopSellingProducts(limit: number) {
+    const products = await Product.findAll({
+      where: { isActive: true, purchaseCount: { [Op.gt]: 0 } },
+      order: [
+        ["purchaseCount", "DESC"],
+        ["createdAt", "DESC"],
+      ],
+      limit,
+    });
+
+    return { products };
+  }
+
   static async listNearbyPharmacies(input: {
     search?: string;
     page?: number;
     limit?: number;
-    activeCartMerchantId?: string;
-    activeCartItemCount?: number;
-    activeCartSubtotal?: number;
+    activeCarts?: Array<{ merchantId: string; itemCount: number; subtotal: number }>;
   }) {
     const page = Math.max(1, Number(input.page || 1));
     const limit = Math.max(1, Math.min(100, Number(input.limit || 20)));
@@ -227,11 +272,14 @@ export class DrugstoreInternalService {
       distinct: true,
     });
 
+    const activeCartByMerchantId = new Map((input.activeCarts || []).map((entry) => [entry.merchantId, entry]));
+
     const items = rows
       .filter((merchant) => merchant.settings?.storePreferences?.enableInHouseDelivery !== false)
       .map((merchant) => {
         const store = merchant.storeDetails;
         const settings = merchant.settings?.storePreferences;
+        const activeCart = activeCartByMerchantId.get(merchant.id);
         return {
           id: merchant.id,
           businessName: store?.businessName || merchant.fullName,
@@ -251,14 +299,13 @@ export class DrugstoreInternalService {
             averageRating: 0,
             reviewCount: 0,
           },
-          cartCompatibility:
-            input.activeCartMerchantId && input.activeCartMerchantId === merchant.id
-              ? {
-                  supported: true,
-                  itemCount: toNumber(input.activeCartItemCount),
-                  subtotal: toNumber(input.activeCartSubtotal),
-                }
-              : null,
+          cartCompatibility: activeCart
+            ? {
+                supported: true,
+                itemCount: toNumber(activeCart.itemCount),
+                subtotal: toNumber(activeCart.subtotal),
+              }
+            : null,
         };
       });
 
@@ -413,6 +460,7 @@ export class DrugstoreInternalService {
         {
           inventory: newInventory,
           status: nextStatus,
+          purchaseCount: product.purchaseCount + item.quantity,
         },
         { transaction }
       );
@@ -489,6 +537,7 @@ export class DrugstoreInternalService {
         const order = await DrugstoreOrder.create(
           {
             merchantId: payload.merchantId,
+            fulfillmentMethod: payload.fulfillmentMethod === "pickup" ? "pickup" : "delivery",
             sourceOrderId: payload.sourceOrderId,
             sourceSyncKey: payload.sourceSyncKey,
             paymentReference: payload.paymentReference,
