@@ -2,6 +2,8 @@ import express, { Application, Router} from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "../config/swagger";
 
 import RouteGroup from "express-route-grouping";
 const root = new RouteGroup("/", Router());
@@ -26,6 +28,16 @@ export default function (app: Application) {
 	app.use(express.urlencoded({ extended: true }));
 	app.use(helmet());
 	app.use(cookieParser());
+
+	app.get("/api-docs.json", (_req, res) => {
+		res.setHeader("Content-Type", "application/json");
+		res.send(swaggerSpec);
+	});
+	app.use(
+		"/api-docs",
+		swaggerUi.serve,
+		swaggerUi.setup(swaggerSpec, { explorer: true, swaggerOptions: { persistAuthorization: true } })
+	);
 
 	root.group("api/v1/main/", (router) => {
 		router.use("/auth", userAuthRouter);

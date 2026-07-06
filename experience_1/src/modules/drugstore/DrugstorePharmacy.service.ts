@@ -5,7 +5,7 @@ import { NearbyPharmaciesQueryDTO } from "./Drugstore.dto";
 import { DrugstoreCart } from "./DrugstoreCart.model";
 import { DrugstoreCartItem } from "./DrugstoreCartItem.model";
 
-const pharmaciesNearbyPath = "/api/v1/merchant/internal/drugstore/pharmacies/nearby";
+const pharmaciesNearbyPath = "/api/v1/merchant/internal/drugstore/nearby-pharmacies";
 const pharmacyProfilePath = "/api/v1/merchant/internal/drugstore/pharmacies";
 
 const response = (data: unknown, message = "Success", code = 200): ApiResponse => ({
@@ -16,21 +16,21 @@ const response = (data: unknown, message = "Success", code = 200): ApiResponse =
 });
 
 export class DrugstorePharmacyService {
-	private static async getActiveCartSummary(userId: number) {
-		const cart = await DrugstoreCart.findOne({
+	// A caller can hold one active cart per pharmacy simultaneously, so every one of them needs its
+	// own summary here — not just "the" active cart — to enrich each matching row in the nearby list.
+	private static async getActiveCartSummaries(userId: number) {
+		const carts = await DrugstoreCart.findAll({
 			where: { userId, status: "active" },
 			include: [{ model: DrugstoreCartItem, as: "items" }],
 			order: [["createdAt", "DESC"]],
 		});
 
-		if (!cart) return null;
-
-		return {
+		return carts.map((cart) => ({
 			merchantId: cart.merchantId,
 			itemCount: (cart.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0),
 			subtotal: Number(cart.grandTotal || 0),
 			productIds: (cart.items || []).map((item) => item.merchantProductId),
-		};
+		}));
 	}
 
 	static async listNearbyPharmacies(userId: number, query: NearbyPharmaciesQueryDTO): Promise<ApiResponse> {
@@ -58,7 +58,7 @@ export class DrugstorePharmacyService {
 			}
 		}
 
-		const cartSummary = await this.getActiveCartSummary(userId);
+		const cartSummaries = await this.getActiveCartSummaries(userId);
 		const data = await DrugstoreMerchantClient.get(pharmaciesNearbyPath, {
 			addressId,
 			latitude,
@@ -66,9 +66,9 @@ export class DrugstorePharmacyService {
 			search: query.search,
 			page: query.page,
 			limit: query.limit,
-			activeCartMerchantId: cartSummary?.merchantId,
-			activeCartItemCount: cartSummary?.itemCount,
-			activeCartSubtotal: cartSummary?.subtotal,
+			// JSON-encoded since DrugstoreMerchantClient.get only carries flat string/number/boolean
+			// query values — this is the one field here that's genuinely list-shaped.
+			activeCarts: cartSummaries.length > 0 ? JSON.stringify(cartSummaries) : undefined,
 		});
 
 		return response(data);

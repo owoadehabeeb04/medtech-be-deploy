@@ -105,6 +105,11 @@ export class Product extends Model<Product> {
   declare inventory: number; // Stock quantity
 
   @AllowNull(false)
+  @Default(0)
+  @Column(DataType.INTEGER)
+  declare purchaseCount: number; // Cumulative units sold across paid orders — powers "top selling"
+
+  @AllowNull(false)
   @Default(ProductStatus.OUT_OF_STOCK)
   @Index
   @Column(DataType.ENUM(...Object.values(ProductStatus)))

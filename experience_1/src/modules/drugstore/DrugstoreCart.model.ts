@@ -19,6 +19,9 @@ import { DrugstoreCartItem } from "./DrugstoreCartItem.model";
 	indexes: [
 		{ fields: ["user_id", "status"] },
 		{ fields: ["merchant_id"] },
+		// Enforces at most one active cart per user+merchant without blocking historical
+		// completed/abandoned carts for the same pair, which a plain composite unique index would.
+		{ unique: true, fields: ["user_id", "merchant_id"], where: { status: "active" } },
 	],
 })
 export class DrugstoreCart extends Model<DrugstoreCart> {

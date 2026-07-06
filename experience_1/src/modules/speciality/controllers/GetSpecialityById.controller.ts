@@ -4,6 +4,29 @@ import { ERR_USER } from "../../../constants/error-codes";
 import { CommonSpecialitySchema } from "../Speciality.schema";
 import { SpecialityService } from "../Speciality.service";
 
+/**
+ * @swagger
+ * /api/v1/main/specialities/id/{id}:
+ *   get:
+ *     summary: Get a speciality by ID
+ *     tags: [Specialities]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string, example: "Success." }
+ *                 data: { $ref: '#/components/schemas/SpecialityResponse' }
+ *       404: { description: Speciality not found, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+ */
 export const getSpecialityById: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
 	const { manageApplicationErrors, manageAsyncOps, validateSchema, sanitizeBody, errorCode, encrypt, user } = req.context;
 

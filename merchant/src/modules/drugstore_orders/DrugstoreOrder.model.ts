@@ -39,6 +39,11 @@ export class DrugstoreOrder extends Model<DrugstoreOrder> {
   declare merchantId: string;
 
   @AllowNull(false)
+  @Default("delivery")
+  @Column(DataType.ENUM("delivery", "pickup"))
+  declare fulfillmentMethod: "delivery" | "pickup";
+
+  @AllowNull(false)
   @Column(DataType.UUID)
   declare sourceOrderId: string;
 
@@ -110,29 +115,30 @@ export class DrugstoreOrder extends Model<DrugstoreOrder> {
   @Column(DataType.UUID)
   declare discountId: string | null;
 
-  @AllowNull(false)
+  // Nullable: pickup orders (fulfillmentMethod=pickup on the experience_1 side) have no delivery destination.
+  @AllowNull(true)
   @Column(DataType.STRING)
-  declare recipientName: string;
+  declare recipientName: string | null;
 
-  @AllowNull(false)
+  @AllowNull(true)
   @Column(DataType.STRING)
-  declare recipientPhone: string;
+  declare recipientPhone: string | null;
 
-  @AllowNull(false)
+  @AllowNull(true)
   @Column(DataType.STRING)
-  declare addressLine1: string;
+  declare addressLine1: string | null;
 
   @AllowNull(true)
   @Column(DataType.STRING)
   declare addressLine2: string | null;
 
-  @AllowNull(false)
+  @AllowNull(true)
   @Column(DataType.STRING)
-  declare city: string;
+  declare city: string | null;
 
-  @AllowNull(false)
+  @AllowNull(true)
   @Column(DataType.STRING)
-  declare state: string;
+  declare state: string | null;
 
   @AllowNull(true)
   @Column(DataType.STRING)

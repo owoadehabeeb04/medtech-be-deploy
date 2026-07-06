@@ -41,6 +41,11 @@ export class DrugstoreOrder extends Model<DrugstoreOrder> {
 	@Column(DataType.UUID)
 	declare sourceOrderId: string;
 
+	@Unique(true)
+	@AllowNull(false)
+	@Column(DataType.STRING(6))
+	declare orderCode: string;
+
 	@ForeignKey(() => User)
 	@AllowNull(false)
 	@Column(DataType.INTEGER)
@@ -68,6 +73,11 @@ export class DrugstoreOrder extends Model<DrugstoreOrder> {
 	@AllowNull(true)
 	@Column(DataType.UUID)
 	declare merchantOrderId: string | null;
+
+	@AllowNull(false)
+	@Default("delivery")
+	@Column(DataType.ENUM("delivery", "pickup"))
+	declare fulfillmentMethod: "delivery" | "pickup";
 
 	@AllowNull(false)
 	@Column(DataType.STRING)
@@ -164,29 +174,30 @@ export class DrugstoreOrder extends Model<DrugstoreOrder> {
 	@Column(DataType.STRING)
 	declare currency: string;
 
-	@AllowNull(false)
+	// Nullable: pickup orders have no delivery destination.
+	@AllowNull(true)
 	@Column(DataType.STRING)
-	declare recipientName: string;
+	declare recipientName: string | null;
 
-	@AllowNull(false)
+	@AllowNull(true)
 	@Column(DataType.STRING)
-	declare recipientPhone: string;
+	declare recipientPhone: string | null;
 
-	@AllowNull(false)
+	@AllowNull(true)
 	@Column(DataType.STRING)
-	declare addressLine1: string;
+	declare addressLine1: string | null;
 
 	@AllowNull(true)
 	@Column(DataType.STRING)
 	declare addressLine2: string | null;
 
-	@AllowNull(false)
+	@AllowNull(true)
 	@Column(DataType.STRING)
-	declare city: string;
+	declare city: string | null;
 
-	@AllowNull(false)
+	@AllowNull(true)
 	@Column(DataType.STRING)
-	declare state: string;
+	declare state: string | null;
 
 	@AllowNull(true)
 	@Column(DataType.STRING)

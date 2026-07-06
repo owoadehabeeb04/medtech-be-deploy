@@ -477,10 +477,24 @@ export class UserAuthService {
 
 		const pendingPayload = session.payload || {};
 		const role = this.normalizeRole(pendingPayload.role || session.userType);
-		const email = String(pendingPayload.email || session.email).toLowerCase().trim();
+		const sessionEmail = String(pendingPayload.email || session.email).toLowerCase().trim();
+
+		// firstName/lastName/phoneNumber/email are collected here (not at request-otp) so the
+		// account is only actually created once the caller has confirmed all of their profile
+		// details alongside the password. email is still cross-checked against the OTP-verified
+		// session email — the client can echo it back, but can't swap in an unverified address.
+		const email = data.email ? data.email.toLowerCase().trim() : sessionEmail;
+		if (email !== sessionEmail) {
+			return { status: false, code: 400, message: "Email does not match the address that was verified" };
+		}
+
+		const firstName = (data.firstName || pendingPayload.firstName || "").trim();
+		const lastName = (data.lastName || pendingPayload.lastName || "").trim();
+		const phoneNumber = data.phoneNumber ? data.phoneNumber.trim() : pendingPayload.phoneNumber;
+
 		const whereConditions: Array<{ email: string } | { phoneNumber: string }> = [{ email }];
-		if (pendingPayload.phoneNumber) {
-			whereConditions.push({ phoneNumber: pendingPayload.phoneNumber });
+		if (phoneNumber) {
+			whereConditions.push({ phoneNumber });
 		}
 
 		const existingUser = await User.findOne({ where: { [Op.or]: whereConditions } });
@@ -497,10 +511,10 @@ export class UserAuthService {
 
 		const password = await UserAuth.encryptPassword(data.password);
 		const user = await User.createUser({
-			firstName: pendingPayload.firstName,
-			lastName: pendingPayload.lastName,
+			firstName,
+			lastName,
 			email,
-			phoneNumber: pendingPayload.phoneNumber,
+			phoneNumber,
 			userType: role,
 			verificationNumber: pendingPayload.medicalLicenseNumber,
 			medicalLicenseNumber: pendingPayload.medicalLicenseNumber,
@@ -515,14 +529,14 @@ export class UserAuthService {
 
 		if (role === AUTH_ROLE.CONSUMER) {
 			await UserProfile.createProfile(user.id, {
-				phoneNumber: pendingPayload.phoneNumber,
+				phoneNumber,
 				profileCompleted: false,
 				onboardingSkipped: false,
 			});
 		} else {
 			await DoctorProfile.create({
 				userId: user.id,
-				phoneNumber: pendingPayload.phoneNumber,
+				phoneNumber,
 				medicalLicenseNumber: pendingPayload.medicalLicenseNumber,
 				onboardingCompleted: false,
 				onboardingStep: 1,
