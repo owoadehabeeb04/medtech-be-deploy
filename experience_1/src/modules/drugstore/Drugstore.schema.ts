@@ -113,6 +113,10 @@ export const productAvailabilityQuerySchema = Joi.object({
 	quantity: Joi.number().integer().min(1).default(1),
 });
 
+export const productOrderLimitsQuerySchema = Joi.object({
+	merchantId: Joi.string().uuid().required(),
+});
+
 export const itemIdParamSchema = Joi.object({
 	itemId: Joi.string().uuid().required(),
 });

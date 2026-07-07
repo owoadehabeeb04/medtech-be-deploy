@@ -16,6 +16,7 @@ import {
 	prescriptionIdParamSchema,
 	productAvailabilityQuerySchema,
 	productIdParamSchema,
+	productOrderLimitsQuerySchema,
 	reviewPrescriptionSchema,
 	submitPrescriptionSchema,
 	topSellingProductsQuerySchema,
@@ -414,16 +415,70 @@ export const getCatalogProduct: RequestHandler = async (req, res, next) => {
 
 /**
  * @swagger
+ * /api/v1/main/drugstore/catalog/products/{productId}/order-limits:
+ *   get:
+ *     summary: Get product order quantity limits
+ *     description: Returns the merchant-configured min/max order quantities for a specific pharmacy product. Use this to guide the cart quantity stepper; checkout still enforces these limits.
+ *     tags: [Drugstore]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - name: productId
+ *         in: path
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *       - name: merchantId
+ *         in: query
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string, example: "Success" }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     productId: { type: string, format: uuid }
+ *                     merchantId: { type: string, format: uuid }
+ *                     minQuantity: { type: integer, example: 5 }
+ *                     maxQuantity: { type: integer, example: 30 }
+ *                     inventory: { type: integer, example: 100 }
+ *                     isActive: { type: boolean, example: true }
+ *                     requiresPrescription: { type: boolean, example: false }
+ *       400: { description: Validation failed, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+ *       401: { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+ *       403: { description: Forbidden — caller must be a consumer or doctor, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+ *       404: { description: Product not found for this pharmacy, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+ */
+export const getProductOrderLimits: RequestHandler = async (req, res, next) => {
+	const { validateSchema, manageAsyncOps } = req.context;
+	const params = validateSchema(productIdParamSchema, req.params, next);
+	if (!params) return;
+
+	const query = validateSchema(productOrderLimitsQuerySchema, req.query, next);
+	if (!query) return;
+
+	const [error, result] = await manageAsyncOps(DrugstoreService.getProductOrderLimits(query.merchantId, params.productId));
+	if (error) return handleServiceError(req, next, error, "D161");
+	return handleResult(req, res, next, result);
+};
+
+/**
+ * @swagger
  * /api/v1/main/drugstore/catalog/products/{productId}/availability:
  *   get:
  *     summary: Check whether a pharmacy has a product available
  *     description: >
  *       Lightweight pre-flight check for the frontend to call before enabling/disabling an
  *       "Add to Cart" button, or right before actually adding an item (to catch stock changes
- *       since the catalog list was loaded). Runs the exact same rules POST /drugstore/cart/items
- *       uses (isActive, inventory, minQuantity/maxQuantity) but does not touch the cart, so it's
- *       safe to call repeatedly. Since stock is per-pharmacy, the same product can be available
- *       from one merchant and unavailable from another.
+ *       since the catalog list was loaded). Checks product activity and available stock only;
+ *       minQuantity/maxQuantity are returned for the UI and enforced during checkout. Since stock
+ *       is per-pharmacy, the same product can be available from one merchant and unavailable from
+ *       another.
  *     tags: [Drugstore]
  *     security: [{ bearerAuth: [] }]
  *     parameters:
