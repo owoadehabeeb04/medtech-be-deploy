@@ -19,6 +19,7 @@ import {
 	getOrderById,
 	getPharmacyProfile,
 	getPharmacyReviews,
+	getProductOrderLimits,
 	getPrescriptionById,
 	getTopSellingProducts,
 	listAddresses,
@@ -57,8 +58,9 @@ router.get("/categories/:slug", verifyToken, allowConsumerAndDoctor, getCategory
 router.get("/catalog/top-selling", verifyToken, allowConsumerAndDoctor, getTopSellingProducts);
 router.get("/catalog/brands", verifyToken, allowConsumerAndDoctor, getCatalogBrands);
 router.get("/catalog/products", verifyToken, allowConsumerAndDoctor, getCatalogProducts);
-router.get("/catalog/products/:productId", verifyToken, allowConsumerAndDoctor, getCatalogProduct);
 router.get("/catalog/products/:productId/availability", verifyToken, allowConsumerAndDoctor, checkProductAvailability);
+router.get("/catalog/products/:productId/order-limits", verifyToken, allowConsumerAndDoctor, getProductOrderLimits);
+router.get("/catalog/products/:productId", verifyToken, allowConsumerAndDoctor, getCatalogProduct);
 router.get("/catalog/categories", verifyToken, allowConsumerAndDoctor, getCatalogCategories);
 router.post("/catalog/discounts/validate", verifyToken, allowConsumerAndDoctor, validateCatalogDiscount);
 
