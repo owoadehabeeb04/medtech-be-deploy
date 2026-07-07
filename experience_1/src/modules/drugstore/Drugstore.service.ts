@@ -466,14 +466,30 @@ export class DrugstoreService {
 		};
 	}
 
+	static async getProductOrderLimits(merchantId: string, productId: string): Promise<ApiResponse> {
+		const product = await this.getMerchantProduct(merchantId, productId);
+		return {
+			status: true,
+			code: 200,
+			message: RESPONSE_MESSAGES.SUCCESSS,
+			data: {
+				productId: product.id,
+				merchantId: product.merchantId,
+				minQuantity: product.minQuantity,
+				maxQuantity: product.maxQuantity,
+				inventory: product.inventory,
+				isActive: product.isActive,
+				requiresPrescription: Boolean(product.requiresPrescription),
+			},
+		};
+	}
+
 	static async checkProductAvailability(merchantId: string, productId: string, quantity: number): Promise<ApiResponse> {
 		const product = await this.getMerchantProduct(merchantId, productId);
 
 		let reason: string | null = null;
 		if (product.isActive === false || product.inventory <= 0) {
 			reason = "Product is unavailable";
-		} else if (quantity < product.minQuantity || quantity > product.maxQuantity) {
-			reason = `Quantity must be between ${product.minQuantity} and ${product.maxQuantity}`;
 		} else if (quantity > product.inventory) {
 			reason = "Requested quantity exceeds available stock";
 		}
@@ -582,14 +598,6 @@ export class DrugstoreService {
 			return { status: false, code: 400, message: "Product is unavailable" };
 		}
 
-		if (payload.quantity < product.minQuantity || payload.quantity > product.maxQuantity) {
-			return {
-				status: false,
-				code: 400,
-				message: `Quantity must be between ${product.minQuantity} and ${product.maxQuantity}`,
-			};
-		}
-
 		if (payload.quantity > product.inventory) {
 			return {
 				status: false,
@@ -691,14 +699,6 @@ export class DrugstoreService {
 		const product = await this.getMerchantProduct(item.merchantId, item.merchantProductId);
 		if (payload.quantity > product.inventory) {
 			return { status: false, code: 400, message: "Requested quantity exceeds available stock" };
-		}
-
-		if (payload.quantity < product.minQuantity || payload.quantity > product.maxQuantity) {
-			return {
-				status: false,
-				code: 400,
-				message: `Quantity must be between ${product.minQuantity} and ${product.maxQuantity}`,
-			};
 		}
 
 		const line = this.calculateLine({
