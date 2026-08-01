@@ -49,3 +49,31 @@ export const verifyResetOtp = async (req: Request, res: Response, next: NextFunc
 
   return res.status(data.code).json(responsePayload);
 };
+/**
+ * @swagger
+ * /api/v1/merchant/auth/verify-reset-otp:
+ *   post:
+ *     summary: "Verify reset OTP"
+ *     description: "Verify reset OTP for the merchant API."
+ *     operationId: "merchant_post_api_v1_merchant_auth_verify_reset_otp"
+ *     tags: ["Authentication"]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object, additionalProperties: true }
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication or signature rejected"
+ *       409:
+ *         description: "Business rule conflict"
+ */

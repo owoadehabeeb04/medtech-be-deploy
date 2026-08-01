@@ -24,3 +24,24 @@ export const getBankList = async (req: Request, res: Response, next: NextFunctio
 
   return res.status(OK).json(responsePayload);
 };
+/**
+ * @swagger
+ * /api/v1/merchant/onboarding/banks:
+ *   get:
+ *     summary: "Get bank list"
+ *     description: "Get bank list for the merchant API."
+ *     operationId: "merchant_get_api_v1_merchant_onboarding_banks"
+ *     tags: ["Onboarding"]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ */

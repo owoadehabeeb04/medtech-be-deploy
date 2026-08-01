@@ -63,3 +63,31 @@ export const uploadValidId = async (req: Request, res: Response, next: NextFunct
 
   return res.status(data.code).json(responsePayload);
 };
+/**
+ * @swagger
+ * /api/v1/merchant/onboarding/upload-valid-id:
+ *   post:
+ *     summary: "Upload valid ID"
+ *     description: "Upload valid ID for the merchant API."
+ *     operationId: "merchant_post_api_v1_merchant_onboarding_upload_valid_id"
+ *     tags: ["Onboarding"]
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object, additionalProperties: true }
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ *       409:
+ *         description: "Business rule conflict"
+ */

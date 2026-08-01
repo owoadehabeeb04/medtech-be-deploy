@@ -32,6 +32,13 @@ const options: swaggerJsdoc.Options = {
           scheme: "bearer",
           bearerFormat: "JWT",
         },
+        internalAuth: {
+          type: "apiKey",
+          in: "header",
+          name: "x-internal-signature",
+          description:
+            "HMAC-SHA256 service-to-service authentication. Also requires x-internal-key-id, x-internal-timestamp, and x-internal-nonce.",
+        },
       },
       schemas: {
         SignupRequest: {
@@ -182,7 +189,8 @@ const options: swaggerJsdoc.Options = {
               example: "Error message",
             },
             data: {
-              type: "null",
+              type: "object",
+              nullable: true,
             },
           },
         },
@@ -247,12 +255,48 @@ const options: swaggerJsdoc.Options = {
         description: "Product inventory management endpoints",
       },
       {
+        name: "Categories",
+        description: "Merchant product category endpoints",
+      },
+      {
+        name: "Internal Drugstore",
+        description: "Signed service-to-service drugstore endpoints",
+      },
+      {
+        name: "In-Store Sales",
+        description: "Point-of-sale sale, cancellation, return, and manual refund endpoints",
+      },
+      {
         name: "Discounts",
         description: "Discount code management endpoints",
       },
       {
         name: "Merchant Settings",
         description: "Merchant settings and preferences endpoints",
+      },
+      {
+        name: "Support",
+        description: "Merchant support endpoints",
+      },
+      {
+        name: "Subscriptions",
+        description: "Merchant subscription and billing endpoints",
+      },
+      {
+        name: "Wallet",
+        description: "Merchant wallet and transaction endpoints",
+      },
+      {
+        name: "Dashboard & Analytics",
+        description: "Merchant dashboard and drugstore analytics endpoints",
+      },
+      {
+        name: "Drugstore Orders",
+        description: "Merchant drugstore order operations",
+      },
+      {
+        name: "Drugstore Prescriptions",
+        description: "Merchant prescription review endpoints",
       },
       {
         name: "Health",

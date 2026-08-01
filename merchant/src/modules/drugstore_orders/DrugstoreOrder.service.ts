@@ -24,6 +24,7 @@ type AnalyticsOrderRow = {
   totalAmount: string | number;
   sourceUserId: number | string;
   deliveryStatus: DeliveryStatus;
+  isInstoreSales: boolean;
 };
 
 type AnalyticsBucket = {
@@ -738,7 +739,14 @@ const buildRangeWhere = (merchantId: string, start: Date, end: Date) => ({
 const fetchAnalyticsOrders = async (merchantId: string, start: Date, end: Date): Promise<AnalyticsOrderRow[]> => {
   const rows = await DrugstoreOrder.findAll({
     where: buildRangeWhere(merchantId, start, end),
-    attributes: ["placedAt", "paymentStatus", "totalAmount", "sourceUserId", "deliveryStatus"],
+    attributes: [
+      "placedAt",
+      "paymentStatus",
+      "totalAmount",
+      "sourceUserId",
+      "deliveryStatus",
+      "isInstoreSales",
+    ],
     raw: true,
   });
 
@@ -1351,7 +1359,7 @@ export class DrugstoreOrderService {
       if (!entry) return;
 
       entry.orderCount += 1;
-      if (row.sourceUserId !== undefined && row.sourceUserId !== null) {
+      if (!row.isInstoreSales && row.sourceUserId !== undefined && row.sourceUserId !== null) {
         entry.uniqueUsers.add(String(row.sourceUserId));
       }
       if (row.paymentStatus === "paid") {
@@ -1381,6 +1389,7 @@ export class DrugstoreOrderService {
         orderCount: series.reduce((sum, item) => sum + item.orderCount, 0),
         uniqueUsers: new Set(
           rows
+            .filter((row) => !row.isInstoreSales)
             .map((row) => row.sourceUserId)
             .filter((value) => value !== undefined && value !== null)
             .map((value) => String(value))

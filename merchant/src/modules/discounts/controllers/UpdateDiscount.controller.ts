@@ -52,3 +52,38 @@ export default async (req: Request, res: Response, next: NextFunction) => {
     return next(error);
   }
 };
+/**
+ * @swagger
+ * /api/v1/merchant/discounts/{discountId}:
+ *   patch:
+ *     summary: "Update discount"
+ *     description: "Update discount for the merchant API."
+ *     operationId: "merchant_patch_api_v1_merchant_discounts_discountId"
+ *     tags: ["Discounts"]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: discountId
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object, additionalProperties: true }
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ *       404:
+ *         description: "Requested resource was not found"
+ *       409:
+ *         description: "Business rule conflict"
+ */
