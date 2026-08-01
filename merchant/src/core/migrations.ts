@@ -6,6 +6,7 @@ export async function runMigrations(sequelize: Sequelize): Promise<void> {
 
   await removeTermsAcceptedColumn(queryInterface);
   await addDrugstoreOrderFlowColumns(queryInterface);
+  await addInStoreSalesFlag(queryInterface);
   await shiftOnboardingSteps(sequelize);
 }
 
@@ -67,6 +68,37 @@ async function addDrugstoreOrderFlowColumns(queryInterface: any): Promise<void> 
   } catch (error: any) {
     if (error.message?.includes("does not exist")) return;
     console.error("[Migration] Error adding merchant drugstore order flow columns:", error.message);
+  }
+}
+
+async function addInStoreSalesFlag(queryInterface: any): Promise<void> {
+  try {
+    const tableName = "merchant_drugstore_orders";
+    const tableDescription = await queryInterface.describeTable(tableName);
+
+    if (!tableDescription.is_instore_sales) {
+      await queryInterface.addColumn(tableName, "is_instore_sales", {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      });
+      console.log("[Migration] Added is_instore_sales column to merchant_drugstore_orders");
+    }
+
+    await queryInterface.sequelize.query(
+      `UPDATE ${tableName}
+       SET is_instore_sales = true
+       WHERE is_instore_sales = false
+         AND metadata @> '{"origin":"in_store"}'::jsonb`
+    );
+
+    await queryInterface.sequelize.query(
+      `CREATE INDEX IF NOT EXISTS idx_merchant_drugstore_orders_is_instore_sales
+       ON ${tableName} (is_instore_sales)`
+    );
+  } catch (error: any) {
+    if (error.message?.includes("does not exist")) return;
+    console.error("[Migration] Error adding is_instore_sales column:", error.message);
   }
 }
 

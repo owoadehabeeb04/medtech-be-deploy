@@ -182,7 +182,8 @@ const options: swaggerJsdoc.Options = {
               example: "Error message",
             },
             data: {
-              type: "null",
+              type: "object",
+              nullable: true,
             },
           },
         },
@@ -245,6 +246,10 @@ const options: swaggerJsdoc.Options = {
       {
         name: "Products",
         description: "Product inventory management endpoints",
+      },
+      {
+        name: "In-Store Sales",
+        description: "Point-of-sale sale, cancellation, return, and manual refund endpoints",
       },
       {
         name: "Discounts",
