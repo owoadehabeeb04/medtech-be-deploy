@@ -61,6 +61,245 @@ export const listDrugstoreOrders = async (req: Request, res: Response, next: Nex
     return next(error);
   }
 };
+/**
+ * @swagger
+ * /api/v1/merchant/analytics/kpis:
+ *   get:
+ *     summary: "Get drugstore order analytics KPIs"
+ *     description: "Get drugstore order analytics KPIs for the merchant API."
+ *     operationId: "merchant_get_api_v1_merchant_analytics_kpis"
+ *     tags: ["Dashboard & Analytics"]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/analytics/sales:
+ *   get:
+ *     summary: "Get drugstore order analytics sales"
+ *     description: "Get drugstore order analytics sales for the merchant API."
+ *     operationId: "merchant_get_api_v1_merchant_analytics_sales"
+ *     tags: ["Dashboard & Analytics"]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/analytics/order-breakdown:
+ *   get:
+ *     summary: "Get drugstore order analytics order breakdown"
+ *     description: "Get drugstore order analytics order breakdown for the merchant API."
+ *     operationId: "merchant_get_api_v1_merchant_analytics_order_breakdown"
+ *     tags: ["Dashboard & Analytics"]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/analytics/top-selling-products:
+ *   get:
+ *     summary: "Get drugstore order analytics top selling products"
+ *     description: "Get drugstore order analytics top selling products for the merchant API."
+ *     operationId: "merchant_get_api_v1_merchant_analytics_top_selling_products"
+ *     tags: ["Dashboard & Analytics"]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/analytics/recent-product-sales:
+ *   get:
+ *     summary: "Get drugstore order analytics recent product sales"
+ *     description: "Get drugstore order analytics recent product sales for the merchant API."
+ *     operationId: "merchant_get_api_v1_merchant_analytics_recent_product_sales"
+ *     tags: ["Dashboard & Analytics"]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/dashboard:
+ *   get:
+ *     summary: "Get drugstore orders dashboard"
+ *     description: "Get drugstore orders dashboard for the merchant API."
+ *     operationId: "merchant_get_api_v1_merchant_dashboard"
+ *     tags: ["Dashboard & Analytics"]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/drugstore-orders/seed:
+ *   post:
+ *     summary: "Seed drugstore orders"
+ *     description: "Seed drugstore orders for the merchant API."
+ *     operationId: "merchant_post_api_v1_merchant_drugstore_orders_seed"
+ *     tags: ["Drugstore Orders"]
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object, additionalProperties: true }
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ *       409:
+ *         description: "Business rule conflict"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/drugstore-orders:
+ *   get:
+ *     summary: "List drugstore orders"
+ *     description: "List drugstore orders for the merchant API."
+ *     operationId: "merchant_get_api_v1_merchant_drugstore_orders"
+ *     tags: ["Drugstore Orders"]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/drugstore-orders/export.csv:
+ *   get:
+ *     summary: "Export drugstore orders CSV"
+ *     description: "Returns a CSV export."
+ *     operationId: "merchant_get_api_v1_merchant_drugstore_orders_export_csv"
+ *     tags: ["Drugstore Orders"]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: "CSV export generated successfully"
+ *         content:
+ *           text/csv:
+ *             schema: { type: string }
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/drugstore-orders/{orderId}/status:
+ *   patch:
+ *     summary: "Update drugstore order status"
+ *     description: "Update drugstore order status for the merchant API."
+ *     operationId: "merchant_patch_api_v1_merchant_drugstore_orders_orderId_status"
+ *     tags: ["Drugstore Orders"]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: orderId
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object, additionalProperties: true }
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ *       404:
+ *         description: "Requested resource was not found"
+ *       409:
+ *         description: "Business rule conflict"
+ */
 
 export const seedDrugstoreOrders = async (req: Request, res: Response, next: NextFunction) => {
   try {

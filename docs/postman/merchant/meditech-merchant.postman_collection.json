@@ -37,6 +37,30 @@
     {
       "key": "withdrawalReference",
       "value": ""
+    },
+    {
+      "key": "in_store_order_id",
+      "value": ""
+    },
+    {
+      "key": "in_store_order_item_id",
+      "value": ""
+    },
+    {
+      "key": "in_store_create_idempotency_key",
+      "value": "postman-in-store-create-1"
+    },
+    {
+      "key": "in_store_cancel_idempotency_key",
+      "value": "postman-in-store-cancel-1"
+    },
+    {
+      "key": "in_store_return_idempotency_key",
+      "value": "postman-in-store-return-1"
+    },
+    {
+      "key": "in_store_refund_idempotency_key",
+      "value": "postman-in-store-refund-1"
     }
   ],
   "auth": {
@@ -2061,6 +2085,36 @@
             },
             "description": "Disable auto-renewal. Plan expires at the end of current billing period."
           }
+        },
+        {
+          "name": "Subscription Webhook",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/webhook",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptions",
+                "webhook"
+              ]
+            },
+            "description": "Public payment-provider webhook endpoint. Use a provider-signed payload when testing against a configured environment.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
         }
       ]
     },
@@ -2772,9 +2826,209 @@
       ]
     },
     {
+      "name": "In-Store Sales",
+      "description": "Merchant point-of-sale sales, inventory resolution, returns, and manual refunds. Action requests require an Idempotency-Key header.",
+      "item": [
+        {
+          "name": "List In-Store Sale Products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/in-store-sales/products?search=&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["in-store-sales", "products"],
+              "query": [
+                { "key": "search", "value": "" },
+                { "key": "limit", "value": "20" }
+              ]
+            },
+            "description": "List active products with available inventory for the cashier product picker."
+          }
+        },
+        {
+          "name": "Create In-Store Sale",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data || {};",
+                  "if (data.id) pm.collectionVariables.set('in_store_order_id', data.id);",
+                  "if (data.items?.[0]?.id) pm.collectionVariables.set('in_store_order_item_id', data.items[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{in_store_create_idempotency_key}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/in-store-sales",
+              "host": ["{{baseUrl}}"],
+              "path": ["in-store-sales"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"productId\": \"{{product_id}}\",\n      \"quantity\": 1\n    }\n  ],\n  \"customerName\": \"Walk-in Customer\",\n  \"paymentStatus\": \"paid\",\n  \"deliveryStatus\": \"delivered\"\n}"
+            },
+            "description": "Create a completed walk-in sale and decrement inventory atomically."
+          }
+        },
+        {
+          "name": "List In-Store Sales",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/in-store-sales?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["in-store-sales"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            },
+            "description": "List paginated in-store sales with Lagos-formatted date/time and resolution status."
+          }
+        },
+        {
+          "name": "Get In-Store Sale",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/in-store-sales/{{in_store_order_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["in-store-sales", "{{in_store_order_id}}"]
+            },
+            "description": "Get a sale by database UUID or human-facing IS-... sale ID."
+          }
+        },
+        {
+          "name": "Export In-Store Sales CSV",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/in-store-sales/export.csv?paymentStatus=paid",
+              "host": ["{{baseUrl}}"],
+              "path": ["in-store-sales", "export.csv"],
+              "query": [{ "key": "paymentStatus", "value": "paid" }]
+            },
+            "description": "Export filtered in-store sales as CSV. Large exports are read in batches."
+          }
+        },
+        {
+          "name": "Cancel In-Store Sale",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{in_store_cancel_idempotency_key}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/in-store-sales/{{in_store_order_id}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["in-store-sales", "{{in_store_order_id}}", "cancel"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Customer changed their mind\"\n}"
+            },
+            "description": "Cancel a pre-completion sale. This restores inventory; record a refund separately when payment was successful."
+          }
+        },
+        {
+          "name": "Return In-Store Sale Items",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{in_store_return_idempotency_key}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/in-store-sales/{{in_store_order_id}}/return",
+              "host": ["{{baseUrl}}"],
+              "path": ["in-store-sales", "{{in_store_order_id}}", "return"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"orderItemId\": \"{{in_store_order_item_id}}\",\n      \"quantity\": 1,\n      \"condition\": \"resalable\"\n    }\n  ],\n  \"reason\": \"Customer returned unopened item\"\n}"
+            },
+            "description": "Record a full or partial return. Resalable items return to stock; damaged items do not."
+          }
+        },
+        {
+          "name": "Record In-Store Sale Refund",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{in_store_refund_idempotency_key}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/in-store-sales/{{in_store_order_id}}/refund",
+              "host": ["{{baseUrl}}"],
+              "path": ["in-store-sales", "{{in_store_order_id}}", "refund"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"cash\",\n  \"note\": \"Cash refunded to customer\"\n}"
+            },
+            "description": "Record the remaining manual refund balance after a cancellation or return."
+          }
+        }
+      ]
+    },
+    {
       "name": "Internal Drugstore",
       "description": "Signed internal endpoints consumed by experience_1. These are service-to-service routes and require HMAC headers; the folder pre-request script populates those automatically from environment variables.",
       "item": [
+        {
+          "name": "Internal Top Selling Products",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              { "key": "x-internal-key-id", "value": "{{internal_key_id}}" },
+              { "key": "x-internal-timestamp", "value": "{{internal_timestamp}}" },
+              { "key": "x-internal-nonce", "value": "{{internal_nonce}}" },
+              { "key": "x-internal-signature", "value": "{{internal_signature}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/internal/drugstore/top-selling-products?limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["internal", "drugstore", "top-selling-products"],
+              "query": [{ "key": "limit", "value": "20" }]
+            },
+            "description": "Signed service-to-service top-selling-products endpoint."
+          }
+        },
+        {
+          "name": "Internal Product Brands",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              { "key": "x-internal-key-id", "value": "{{internal_key_id}}" },
+              { "key": "x-internal-timestamp", "value": "{{internal_timestamp}}" },
+              { "key": "x-internal-nonce", "value": "{{internal_nonce}}" },
+              { "key": "x-internal-signature", "value": "{{internal_signature}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/internal/drugstore/product-brands?category=",
+              "host": ["{{baseUrl}}"],
+              "path": ["internal", "drugstore", "product-brands"],
+              "query": [{ "key": "category", "value": "" }]
+            },
+            "description": "Signed service-to-service distinct product brands endpoint."
+          }
+        },
         {
           "name": "Internal List Products",
           "request": {
@@ -2977,15 +3231,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/internal/drugstore/pharmacies/nearby?search=&page=1&limit=20&activeCartMerchantId={{merchant_id}}&activeCartItemCount=2&activeCartSubtotal=49000",
+              "raw": "{{baseUrl}}/internal/drugstore/nearby-pharmacies?search=&page=1&limit=20&activeCartMerchantId={{merchant_id}}&activeCartItemCount=2&activeCartSubtotal=49000",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "internal",
                 "drugstore",
-                "pharmacies",
-                "nearby"
+                "nearby-pharmacies"
               ],
               "query": [
                 {

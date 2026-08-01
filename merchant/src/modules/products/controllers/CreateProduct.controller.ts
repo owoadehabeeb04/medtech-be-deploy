@@ -55,3 +55,31 @@ export default async (req: Request, res: Response, next: NextFunction) => {
     return next(error);
   }
 };
+/**
+ * @swagger
+ * /api/v1/merchant/products:
+ *   post:
+ *     summary: "Create product"
+ *     description: "Create product for the merchant API."
+ *     operationId: "merchant_post_api_v1_merchant_products"
+ *     tags: ["Products"]
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object, additionalProperties: true }
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ *       409:
+ *         description: "Business rule conflict"
+ */

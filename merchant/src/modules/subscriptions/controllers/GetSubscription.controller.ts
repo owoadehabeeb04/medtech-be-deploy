@@ -24,3 +24,24 @@ export default async (req: Request, res: Response, next: NextFunction) => {
     return next(error);
   }
 };
+/**
+ * @swagger
+ * /api/v1/merchant/subscriptions:
+ *   get:
+ *     summary: "Get subscription"
+ *     description: "Get subscription for the merchant API."
+ *     operationId: "merchant_get_api_v1_merchant_subscriptions"
+ *     tags: ["Subscriptions"]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ */

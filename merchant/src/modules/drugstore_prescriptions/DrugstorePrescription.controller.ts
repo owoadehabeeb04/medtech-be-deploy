@@ -29,6 +29,63 @@ export const listDrugstorePrescriptions = async (req: Request, res: Response, ne
     return next(error);
   }
 };
+/**
+ * @swagger
+ * /api/v1/merchant/drugstore-prescriptions:
+ *   get:
+ *     summary: "List drugstore prescriptions"
+ *     description: "List drugstore prescriptions for the merchant API."
+ *     operationId: "merchant_get_api_v1_merchant_drugstore_prescriptions"
+ *     tags: ["Drugstore Prescriptions"]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/drugstore-prescriptions/{prescriptionId}/review:
+ *   post:
+ *     summary: "Review drugstore prescription"
+ *     description: "Review drugstore prescription for the merchant API."
+ *     operationId: "merchant_post_api_v1_merchant_drugstore_prescriptions_prescriptionId_review"
+ *     tags: ["Drugstore Prescriptions"]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: prescriptionId
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object, additionalProperties: true }
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ *       404:
+ *         description: "Requested resource was not found"
+ *       409:
+ *         description: "Business rule conflict"
+ */
 
 export const reviewDrugstorePrescription = async (req: Request, res: Response, next: NextFunction) => {
   try {

@@ -51,3 +51,24 @@ export const getOnboardingStatus = async (req: Request, res: Response, next: Nex
 
   return next();
 };
+/**
+ * @swagger
+ * /api/v1/merchant/onboarding/status:
+ *   get:
+ *     summary: "Get onboarding status"
+ *     description: "Get onboarding status for the merchant API."
+ *     operationId: "merchant_get_api_v1_merchant_onboarding_status"
+ *     tags: ["Onboarding"]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ */

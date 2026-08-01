@@ -25,6 +25,7 @@ import { DrugstoreOrderItem } from "./DrugstoreOrderItem.model";
     { fields: ["delivery_status"] },
     { fields: ["placed_at"] },
     { fields: ["status"] },
+    { fields: ["is_instore_sales"] },
   ],
 })
 export class DrugstoreOrder extends Model<DrugstoreOrder> {
@@ -76,6 +77,11 @@ export class DrugstoreOrder extends Model<DrugstoreOrder> {
   @Default("pending")
   @Column(DataType.ENUM("pending", "picked_up", "in_transit", "delivered", "cancelled"))
   declare deliveryStatus: "pending" | "picked_up" | "in_transit" | "delivered" | "cancelled";
+
+  @AllowNull(false)
+  @Default(false)
+  @Column(DataType.BOOLEAN)
+  declare isInstoreSales: boolean;
 
   @AllowNull(false)
   @Default(DataType.NOW)

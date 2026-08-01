@@ -60,3 +60,31 @@ export const uploadProfilePicture = async (req: Request, res: Response, next: Ne
 
   return res.status(OK).json(responsePayload);
 };
+/**
+ * @swagger
+ * /api/v1/merchant/onboarding/upload-profile-picture:
+ *   post:
+ *     summary: "Upload profile picture"
+ *     description: "Upload profile picture for the merchant API."
+ *     operationId: "merchant_post_api_v1_merchant_onboarding_upload_profile_picture"
+ *     tags: ["Onboarding"]
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object, additionalProperties: true }
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ *       409:
+ *         description: "Business rule conflict"
+ */
