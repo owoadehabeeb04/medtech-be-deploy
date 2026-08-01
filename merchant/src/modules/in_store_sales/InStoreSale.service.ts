@@ -880,7 +880,7 @@ export class InStoreSaleService {
       where: this.buildSaleLookup(merchantId, orderId),
       include: [{ model: DrugstoreOrderItem, as: "items" }],
       transaction,
-      lock: true,
+      lock: { level: Transaction.LOCK.UPDATE, of: DrugstoreOrder },
     });
 
     if (!order) {

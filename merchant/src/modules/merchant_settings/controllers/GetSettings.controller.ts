@@ -38,3 +38,24 @@ export const getAllSettings = async (
     data: result.data,
   });
 };
+/**
+ * @swagger
+ * /api/v1/merchant/settings:
+ *   get:
+ *     summary: "Get all settings"
+ *     description: "Get all settings for the merchant API."
+ *     operationId: "merchant_get_api_v1_merchant_settings"
+ *     tags: ["Merchant Settings"]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Authentication required"
+ */

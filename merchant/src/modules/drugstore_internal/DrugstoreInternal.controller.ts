@@ -52,6 +52,260 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
     return next(error);
   }
 };
+/**
+ * @swagger
+ * /api/v1/merchant/internal/drugstore/top-selling-products:
+ *   get:
+ *     summary: "Get top selling products"
+ *     description: "Signed service-to-service merchant endpoint."
+ *     operationId: "merchant_get_api_v1_merchant_internal_drugstore_top_selling_products"
+ *     tags: ["Internal Drugstore"]
+ *     security: [{ internalAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Missing or invalid internal authentication signature"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/internal/drugstore/product-brands:
+ *   get:
+ *     summary: "Get distinct brands"
+ *     description: "Signed service-to-service merchant endpoint."
+ *     operationId: "merchant_get_api_v1_merchant_internal_drugstore_product_brands"
+ *     tags: ["Internal Drugstore"]
+ *     security: [{ internalAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Missing or invalid internal authentication signature"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/internal/drugstore/products:
+ *   get:
+ *     summary: "List products"
+ *     description: "Signed service-to-service merchant endpoint."
+ *     operationId: "merchant_get_api_v1_merchant_internal_drugstore_products"
+ *     tags: ["Internal Drugstore"]
+ *     security: [{ internalAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Missing or invalid internal authentication signature"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/internal/drugstore/products/{productId}:
+ *   get:
+ *     summary: "Get product"
+ *     description: "Signed service-to-service merchant endpoint."
+ *     operationId: "merchant_get_api_v1_merchant_internal_drugstore_products_productId"
+ *     tags: ["Internal Drugstore"]
+ *     security: [{ internalAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Missing or invalid internal authentication signature"
+ *       404:
+ *         description: "Requested resource was not found"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/internal/drugstore/categories:
+ *   get:
+ *     summary: "List categories"
+ *     description: "Signed service-to-service merchant endpoint."
+ *     operationId: "merchant_get_api_v1_merchant_internal_drugstore_categories"
+ *     tags: ["Internal Drugstore"]
+ *     security: [{ internalAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Missing or invalid internal authentication signature"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/internal/drugstore/nearby-pharmacies:
+ *   get:
+ *     summary: "List nearby pharmacies"
+ *     description: "Signed service-to-service merchant endpoint."
+ *     operationId: "merchant_get_api_v1_merchant_internal_drugstore_nearby_pharmacies"
+ *     tags: ["Internal Drugstore"]
+ *     security: [{ internalAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Missing or invalid internal authentication signature"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/internal/drugstore/pharmacies/{merchantId}:
+ *   get:
+ *     summary: "Get pharmacy profile"
+ *     description: "Signed service-to-service merchant endpoint."
+ *     operationId: "merchant_get_api_v1_merchant_internal_drugstore_pharmacies_merchantId"
+ *     tags: ["Internal Drugstore"]
+ *     security: [{ internalAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: merchantId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Missing or invalid internal authentication signature"
+ *       404:
+ *         description: "Requested resource was not found"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/internal/drugstore/pharmacies/{merchantId}/reviews:
+ *   get:
+ *     summary: "Get pharmacy reviews"
+ *     description: "Signed service-to-service merchant endpoint."
+ *     operationId: "merchant_get_api_v1_merchant_internal_drugstore_pharmacies_merchantId_reviews"
+ *     tags: ["Internal Drugstore"]
+ *     security: [{ internalAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: merchantId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Missing or invalid internal authentication signature"
+ *       404:
+ *         description: "Requested resource was not found"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/internal/drugstore/discounts/validate:
+ *   post:
+ *     summary: "Validate discount"
+ *     description: "Signed service-to-service merchant endpoint."
+ *     operationId: "merchant_post_api_v1_merchant_internal_drugstore_discounts_validate"
+ *     tags: ["Internal Drugstore"]
+ *     security: [{ internalAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object, additionalProperties: true }
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Missing or invalid internal authentication signature"
+ *       409:
+ *         description: "Business rule conflict"
+ */
+
+/**
+ * @swagger
+ * /api/v1/merchant/internal/drugstore/orders/reflect:
+ *   post:
+ *     summary: "Reflect order"
+ *     description: "Signed service-to-service merchant endpoint."
+ *     operationId: "merchant_post_api_v1_merchant_internal_drugstore_orders_reflect"
+ *     tags: ["Internal Drugstore"]
+ *     security: [{ internalAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object, additionalProperties: true }
+ *     responses:
+ *       200:
+ *         description: "Request completed successfully"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/SuccessResponse"
+ *       400:
+ *         description: "Invalid request or validation failed"
+ *       401:
+ *         description: "Missing or invalid internal authentication signature"
+ *       409:
+ *         description: "Business rule conflict"
+ */
 
 export const getProduct = async (req: Request, res: Response, next: NextFunction) => {
   try {
