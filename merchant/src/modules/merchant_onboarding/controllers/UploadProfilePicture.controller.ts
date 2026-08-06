@@ -80,7 +80,7 @@ export const uploadProfilePicture = async (req: Request, res: Response, next: Ne
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/UploadProfilePictureResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:

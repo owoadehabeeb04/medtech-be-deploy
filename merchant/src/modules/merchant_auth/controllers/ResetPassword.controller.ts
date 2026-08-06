@@ -69,7 +69,7 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/MessageOnlyResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:

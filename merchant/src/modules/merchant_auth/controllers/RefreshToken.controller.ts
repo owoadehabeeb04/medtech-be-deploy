@@ -69,7 +69,7 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/RefreshTokenResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:

@@ -67,7 +67,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/InternalTopSellingProductsResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -89,7 +89,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/InternalDistinctBrandsResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -111,7 +111,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/InternalListProductsResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -138,7 +138,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/InternalProductResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -162,7 +162,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/InternalCategoriesResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -184,7 +184,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/InternalNearbyPharmaciesResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -211,7 +211,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/InternalPharmacyProfileResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -240,7 +240,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/InternalPharmacyReviewsResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -269,7 +269,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/ValidateDiscountCodeResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -298,7 +298,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/InternalReflectOrderResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:

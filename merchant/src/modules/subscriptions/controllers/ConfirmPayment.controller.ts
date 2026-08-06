@@ -56,7 +56,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/ConfirmSubscriptionPaymentResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:

@@ -71,6 +71,10 @@ export const listInStoreSaleProducts = async (req: Request, res: Response, next:
  *     responses:
  *       200:
  *         description: In-stock active products
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/InStoreSaleProductOptionsResponse"
  *       400:
  *         description: Invalid search or limit
  *       401:
@@ -155,6 +159,10 @@ export const listInStoreSaleProducts = async (req: Request, res: Response, next:
  *     responses:
  *       200:
  *         description: Paginated in-store sales
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/InStoreSaleListResponse"
  *       400:
  *         description: Invalid filter, sort, or pagination value
  *       401:
@@ -188,7 +196,7 @@ export const listInStoreSaleProducts = async (req: Request, res: Response, next:
  *               items:
  *                 type: array
  *                 minItems: 1
- *                 maxItems: 50
+ *                 description: No upper limit on line item count.
  *                 items:
  *                   type: object
  *                   required: [productId, quantity]
@@ -204,6 +212,10 @@ export const listInStoreSaleProducts = async (req: Request, res: Response, next:
  *     responses:
  *       201:
  *         description: Sale created and inventory decremented
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/InStoreSaleResponse"
  *       400:
  *         description: Invalid sale payload
  *       401:
@@ -244,6 +256,10 @@ export const listInStoreSaleProducts = async (req: Request, res: Response, next:
  *     responses:
  *       200:
  *         description: Sale cancelled and inventory restored
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/InStoreSaleResponse"
  *       400:
  *         description: Missing idempotency key or invalid reason
  *       404:
@@ -282,7 +298,7 @@ export const listInStoreSaleProducts = async (req: Request, res: Response, next:
  *               items:
  *                 type: array
  *                 minItems: 1
- *                 maxItems: 50
+ *                 description: No upper limit on line item count.
  *                 items:
  *                   type: object
  *                   required: [orderItemId, quantity, condition]
@@ -295,6 +311,10 @@ export const listInStoreSaleProducts = async (req: Request, res: Response, next:
  *     responses:
  *       200:
  *         description: Return recorded and any resalable inventory restored
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/InStoreSaleResponse"
  *       400:
  *         description: Invalid return payload
  *       404:
@@ -338,6 +358,10 @@ export const listInStoreSaleProducts = async (req: Request, res: Response, next:
  *     responses:
  *       200:
  *         description: Refund recorded against the sale
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/InStoreSaleResponse"
  *       400:
  *         description: Invalid amount, method, reference, or idempotency key
  *       404:
@@ -363,6 +387,10 @@ export const listInStoreSaleProducts = async (req: Request, res: Response, next:
  *     responses:
  *       200:
  *         description: Sale details, including cancellation, return, and refund resolution history
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/InStoreSaleResponse"
  *       404:
  *         description: Sale not found for this merchant
  */

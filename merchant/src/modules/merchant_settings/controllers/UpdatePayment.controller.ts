@@ -72,7 +72,7 @@ export const updatePayment = async (
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/UpdatePaymentResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
