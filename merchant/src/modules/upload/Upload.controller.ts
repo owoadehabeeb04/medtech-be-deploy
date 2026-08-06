@@ -59,7 +59,7 @@ export const uploadSingle = async (req: Request, res: Response, next: NextFuncti
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/UploadSingleResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -88,7 +88,7 @@ export const uploadSingle = async (req: Request, res: Response, next: NextFuncti
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/UploadBulkResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:

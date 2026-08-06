@@ -53,7 +53,7 @@ export const getAllSettings = async (
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/GetAllSettingsResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:

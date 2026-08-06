@@ -69,7 +69,7 @@ export const completeSignup = async (req: Request, res: Response, next: NextFunc
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/CompleteSignupResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:

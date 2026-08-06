@@ -71,7 +71,7 @@ console.log("Contact Support Result:", result);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/ContactSupportResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
