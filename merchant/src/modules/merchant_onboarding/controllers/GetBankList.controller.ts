@@ -39,7 +39,7 @@ export const getBankList = async (req: Request, res: Response, next: NextFunctio
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/BankListResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:

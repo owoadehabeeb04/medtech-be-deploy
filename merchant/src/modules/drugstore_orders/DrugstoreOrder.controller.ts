@@ -76,7 +76,7 @@ export const listDrugstoreOrders = async (req: Request, res: Response, next: Nex
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/AnalyticsKpisResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -98,7 +98,7 @@ export const listDrugstoreOrders = async (req: Request, res: Response, next: Nex
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/AnalyticsSalesSeriesResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -120,7 +120,7 @@ export const listDrugstoreOrders = async (req: Request, res: Response, next: Nex
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/AnalyticsOrderBreakdownResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -142,7 +142,7 @@ export const listDrugstoreOrders = async (req: Request, res: Response, next: Nex
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/AnalyticsTopSellingProductsResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -164,7 +164,7 @@ export const listDrugstoreOrders = async (req: Request, res: Response, next: Nex
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/AnalyticsRecentProductSalesResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -186,7 +186,7 @@ export const listDrugstoreOrders = async (req: Request, res: Response, next: Nex
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/DrugstoreDashboardResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -213,7 +213,7 @@ export const listDrugstoreOrders = async (req: Request, res: Response, next: Nex
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/SeedDrugstoreOrdersResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -237,7 +237,7 @@ export const listDrugstoreOrders = async (req: Request, res: Response, next: Nex
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/DrugstoreOrderListResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -290,7 +290,7 @@ export const listDrugstoreOrders = async (req: Request, res: Response, next: Nex
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/DrugstoreOrderRowResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:

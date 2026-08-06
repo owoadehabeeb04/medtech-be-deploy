@@ -44,7 +44,7 @@ export const listDrugstorePrescriptions = async (req: Request, res: Response, ne
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/ListDrugstorePrescriptionsResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
@@ -76,7 +76,7 @@ export const listDrugstorePrescriptions = async (req: Request, res: Response, ne
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/ReviewDrugstorePrescriptionResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:

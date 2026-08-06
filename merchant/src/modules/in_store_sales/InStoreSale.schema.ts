@@ -11,7 +11,7 @@ export const createInStoreSaleSchema = Joi.object({
   // schema/table change.
   productId: Joi.string().uuid().optional(),
   quantity: Joi.number().integer().min(1).optional(),
-  items: Joi.array().items(inStoreOrderItemSchema).min(1).max(50).optional(),
+  items: Joi.array().items(inStoreOrderItemSchema).min(1).optional(),
   customerName: Joi.string().trim().max(255).allow("", null).optional(),
   customerPhone: Joi.string().trim().max(50).allow("", null).optional(),
   paymentStatus: Joi.string().valid("pending", "paid", "failed").default("paid"),
@@ -56,7 +56,6 @@ export const returnInStoreSaleSchema = Joi.object({
       })
     )
     .min(1)
-    .max(50)
     .required()
     .messages({
       "any.required": "At least one returned item is required",

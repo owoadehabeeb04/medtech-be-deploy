@@ -85,7 +85,7 @@ export const verifyBankAccount = async (req: Request, res: Response, next: NextF
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/VerifyBankResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:

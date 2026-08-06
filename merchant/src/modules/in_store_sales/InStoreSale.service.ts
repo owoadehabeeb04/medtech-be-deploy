@@ -699,6 +699,15 @@ export class InStoreSaleService {
       const settings = await MerchantSettings.findOne({ where: { merchantId }, transaction });
       const lowStockThreshold = Number(settings?.storePreferences?.lowStockThreshold || 10);
       const builtItems: any[] = [];
+      // Collected here and written in one batched statement after the loop instead of one
+      // `await product.update()` per item, so an order with many line items does not hold
+      // the row locks acquired above for N sequential round trips.
+      const productUpdates: Array<{
+        id: string;
+        inventory: number;
+        status: ProductStatus;
+        purchaseCount: number;
+      }> = [];
 
       for (const requestedItem of requestedItems) {
         const product = productMap.get(requestedItem.productId);
@@ -754,15 +763,20 @@ export class InStoreSaleService {
               ? ProductStatus.LOW_STOCK
               : ProductStatus.IN_STOCK;
 
-        await product.update(
-          {
-            inventory: nextInventory,
-            status: nextStatus,
-            purchaseCount: Number(product.purchaseCount || 0) + quantity,
-          },
-          { transaction }
-        );
+        productUpdates.push({
+          id: product.id,
+          inventory: nextInventory,
+          status: nextStatus,
+          purchaseCount: Number(product.purchaseCount || 0) + quantity,
+        });
       }
+
+      // `combineDuplicateItems` already merged any repeated productId before this loop, so
+      // each product appears at most once here and this single upsert is safe.
+      await Product.bulkCreate(productUpdates, {
+        updateOnDuplicate: ["inventory", "status", "purchaseCount"],
+        transaction,
+      });
 
       const subtotal = roundMoney(builtItems.reduce((sum, item) => sum + item.lineSubtotal, 0));
       const vatTotal = roundMoney(builtItems.reduce((sum, item) => sum + item.lineVatTotal, 0));
@@ -909,6 +923,15 @@ export class InStoreSaleService {
     const settings = await MerchantSettings.findOne({ where: { merchantId }, transaction });
     const lowStockThreshold = Number(settings?.storePreferences?.lowStockThreshold || 10);
     let restoredQuantity = 0;
+    // Collected and written in one batched statement below instead of one `await
+    // product.update()` per entry, so restoring many products does not hold the row locks
+    // acquired above for N sequential round trips.
+    const productUpdates: Array<{
+      id: string;
+      inventory: number;
+      status: ProductStatus;
+      purchaseCount: number;
+    }> = [];
 
     for (const [productId, quantity] of entries) {
       const product = productMap.get(productId);
@@ -920,16 +943,21 @@ export class InStoreSaleService {
       }
 
       const nextInventory = toNumber(product.inventory) + quantity;
-      await product.update(
-        {
-          inventory: nextInventory,
-          status: resolveProductStatus(nextInventory, lowStockThreshold),
-          purchaseCount: Math.max(0, toNumber(product.purchaseCount) - quantity),
-        },
-        { transaction }
-      );
+      productUpdates.push({
+        id: product.id,
+        inventory: nextInventory,
+        status: resolveProductStatus(nextInventory, lowStockThreshold),
+        purchaseCount: Math.max(0, toNumber(product.purchaseCount) - quantity),
+      });
       restoredQuantity += quantity;
     }
+
+    // `entries` comes from a Map keyed by productId, so each product appears at most once
+    // here and this single upsert is safe.
+    await Product.bulkCreate(productUpdates, {
+      updateOnDuplicate: ["inventory", "status", "purchaseCount"],
+      transaction,
+    });
 
     return restoredQuantity;
   }
@@ -950,6 +978,10 @@ export class InStoreSaleService {
       paranoid: false,
     });
     const productMap = new Map(products.map((product) => [product.id, product]));
+    // Collected and written in one batched statement below instead of one `await
+    // product.update()` per entry, so reversing many products does not hold the row locks
+    // acquired above for N sequential round trips.
+    const productUpdates: Array<{ id: string; purchaseCount: number }> = [];
 
     for (const [productId, quantity] of entries) {
       const product = productMap.get(productId);
@@ -960,11 +992,18 @@ export class InStoreSaleService {
         );
       }
 
-      await product.update(
-        { purchaseCount: Math.max(0, toNumber(product.purchaseCount) - quantity) },
-        { transaction }
-      );
+      productUpdates.push({
+        id: product.id,
+        purchaseCount: Math.max(0, toNumber(product.purchaseCount) - quantity),
+      });
     }
+
+    // `entries` comes from a Map keyed by productId, so each product appears at most once
+    // here and this single upsert is safe.
+    await Product.bulkCreate(productUpdates, {
+      updateOnDuplicate: ["purchaseCount"],
+      transaction,
+    });
   }
 
   private static mergeReturnItems(items: ReturnInStoreSaleItemInput[]): ReturnInStoreSaleItemInput[] {

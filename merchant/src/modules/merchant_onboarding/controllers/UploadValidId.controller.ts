@@ -83,7 +83,7 @@ export const uploadValidId = async (req: Request, res: Response, next: NextFunct
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/SuccessResponse"
+ *               $ref: "#/components/schemas/UploadValidIdResponse"
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
