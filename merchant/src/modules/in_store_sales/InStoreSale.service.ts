@@ -699,9 +699,10 @@ export class InStoreSaleService {
       const settings = await MerchantSettings.findOne({ where: { merchantId }, transaction });
       const lowStockThreshold = Number(settings?.storePreferences?.lowStockThreshold || 10);
       const builtItems: any[] = [];
-      // Collected here and written in one batched statement after the loop instead of one
-      // `await product.update()` per item, so an order with many line items does not hold
-      // the row locks acquired above for N sequential round trips.
+      // Collect the changes while validating the order, then persist them on the
+      // already-locked Product instances. Updating the instances avoids a partial
+      // bulk upsert, which Sequelize may treat as an insert when required fields are
+      // omitted (for example, merchant_id).
       const productUpdates: Array<{
         id: string;
         inventory: number;
@@ -771,12 +772,19 @@ export class InStoreSaleService {
         });
       }
 
-      // `combineDuplicateItems` already merged any repeated productId before this loop, so
-      // each product appears at most once here and this single upsert is safe.
-      await Product.bulkCreate(productUpdates, {
-        updateOnDuplicate: ["inventory", "status", "purchaseCount"],
-        transaction,
-      });
+      for (const update of productUpdates) {
+        const product = productMap.get(update.id);
+        if (!product) {
+          throw new HttpException(404, `Product ${update.id} was not found`);
+        }
+
+        product.set({
+          inventory: update.inventory,
+          status: update.status,
+          purchaseCount: update.purchaseCount,
+        });
+        await product.save({ transaction });
+      }
 
       const subtotal = roundMoney(builtItems.reduce((sum, item) => sum + item.lineSubtotal, 0));
       const vatTotal = roundMoney(builtItems.reduce((sum, item) => sum + item.lineVatTotal, 0));
@@ -923,9 +931,9 @@ export class InStoreSaleService {
     const settings = await MerchantSettings.findOne({ where: { merchantId }, transaction });
     const lowStockThreshold = Number(settings?.storePreferences?.lowStockThreshold || 10);
     let restoredQuantity = 0;
-    // Collected and written in one batched statement below instead of one `await
-    // product.update()` per entry, so restoring many products does not hold the row locks
-    // acquired above for N sequential round trips.
+    // Collect the changes while validating the products, then persist them on the
+    // already-locked Product instances. This avoids a partial bulk upsert being treated
+    // as an insert when required fields are omitted.
     const productUpdates: Array<{
       id: string;
       inventory: number;
@@ -952,12 +960,22 @@ export class InStoreSaleService {
       restoredQuantity += quantity;
     }
 
-    // `entries` comes from a Map keyed by productId, so each product appears at most once
-    // here and this single upsert is safe.
-    await Product.bulkCreate(productUpdates, {
-      updateOnDuplicate: ["inventory", "status", "purchaseCount"],
-      transaction,
-    });
+    for (const update of productUpdates) {
+      const product = productMap.get(update.id);
+      if (!product) {
+        throw new HttpException(
+          409,
+          `Cannot restore inventory for product ${update.id} because the product no longer exists`
+        );
+      }
+
+      product.set({
+        inventory: update.inventory,
+        status: update.status,
+        purchaseCount: update.purchaseCount,
+      });
+      await product.save({ transaction });
+    }
 
     return restoredQuantity;
   }
@@ -978,9 +996,9 @@ export class InStoreSaleService {
       paranoid: false,
     });
     const productMap = new Map(products.map((product) => [product.id, product]));
-    // Collected and written in one batched statement below instead of one `await
-    // product.update()` per entry, so reversing many products does not hold the row locks
-    // acquired above for N sequential round trips.
+    // Collect the changes while validating the products, then persist them on the
+    // already-locked Product instances. This avoids a partial bulk upsert being treated
+    // as an insert when required fields are omitted.
     const productUpdates: Array<{ id: string; purchaseCount: number }> = [];
 
     for (const [productId, quantity] of entries) {
@@ -998,12 +1016,18 @@ export class InStoreSaleService {
       });
     }
 
-    // `entries` comes from a Map keyed by productId, so each product appears at most once
-    // here and this single upsert is safe.
-    await Product.bulkCreate(productUpdates, {
-      updateOnDuplicate: ["purchaseCount"],
-      transaction,
-    });
+    for (const update of productUpdates) {
+      const product = productMap.get(update.id);
+      if (!product) {
+        throw new HttpException(
+          409,
+          `Cannot reverse purchase count for product ${update.id} because the product no longer exists`
+        );
+      }
+
+      product.set({ purchaseCount: update.purchaseCount });
+      await product.save({ transaction });
+    }
   }
 
   private static mergeReturnItems(items: ReturnInStoreSaleItemInput[]): ReturnInStoreSaleItemInput[] {
