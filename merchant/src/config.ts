@@ -59,6 +59,16 @@ export const applicationConfig = {
     duration: parseInt(process.env.RATE_LIMIT_DURATION || "60000", 10),
     maxRequestsPerMinute: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || "100", 10),
   },
+
+  // Service-to-service calls use a separate bucket from public traffic. Internal
+  // callers are authenticated with HMAC before this limiter is reached.
+  internalRateLimitOptions: {
+    duration: parseInt(
+      process.env.INTERNAL_RATE_LIMIT_DURATION || process.env.RATE_LIMIT_DURATION || "60000",
+      10
+    ),
+    maxRequestsPerMinute: parseInt(process.env.INTERNAL_RATE_LIMIT_MAX_REQUESTS || "1000", 10),
+  },
   
   encryption: {
     enabled: process.env.ENCRYPTION_ENABLED === "true",

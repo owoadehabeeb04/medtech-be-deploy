@@ -255,10 +255,11 @@ export const getTopSellingProducts: RequestHandler = async (req, res, next) => {
  *               properties:
  *                 message: { type: string, example: "Success" }
  *                 data: { $ref: '#/components/schemas/NearbyPharmaciesResponse' }
- *       400: { description: Validation failed, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
- *       401: { description: Authentication required, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
- *       403: { description: Forbidden — caller must be a consumer or doctor, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
- */
+	 *       400: { description: Validation failed, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+	 *       401: { description: Authentication required, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+	 *       403: { description: Forbidden — caller must be a consumer or doctor, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+	 *       429: { description: Rate limit exceeded by the pharmacy service, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+	 */
 export const listNearbyPharmacies: RequestHandler = async (req, res, next) => {
 	const userId = getUserId(req);
 	if (!userId) {
