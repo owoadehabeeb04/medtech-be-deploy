@@ -55,9 +55,12 @@ const connection = async (): Promise<Sequelize> => {
 		// Setup model associations
 		setupAssociations();
 
-		// Sync database tables in development mode
+		// Keep development startup safe by default. Sequelize's alter mode can
+		// attempt to drop a foreign-key constraint that has already been removed
+		// or renamed in a local database, which crashes the whole service.
 		if (applicationConfig.nodeEnv === "development") {
-			await sequelize.sync({ alter: true });
+			const alterSchema = process.env.DB_SYNC_ALTER === "true";
+			await sequelize.sync(alterSchema ? { alter: true } : undefined);
 		}
 
 		// Run one-time migrations (idempotent, safe for all environments)

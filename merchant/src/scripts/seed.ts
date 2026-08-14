@@ -95,7 +95,8 @@ async function seedDatabase() {
 
     setupAssociations();
 
-    await sequelize.sync({ alter: true });
+    const alterSchema = process.env.DB_SYNC_ALTER === "true";
+    await sequelize.sync(alterSchema ? { alter: true } : undefined);
 
     const hashedPassword = await hashPassword("Admin@123");
 

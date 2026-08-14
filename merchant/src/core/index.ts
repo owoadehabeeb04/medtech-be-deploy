@@ -1,4 +1,4 @@
-import express, { RequestHandler } from "express";
+import express from "express";
 import { Application } from "express";
 import { bootstrapRequestContext } from "./context";
 import routes from "./routes";
@@ -6,12 +6,12 @@ import { errorHandler } from "../middlewares/error.middleware";
 import { notFoundHandler } from "../middlewares/not-found.middleware";
 import { applicationConfig } from "../config";
 import handleApplicationResponses from "./responseContext";
-import rateLimit from "express-rate-limit";
+import { publicRateLimiter } from "../middlewares/rate-limit.middleware";
 
 const timezone = applicationConfig.timezone;
 process.env.TZ = timezone;
 
-const { rateLimitOptions, serverPort } = applicationConfig;
+const { serverPort } = applicationConfig;
 
 export type RequestContextType = Awaited<ReturnType<typeof bootstrapRequestContext>>;
 
@@ -36,18 +36,7 @@ const app: Application = express();
 
 app.set("trust proxy", 1);
 
-const limiter = rateLimit({
-	windowMs: rateLimitOptions.duration,
-	max: rateLimitOptions.maxRequestsPerMinute,
-	message: {
-		status: 429,
-		message: "Too many requests from this IP. Try again in a minute.",
-	},
-	standardHeaders: true,
-	legacyHeaders: false,
-});
-
-app.use(limiter as unknown as RequestHandler);
+app.use(publicRateLimiter);
 
 app.use(express.static("asset"));
 app.use(express.static("public"));

@@ -20,6 +20,7 @@ import walletRouter from "../modules/wallet/Wallet.route";
 import { authMiddleware } from "../middlewares/Auth.Middleware";
 import drugstoreInternalRouter from "../modules/drugstore_internal/DrugstoreInternal.route";
 import { internalAuthMiddleware } from "../middlewares/internal-auth.middleware";
+import { internalRateLimiter } from "../middlewares/rate-limit.middleware";
 import drugstoreAnalyticsRouter from "../modules/drugstore_orders/DrugstoreAnalytics.route";
 import drugstoreDashboardRouter from "../modules/drugstore_orders/DrugstoreDashboard.route";
 import drugstoreOrderRouter from "../modules/drugstore_orders/DrugstoreOrder.route";
@@ -66,7 +67,7 @@ export default function (app: Application) {
 	apiRouter.use("/drugstore-orders", authMiddleware, drugstoreOrderRouter);
 	apiRouter.use("/in-store-sales", authMiddleware, inStoreSaleRouter);
 	apiRouter.use("/drugstore-prescriptions", authMiddleware, drugstorePrescriptionRouter);
-	apiRouter.use("/internal/drugstore", internalAuthMiddleware, drugstoreInternalRouter);
+	apiRouter.use("/internal/drugstore", internalAuthMiddleware, internalRateLimiter, drugstoreInternalRouter);
 
 	app.use("/api/v1/merchant", apiRouter);
 }
