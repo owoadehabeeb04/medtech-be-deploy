@@ -21,8 +21,15 @@ const options: swaggerJsdoc.Options = {
     },
     servers: [
       {
+        // A relative server URL keeps Swagger Execute on the same scheme and
+        // host as the docs page (including Render production), avoiding the
+        // mixed-content/CORS failure caused by an HTTP development IP.
+        url: "/",
+        description: "Current server",
+      },
+      {
         url: applicationConfig.baseUrl,
-        description: "Development server",
+        description: "Configured API server",
       },
     ],
     components: {
