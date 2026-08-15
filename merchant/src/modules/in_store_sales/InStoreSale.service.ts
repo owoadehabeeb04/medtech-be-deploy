@@ -1,6 +1,6 @@
 import { HttpException } from "@medtech/utils";
 import { createHash, randomUUID } from "crypto";
-import { Op, Transaction, cast, col, where as sequelizeWhere } from "sequelize";
+import { Op, Transaction, cast, col, literal, where as sequelizeWhere } from "sequelize";
 import { applicationConfig } from "../../config";
 import { MerchantSettings } from "../merchant_settings/MerchantSettings.model";
 import { Product } from "../products/Product.model";
@@ -493,6 +493,20 @@ const resolveProductStatus = (inventory: number, lowStockThreshold: number): Pro
   return ProductStatus.IN_STOCK;
 };
 
+/**
+ * Build a dialect-escaped SQL string for the small EXISTS predicate used by
+ * the sales search. The fallback keeps this helper safe even if it is called
+ * before Sequelize has finished initialising the model.
+ */
+const escapeSearchValue = (value: string): string => {
+  const sequelize = DrugstoreOrder.sequelize;
+  if (sequelize) {
+    return (sequelize as any).dialect.queryGenerator.escape(value);
+  }
+
+  return `'${value.replace(/'/g, "''")}'`;
+};
+
 const buildListWhere = (input: ListInStoreSalesInput): any => {
   const where: any = {
     merchantId: input.merchantId,
@@ -520,8 +534,21 @@ const buildListWhere = (input: ListInStoreSalesInput): any => {
       { recipientName: { [Op.iLike]: like } },
       { recipientPhone: { [Op.iLike]: like } },
       sequelizeWhere(cast(col("DrugstoreOrder.metadata"), "text"), { [Op.iLike]: like }),
-      { "$items.productNameSnapshot$": { [Op.iLike]: like } },
-      { "$items.skuSnapshot$": { [Op.iLike]: like } },
+      // Do not use `$items.productNameSnapshot$` here. Sequelize places that
+      // expression in the paginated parent subquery and emits the model
+      // attribute name (`productNameSnapshot`) instead of the physical
+      // `product_name_snapshot` column. EXISTS keeps the child search in the
+      // parent WHERE clause, works with LIMIT/OFFSET, and supports any number
+      // of line items without breaking pagination.
+      literal(`EXISTS (
+        SELECT 1
+        FROM "merchant_drugstore_order_items" AS "search_items"
+        WHERE "search_items"."order_id" = "DrugstoreOrder"."id"
+          AND (
+            "search_items"."product_name_snapshot" ILIKE ${escapeSearchValue(like)}
+            OR "search_items"."sku_snapshot" ILIKE ${escapeSearchValue(like)}
+          )
+      )`),
     ];
 
     if (isUuid(search)) {
