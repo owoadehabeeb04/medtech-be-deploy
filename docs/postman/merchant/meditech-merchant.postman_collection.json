@@ -2180,7 +2180,7 @@
               "mode": "raw",
               "raw": "{\n  \"amount\": 5000\n}"
             },
-            "description": "Initialize wallet funding via Paystack.\n\n**Amount is in Naira** (minimum ₦100).\n\nReturns `authorizationUrl` — open in browser to pay with card or bank transfer.\nThen call **Confirm Funding** with the reference."
+            "description": "Initialize wallet funding via Paystack.\n\n**Amount is in Naira** (minimum ₦100).\n\nReturns `authorizationUrl` — open in browser to pay with card or bank transfer. A successful Paystack webhook credits the wallet automatically. **Confirm Funding** remains available as a redirect/callback fallback."
           }
         },
         {
@@ -2252,7 +2252,7 @@
               "mode": "raw",
               "raw": "{\n  \"reference\": \"{{fundingReference}}\"\n}"
             },
-            "description": "Confirm wallet funding after completing Paystack payment.\n\nUse the reference from the Fund Wallet response."
+            "description": "Fallback confirmation after completing Paystack payment. The normal flow is settled automatically by Paystack's successful-payment webhook. Use the reference from the Fund Wallet response if the redirect arrives before the webhook."
           }
         },
         {
