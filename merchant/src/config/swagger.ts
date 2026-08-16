@@ -618,7 +618,7 @@ const options: swaggerJsdoc.Options = {
         },
         DrugstoreOrderRow: {
           type: "object",
-          description: "Raw drugstore order row, shared by both online (experience_1-originated) and in-store sales. isInstoreSales distinguishes the two.",
+          description: "Raw online drugstore order row returned by /drugstore-orders. In-store sales are served by /in-store-sales.",
           properties: {
             id: { type: "string", format: "uuid" },
             merchantId: { type: "string", format: "uuid" },
@@ -746,6 +746,14 @@ const options: swaggerJsdoc.Options = {
                         totalEarned: { $ref: "#/components/schemas/AnalyticsMetricWithGrowth" },
                         totalCommission: { $ref: "#/components/schemas/AnalyticsMetricWithGrowth" },
                         totalOrders: { $ref: "#/components/schemas/AnalyticsMetricWithGrowth" },
+                        onlineOrders: {
+                          $ref: "#/components/schemas/AnalyticsMetricWithGrowth",
+                          description: "Online orders in the selected dashboard window.",
+                        },
+                        inStoreOrders: {
+                          $ref: "#/components/schemas/AnalyticsMetricWithGrowth",
+                          description: "In-store orders in the selected dashboard window.",
+                        },
                         totalProducts: { $ref: "#/components/schemas/AnalyticsMetricWithGrowth" },
                       },
                     },
@@ -911,6 +919,14 @@ const options: swaggerJsdoc.Options = {
                         totalEarned: { $ref: "#/components/schemas/AnalyticsMetricWithGrowth" },
                         totalCommission: { $ref: "#/components/schemas/AnalyticsMetricWithGrowth" },
                         totalOrders: { $ref: "#/components/schemas/AnalyticsMetricWithGrowth" },
+                        onlineOrders: {
+                          $ref: "#/components/schemas/AnalyticsMetricWithGrowth",
+                          description: "Online orders in the selected dashboard window.",
+                        },
+                        inStoreOrders: {
+                          $ref: "#/components/schemas/AnalyticsMetricWithGrowth",
+                          description: "In-store orders in the selected dashboard window.",
+                        },
                         totalProducts: { $ref: "#/components/schemas/AnalyticsMetricWithGrowth" },
                       },
                     },
@@ -1122,7 +1138,7 @@ const options: swaggerJsdoc.Options = {
             { $ref: "#/components/schemas/SuccessResponse" },
             {
               type: "object",
-              description: "Redirect the merchant to authorizationUrl, then call POST /wallet/confirm-funding with reference.",
+              description: "Redirect the merchant to authorizationUrl to complete payment. A successful Paystack webhook credits the wallet automatically; POST /wallet/confirm-funding remains available as a redirect/callback fallback.",
               properties: {
                 data: {
                   type: "object",

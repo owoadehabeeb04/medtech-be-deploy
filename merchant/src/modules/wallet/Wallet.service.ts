@@ -248,8 +248,36 @@ export class WalletService {
     };
   }
 
+
+  static async handleFundingWebhook(data: any) {
+    const reference = String(data?.reference || "").trim();
+    if (!reference) return;
+
+    const transaction = await Transaction.findOne({
+      where: {
+        paystackReference: reference,
+        type: TransactionType.WALLET_FUNDING,
+      },
+    });
+
+    // This webhook endpoint also receives non-wallet Paystack charges.
+    if (!transaction) return;
+
+    const amount = Number(data?.amount);
+    await this.settleFundingTransaction(reference, {
+      source: "paystack_webhook",
+      expectedAmount: Number.isFinite(amount) ? amount : undefined,
+      metadata: {
+        paidAt: data?.paid_at || null,
+        channel: data?.channel || null,
+      },
+    });
+  }
+
   /**
-   * Confirm wallet funding after Paystack callback
+   * Confirm wallet funding after Paystack callback.
+   * This remains available as a fallback when a redirect arrives before the
+   * webhook, but it shares the same idempotent settlement path.
    */
   static async confirmFunding(merchantId: string, reference: string) {
     const transaction = await Transaction.findOne({
@@ -264,36 +292,175 @@ export class WalletService {
     }
 
     if (transaction.status === TransactionStatus.SUCCESS) {
-      throw new HttpException(400, "This funding has already been confirmed and credited to your wallet.");
+      const wallet = await Wallet.findOne({ where: { merchantId } });
+      if (!wallet) {
+        throw new HttpException(500, "Wallet not found. Please contact support.");
+      }
+
+      return {
+        message: "This funding has already been confirmed and credited to your wallet.",
+        wallet: {
+          balance: wallet.balance,
+          balanceInNaira: wallet.balance / 100,
+        },
+      };
     }
 
     // Verify with Paystack
     const verification = await PaystackService.verifyTransaction(reference);
+    const verificationStatus = String(verification.status || "").toLowerCase();
 
-    if (verification.status !== "success") {
-      await transaction.update({ status: TransactionStatus.FAILED });
+    if (verificationStatus !== "success") {
+      if (["failed", "abandoned"].includes(verificationStatus)) {
+        await this.markFundingFailed(merchantId, reference, verificationStatus);
+      }
+
       throw new HttpException(
         400,
-        "Payment was not successful. Please try again or use a different payment method."
+        verificationStatus === "pending"
+          ? "Payment is still pending confirmation. Please wait for Paystack to complete it."
+          : "Payment was not successful. Please try again or use a different payment method."
       );
     }
 
-    // Credit wallet
-    const wallet = await Wallet.findOne({ where: { merchantId } });
-    if (!wallet) {
-      throw new HttpException(500, "Wallet not found. Please contact support.");
-    }
-
-    await wallet.update({ balance: wallet.balance + transaction.amount });
-    await transaction.update({ status: TransactionStatus.SUCCESS });
+    const result = await this.settleFundingTransaction(reference, {
+      merchantId,
+      source: "confirm_funding",
+      expectedAmount: Number.isFinite(Number(verification.amount))
+        ? Number(verification.amount)
+        : undefined,
+      metadata: {
+        paidAt: verification.paidAt || null,
+        channel: verification.channel || null,
+      },
+    });
 
     return {
-      message: `₦${(transaction.amount / 100).toLocaleString()} has been added to your wallet.`,
+      message: result.wasAlreadySettled
+        ? "This funding has already been confirmed and credited to your wallet."
+        : `₦${(result.amount / 100).toLocaleString()} has been added to your wallet.`,
       wallet: {
-        balance: wallet.balance,
-        balanceInNaira: wallet.balance / 100,
+        balance: result.wallet.balance,
+        balanceInNaira: result.wallet.balance / 100,
       },
     };
+  }
+
+  private static async settleFundingTransaction(
+    reference: string,
+    options: {
+      merchantId?: string;
+      source: string;
+      expectedAmount?: number;
+      metadata?: Record<string, any>;
+    }
+  ) {
+    const sequelize = Wallet.sequelize;
+    if (!sequelize) {
+      throw new HttpException(500, "Database not initialized");
+    }
+
+    return sequelize.transaction(async (dbTransaction) => {
+      const where: any = {
+        paystackReference: reference,
+        type: TransactionType.WALLET_FUNDING,
+      };
+      if (options.merchantId) where.merchantId = options.merchantId;
+
+      const transaction = await Transaction.findOne({
+        where,
+        transaction: dbTransaction,
+        lock: true,
+      });
+      if (!transaction) {
+        throw new HttpException(404, "Funding transaction not found. Please ensure the payment reference is correct.");
+      }
+
+      const amount = Number(transaction.amount);
+      if (
+        options.expectedAmount !== undefined &&
+        amount !== Number(options.expectedAmount)
+      ) {
+        throw new HttpException(400, "Payment amount does not match the wallet funding request.");
+      }
+
+      const wallet = await Wallet.findOne({
+        where: transaction.walletId
+          ? { id: transaction.walletId, merchantId: transaction.merchantId }
+          : { merchantId: transaction.merchantId },
+        transaction: dbTransaction,
+        lock: true,
+      });
+      if (!wallet) {
+        throw new HttpException(500, "Wallet not found. Please contact support.");
+      }
+
+      const wasAlreadySettled = transaction.status === TransactionStatus.SUCCESS;
+      if (!wasAlreadySettled) {
+        await wallet.increment("balance", {
+          by: amount,
+          transaction: dbTransaction,
+        });
+        await transaction.update(
+          {
+            status: TransactionStatus.SUCCESS,
+            metadata: {
+              ...(transaction.metadata || {}),
+              ...(options.metadata || {}),
+              settlementSource: options.source,
+              settledAt: new Date().toISOString(),
+            },
+          },
+          { transaction: dbTransaction }
+        );
+      }
+
+      await wallet.reload({ transaction: dbTransaction });
+
+      return {
+        amount,
+        wasAlreadySettled,
+        wallet,
+      };
+    });
+  }
+
+  private static async markFundingFailed(
+    merchantId: string,
+    reference: string,
+    reason: string
+  ) {
+    const sequelize = Wallet.sequelize;
+    if (!sequelize) {
+      throw new HttpException(500, "Database not initialized");
+    }
+
+    await sequelize.transaction(async (dbTransaction) => {
+      const transaction = await Transaction.findOne({
+        where: {
+          paystackReference: reference,
+          merchantId,
+          type: TransactionType.WALLET_FUNDING,
+        },
+        transaction: dbTransaction,
+        lock: true,
+      });
+
+      if (!transaction || transaction.status === TransactionStatus.SUCCESS) {
+        return;
+      }
+
+      await transaction.update(
+        {
+          status: TransactionStatus.FAILED,
+          metadata: {
+            ...(transaction.metadata || {}),
+            failureReason: reason,
+          },
+        },
+        { transaction: dbTransaction }
+      );
+    });
   }
 
   /**

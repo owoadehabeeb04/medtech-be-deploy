@@ -19,6 +19,7 @@ declare global {
 	namespace Express {
 		interface Request {
 			context: RequestContextType;
+			rawBody?: Buffer;
 		}
 		interface Response {
 			response?: {

@@ -11,7 +11,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
       return next();
     }
 
-    const rawBody = JSON.stringify(req.body);
+    const rawBody = req.rawBody || JSON.stringify(req.body);
     const isValid = PaystackService.verifyWebhookSignature(rawBody, signature);
 
     if (!isValid) {
@@ -28,10 +28,8 @@ export default async (req: Request, res: Response, next: NextFunction) => {
     res.response = { message: "Webhook received", statusCode: 200 };
     return next();
   } catch (error) {
-    // Always return 200 to Paystack to prevent retries for processing errors
-    res.status(200);
-    res.response = { message: "Webhook received", statusCode: 200 };
-    return next();
+    // Return a non-2xx response when processing fails so Paystack can retry.
+    return next(error);
   }
 };
 /**
@@ -39,7 +37,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
  * /api/v1/merchant/subscriptions/webhook:
  *   post:
  *     summary: "Webhook"
- *     description: "Webhook for the merchant API."
+ *     description: "Paystack webhook for subscription payments, automatic wallet-funding settlement, and wallet-withdrawal reconciliation. Configure Paystack to call this endpoint; wallet funding is credited on charge.success."
  *     operationId: "merchant_post_api_v1_merchant_subscriptions_webhook"
  *     tags: ["Subscriptions"]
  *     security: []

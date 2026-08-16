@@ -29,7 +29,14 @@ import inStoreSaleRouter from "../modules/in_store_sales/InStoreSale.route";
 
 export default function (app: Application) {
 	app.use(cors());
-	app.use(express.json());
+	app.use(
+		express.json({
+			
+			verify: (req, _res, buf) => {
+				(req as express.Request).rawBody = Buffer.from(buf);
+			},
+		})
+	);
 	app.use(express.urlencoded({ extended: true }));
 	app.use(helmet() as any);
 	app.use(cookieParser() as any);
