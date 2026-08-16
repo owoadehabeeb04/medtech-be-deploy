@@ -54,7 +54,8 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: object, additionalProperties: true }
+ *           schema:
+ *             $ref: "#/components/schemas/ForgotPasswordRequest"
  *     responses:
  *       200:
  *         description: "Request completed successfully"

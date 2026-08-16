@@ -65,7 +65,8 @@ export const updateStore = async (
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: object, additionalProperties: true }
+ *           schema:
+ *             $ref: "#/components/schemas/UpdateStoreRequest"
  *     responses:
  *       200:
  *         description: "Request completed successfully"

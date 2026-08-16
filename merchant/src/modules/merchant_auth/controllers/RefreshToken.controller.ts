@@ -62,7 +62,8 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: object, additionalProperties: true }
+ *           schema:
+ *             $ref: "#/components/schemas/RefreshTokenRequest"
  *     responses:
  *       200:
  *         description: "Request completed successfully"

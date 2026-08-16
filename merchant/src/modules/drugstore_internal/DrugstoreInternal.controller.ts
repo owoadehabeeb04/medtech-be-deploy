@@ -262,7 +262,8 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: object, additionalProperties: true }
+ *           schema:
+ *             $ref: "#/components/schemas/ValidateInternalDiscountRequest"
  *     responses:
  *       200:
  *         description: "Request completed successfully"
@@ -291,7 +292,8 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: object, additionalProperties: true }
+ *           schema:
+ *             $ref: "#/components/schemas/ReflectDrugstoreOrderRequest"
  *     responses:
  *       200:
  *         description: "Request completed successfully"

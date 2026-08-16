@@ -168,6 +168,349 @@ const options: swaggerJsdoc.Options = {
             },
           },
         },
+        RefreshTokenRequest: {
+          type: "object",
+          required: ["refreshToken"],
+          properties: {
+            refreshToken: { type: "string", description: "Refresh token returned by login or a previous refresh." },
+          },
+        },
+        CreateProductRequest: {
+          type: "object",
+          required: ["name", "category", "brand", "price", "vat", "inventory", "images"],
+          properties: {
+            name: { type: "string", minLength: 2, maxLength: 255, example: "Paracetamol 500mg" },
+            description: { type: "string", maxLength: 2000, example: "Pain relief tablets" },
+            category: { type: "string", example: "Pain Relief" },
+            brand: { type: "string", example: "Emzor" },
+            sku: { type: "string", maxLength: 100, example: "PCM-500-001" },
+            price: { type: "number", minimum: 0, example: 1500 },
+            vat: { type: "number", minimum: 0, example: 112.5 },
+            discountPercentage: { type: "number", minimum: 0, maximum: 100, default: 0, example: 0 },
+            minQuantity: { type: "integer", minimum: 1, default: 1, example: 1 },
+            maxQuantity: { type: "integer", minimum: 1, default: 100, example: 100 },
+            inventory: { type: "integer", minimum: 0, example: 50 },
+            images: {
+              type: "array",
+              minItems: 1,
+              maxItems: 3,
+              items: {
+                type: "object",
+                required: ["url", "order", "isMain"],
+                properties: {
+                  url: { type: "string", format: "uri", example: "https://cdn.example.com/product.jpg" },
+                  order: { type: "integer", minimum: 1, maximum: 3, example: 1 },
+                  isMain: { type: "boolean", example: true },
+                },
+              },
+            },
+            isActive: { type: "boolean", default: true, example: true },
+          },
+        },
+        UpdateProductRequest: {
+          type: "object",
+          description: "All fields are optional; send only the fields to change.",
+          properties: {
+            name: { type: "string", minLength: 2, maxLength: 255 },
+            description: { type: "string", maxLength: 2000 },
+            category: { type: "string" },
+            brand: { type: "string" },
+            sku: { type: "string", maxLength: 100 },
+            price: { type: "number", minimum: 0 },
+            vat: { type: "number", minimum: 0 },
+            discountPercentage: { type: "number", minimum: 0, maximum: 100 },
+            minQuantity: { type: "integer", minimum: 1 },
+            maxQuantity: { type: "integer", minimum: 1 },
+            inventory: { type: "integer", minimum: 0 },
+            images: {
+              type: "array",
+              minItems: 1,
+              maxItems: 3,
+              items: {
+                type: "object",
+                required: ["url", "order", "isMain"],
+                properties: {
+                  url: { type: "string", format: "uri" },
+                  order: { type: "integer", minimum: 1, maximum: 3 },
+                  isMain: { type: "boolean" },
+                },
+              },
+            },
+            isActive: { type: "boolean" },
+            status: { type: "string", enum: ["in_stock", "low_stock", "out_of_stock"] },
+          },
+        },
+        UpdateProductStockRequest: {
+          type: "object",
+          required: ["inventory"],
+          properties: { inventory: { type: "integer", minimum: 0, example: 50 } },
+        },
+        CreateCategoryRequest: {
+          type: "object",
+          required: ["name"],
+          properties: {
+            name: { type: "string", minLength: 2, maxLength: 100, example: "Antibiotics" },
+            description: { type: "string", maxLength: 500, example: "Prescription medicines" },
+          },
+        },
+        UpdateCategoryRequest: {
+          type: "object",
+          description: "All fields are optional; send only the fields to change.",
+          properties: {
+            name: { type: "string", minLength: 2, maxLength: 100 },
+            description: { type: "string", maxLength: 500 },
+            isActive: { type: "boolean" },
+          },
+        },
+        CreateDiscountRequest: {
+          type: "object",
+          required: ["code", "type", "amount", "startDate", "endDate"],
+          properties: {
+            code: { type: "string", minLength: 3, maxLength: 50, example: "WELCOME10" },
+            type: { type: "string", enum: ["fixed_amount", "percentage"], example: "percentage" },
+            amount: { type: "number", minimum: 0, example: 10 },
+            applyToAllProducts: { type: "boolean", default: false },
+            applicableProducts: { type: "array", items: { type: "string", format: "uuid" } },
+            applicableCategories: { type: "array", items: { type: "string", example: "Pain Relief" } },
+            minOrderAmount: { type: "number", minimum: 0 },
+            status: { type: "string", enum: ["active", "inactive"], default: "active" },
+            startDate: { type: "string", format: "date-time", example: "2026-08-01T00:00:00.000Z" },
+            endDate: { type: "string", format: "date-time", example: "2026-08-31T23:59:59.000Z" },
+            usageLimit: { type: "integer", minimum: 1 },
+            perUserLimit: { type: "integer", minimum: 1 },
+          },
+        },
+        UpdateDiscountRequest: {
+          type: "object",
+          description: "All fields are optional; send only the fields to change.",
+          properties: {
+            code: { type: "string", minLength: 3, maxLength: 50 },
+            type: { type: "string", enum: ["fixed_amount", "percentage"] },
+            amount: { type: "number", minimum: 0 },
+            applyToAllProducts: { type: "boolean" },
+            applicableProducts: { type: "array", items: { type: "string", format: "uuid" } },
+            applicableCategories: { type: "array", items: { type: "string" } },
+            minOrderAmount: { type: "number", minimum: 0 },
+            status: { type: "string", enum: ["active", "inactive"] },
+            startDate: { type: "string", format: "date-time" },
+            endDate: { type: "string", format: "date-time" },
+            usageLimit: { type: "integer", minimum: 1 },
+            perUserLimit: { type: "integer", minimum: 1 },
+          },
+        },
+        ValidateDiscountRequest: {
+          type: "object",
+          required: ["code", "orderAmount"],
+          description: "Provide either productIds or products; productIds is preferred.",
+          properties: {
+            code: { type: "string", example: "WELCOME10" },
+            orderAmount: { type: "number", minimum: 0, example: 5000 },
+            productIds: { type: "array", minItems: 1, items: { type: "string", format: "uuid" } },
+            products: { type: "array", minItems: 1, items: { type: "string", format: "uuid" } },
+          },
+        },
+        SubscribeRequest: {
+          type: "object",
+          required: ["planId", "paymentMethod"],
+          properties: {
+            planId: { type: "string", format: "uuid", example: "3f1b1c9a-6e8b-4b7e-9b1a-1234567890ab" },
+            paymentMethod: { type: "string", enum: ["wallet", "card", "bank_transfer"], example: "card" },
+            returnUrl: { type: "string", format: "uri", description: "Required for card and bank_transfer payments.", example: "https://app.example.com/subscription/callback" },
+          },
+        },
+        UpgradePlanRequest: {
+          type: "object",
+          required: ["planId", "paymentMethod"],
+          properties: {
+            planId: { type: "string", format: "uuid" },
+            paymentMethod: { type: "string", enum: ["wallet", "card", "bank_transfer"] },
+            returnUrl: { type: "string", format: "uri", description: "Required for card and bank_transfer payments." },
+          },
+        },
+        DowngradePlanRequest: {
+          type: "object",
+          required: ["planId"],
+          properties: { planId: { type: "string", format: "uuid" } },
+        },
+        ToggleAutoRenewRequest: {
+          type: "object",
+          required: ["autoRenew"],
+          properties: { autoRenew: { type: "boolean", example: true } },
+        },
+        ConfirmPaymentRequest: {
+          type: "object",
+          required: ["reference"],
+          properties: { reference: { type: "string", example: "sub_123456789" } },
+        },
+        FundWalletRequest: {
+          type: "object",
+          required: ["amount"],
+          properties: { amount: { type: "integer", minimum: 100, description: "Amount in Naira.", example: 5000 } },
+        },
+        ConfirmFundingRequest: {
+          type: "object",
+          required: ["reference"],
+          properties: { reference: { type: "string", example: "wf_123456789" } },
+        },
+        WithdrawWalletRequest: {
+          type: "object",
+          required: ["amount"],
+          properties: {
+            amount: { type: "integer", minimum: 100, description: "Amount in Naira.", example: 5000 },
+            reason: { type: "string", maxLength: 150, example: "Cash withdrawal" },
+          },
+        },
+        ReviewDrugstorePrescriptionRequest: {
+          type: "object",
+          required: ["action"],
+          properties: {
+            action: { type: "string", enum: ["approved", "rejected", "needs_clarification"], example: "approved" },
+            note: { type: "string", description: "Optional review note." },
+          },
+        },
+        DrugstoreOrderStatusRequest: {
+          type: "object",
+          required: ["deliveryStatus"],
+          properties: {
+            deliveryStatus: { type: "string", enum: ["pending", "picked_up", "in_transit", "delivered", "cancelled"], example: "in_transit" },
+            note: { type: "string", description: "Optional status note." },
+          },
+        },
+        ValidateInternalDiscountRequest: {
+          type: "object",
+          required: ["merchantId", "code", "orderAmount", "productIds"],
+          properties: {
+            merchantId: { type: "string", format: "uuid" },
+            code: { type: "string", example: "WELCOME10" },
+            orderAmount: { type: "number", minimum: 0, example: 5000 },
+            productIds: { type: "array", minItems: 1, items: { type: "string", format: "uuid" } },
+          },
+        },
+        ReflectDrugstoreOrderRequest: {
+          type: "object",
+          required: ["sourceOrderId", "sourceSyncKey", "paymentReference", "merchantId", "user", "amounts", "delivery", "items"],
+          properties: {
+            sourceOrderId: { type: "string", format: "uuid" },
+            sourceSyncKey: { type: "string" },
+            paymentReference: { type: "string" },
+            paymentVerifiedAt: { type: "string", format: "date-time" },
+            paymentStatus: { type: "string", enum: ["pending", "paid", "failed"] },
+            deliveryStatus: { type: "string", enum: ["pending", "picked_up", "in_transit", "delivered", "cancelled"] },
+            merchantId: { type: "string", format: "uuid" },
+            fulfillmentMethod: { type: "string", enum: ["delivery", "pickup"] },
+            user: { type: "object", required: ["id", "role"], properties: { id: { type: "integer" }, role: { type: "string", enum: ["consumer", "doctor"] } } },
+            amounts: {
+              type: "object",
+              required: ["subtotal", "vatTotal", "discountTotal", "deliveryFee", "totalAmount", "currency"],
+              properties: {
+                subtotal: { type: "number" }, vatTotal: { type: "number" }, discountTotal: { type: "number" }, deliveryFee: { type: "number" }, totalAmount: { type: "number" }, currency: { type: "string", example: "NGN" },
+              },
+            },
+            delivery: {
+              type: "object",
+              required: ["recipientName", "recipientPhone", "addressLine1", "city", "state"],
+              properties: {
+                recipientName: { type: "string" }, recipientPhone: { type: "string" }, addressLine1: { type: "string" }, addressLine2: { type: "string", nullable: true }, city: { type: "string" }, state: { type: "string" }, landmark: { type: "string", nullable: true }, deliveryNote: { type: "string", nullable: true }, deliveryDate: { type: "string", nullable: true }, deliveryTimeSlot: { type: "string", nullable: true },
+              },
+            },
+            discount: { type: "object", properties: { code: { type: "string", nullable: true }, discountId: { type: "string", format: "uuid", nullable: true } } },
+            items: { type: "array", minItems: 1, items: { type: "object", properties: { merchantProductId: { type: "string", format: "uuid" }, productNameSnapshot: { type: "string" }, quantity: { type: "integer" }, unitPriceSnapshot: { type: "number" }, vatSnapshot: { type: "number" }, discountPercentageSnapshot: { type: "number" }, lineSubtotal: { type: "number" }, lineVatTotal: { type: "number" }, lineDiscountTotal: { type: "number" }, lineTotal: { type: "number" } }, required: ["merchantProductId", "productNameSnapshot", "quantity", "unitPriceSnapshot", "vatSnapshot", "discountPercentageSnapshot", "lineSubtotal", "lineVatTotal", "lineDiscountTotal", "lineTotal"] } },
+            placedAt: { type: "string", format: "date-time" },
+          },
+        },
+        UpdateProfileRequest: {
+          type: "object",
+          description: "All fields are optional; send only the fields to change.",
+          properties: {
+            firstName: { type: "string", minLength: 2, maxLength: 50 }, lastName: { type: "string", minLength: 2, maxLength: 50 }, phoneNumber: { type: "string", pattern: "^[0-9]{7,15}$" }, phoneCountryCode: { type: "string" },
+          },
+        },
+        UpdateStoreRequest: {
+          type: "object",
+          description: "All fields are optional; send only the fields to change.",
+          properties: {
+            businessName: { type: "string", minLength: 2, maxLength: 100 }, businessUrl: { type: "string", maxLength: 200 }, businessAddress: { type: "string", maxLength: 255 }, city: { type: "string", maxLength: 100 }, state: { type: "string", maxLength: 100 }, landmark: { type: "string", maxLength: 255 }, openHour: { type: "string", pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]$", example: "08:00" }, closeHour: { type: "string", pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]$", example: "20:00" }, vacation: { type: "boolean" }, vacationStartDate: { type: "string", format: "date-time", nullable: true }, vacationEndDate: { type: "string", format: "date-time", nullable: true }, storeDescription: { type: "string", maxLength: 500 }, storeBannerUrl: { type: "string", format: "uri" },
+          },
+        },
+        ChangePasswordRequest: {
+          type: "object",
+          required: ["currentPassword", "newPassword", "confirmPassword"],
+          properties: {
+            currentPassword: { type: "string" }, newPassword: { type: "string", minLength: 8, description: "Must include uppercase, lowercase, number, and special character." }, confirmPassword: { type: "string" },
+          },
+        },
+        UpdatePaymentRequest: {
+          type: "object",
+          required: ["bankCode", "accountNumber", "accountName"],
+          properties: { bankCode: { type: "string", example: "058" }, accountNumber: { type: "string", pattern: "^[0-9]{10}$", example: "0123456789" }, accountName: { type: "string", example: "ABC Pharmacy" } },
+        },
+        NotificationChannelPreferenceRequest: {
+          type: "object",
+          properties: { email: { type: "boolean" }, sms: { type: "boolean" }, desktop: { type: "boolean" } },
+        },
+        UpdateNotificationsRequest: {
+          type: "object",
+          properties: {
+            pushNotificationsEnabled: { type: "boolean" }, emailNotificationsEnabled: { type: "boolean" }, notificationPreferences: { type: "object", properties: { orderPlaced: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }, lowStock: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }, payoutAlert: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }, supportTicket: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" } } },
+          },
+        },
+        UpdatePreferencesRequest: {
+          type: "object",
+          properties: {
+            storePreferences: { type: "object", properties: { acceptOrdersAutomatically: { type: "boolean" }, requireManualApprovalForPrescriptions: { type: "boolean" }, allowOutOfStockAlternatives: { type: "boolean" }, autoHideOutOfStock: { type: "boolean" }, enablePharmacyPickup: { type: "boolean" }, enableInHouseDelivery: { type: "boolean" }, deliveryRadius: { type: "number", minimum: 0, nullable: true }, deliveryFeeType: { type: "string", enum: ["flat", "distance-based"] }, deliveryFlatFee: { type: "number", minimum: 0, nullable: true }, deliveryPricePerKm: { type: "number", minimum: 0, nullable: true }, deliveryMinKm: { type: "number", minimum: 0, nullable: true }, deliveryStartTime: { type: "string", nullable: true }, deliveryEndTime: { type: "string", nullable: true }, lowStockThreshold: { type: "integer", minimum: 1 }, showLowStockLabel: { type: "boolean" } } },
+          },
+        },
+        UpdateAllSettingsRequest: {
+          type: "object",
+          description: "Unified update; all fields are optional. If any payment field is provided, provide all three payment fields.",
+          properties: {
+            firstName: { type: "string" }, lastName: { type: "string" }, phoneNumber: { type: "string" }, phoneCountryCode: { type: "string" }, businessName: { type: "string" }, businessUrl: { type: "string" }, businessAddress: { type: "string" }, city: { type: "string" }, state: { type: "string" }, landmark: { type: "string" }, openHour: { type: "string" }, closeHour: { type: "string" }, vacation: { type: "boolean" }, vacationStartDate: { type: "string", format: "date-time", nullable: true }, vacationEndDate: { type: "string", format: "date-time", nullable: true }, storeDescription: { type: "string" }, storeBannerUrl: { type: "string", format: "uri" }, bankCode: { type: "string" }, accountNumber: { type: "string", pattern: "^[0-9]{10}$" }, accountName: { type: "string" }, pushNotificationsEnabled: { type: "boolean" }, emailNotificationsEnabled: { type: "boolean" }, notificationPreferences: { type: "object" }, storePreferences: { type: "object" },
+          },
+        },
+        UploadProfilePictureRequest: {
+          type: "object",
+          required: ["profilePictureUrl"],
+          properties: { profilePictureUrl: { type: "string", format: "uri", example: "https://cdn.example.com/profile.jpg" } },
+        },
+        UploadValidIdRequest: {
+          type: "object",
+          required: ["validIdUrl"],
+          properties: { validIdUrl: { type: "string", format: "uri", example: "https://cdn.example.com/id.pdf" } },
+        },
+        VerifyBankAccountRequest: {
+          type: "object",
+          required: ["bankCode", "accountNumber", "accountName"],
+          properties: { bankCode: { type: "string", example: "058" }, accountNumber: { type: "string", pattern: "^[0-9]{10}$", example: "0123456789" }, accountName: { type: "string", minLength: 3, maxLength: 100, example: "ABC Pharmacy" } },
+        },
+        ContactSupportRequest: {
+          type: "object",
+          required: ["name", "email", "subject", "message"],
+          properties: { name: { type: "string", minLength: 2, maxLength: 100 }, email: { type: "string", format: "email" }, subject: { type: "string", minLength: 3, maxLength: 200 }, message: { type: "string", minLength: 10, maxLength: 2000 } },
+        },
+        UploadSingleRequest: {
+          type: "object",
+          required: ["file"],
+          properties: {
+            file: { type: "string", format: "binary", description: "The file to upload." },
+            folder: { type: "string", default: "general", example: "products" },
+          },
+        },
+        UploadBulkRequest: {
+          type: "object",
+          required: ["files"],
+          properties: {
+            files: { type: "array", items: { type: "string", format: "binary" }, description: "Files to upload." },
+            folder: { type: "string", default: "general", example: "products" },
+          },
+        },
+        PaystackWebhookRequest: {
+          type: "object",
+          required: ["event", "data"],
+          properties: {
+            event: { type: "string", example: "charge.success" },
+            data: { type: "object", properties: { reference: { type: "string" }, status: { type: "string" }, amount: { type: "number" }, currency: { type: "string" }, metadata: { type: "object" } } },
+          },
+        },
         SuccessResponse: {
           type: "object",
           properties: {

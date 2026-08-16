@@ -69,7 +69,8 @@ export const listDrugstorePrescriptions = async (req: Request, res: Response, ne
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: object, additionalProperties: true }
+ *           schema:
+ *             $ref: "#/components/schemas/ReviewDrugstorePrescriptionRequest"
  *     responses:
  *       200:
  *         description: "Request completed successfully"
