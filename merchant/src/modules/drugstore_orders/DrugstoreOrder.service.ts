@@ -678,7 +678,9 @@ const csvEscape = (value: unknown): string => {
 };
 
 const buildWhereClause = (input: ListOrderInput): any => {
-  const where: any = { merchantId: input.merchantId };
+  // This router is the online drugstore-order surface. In-store sales have
+  // their own list/export/action endpoints under /in-store-sales.
+  const where: any = { merchantId: input.merchantId, isInstoreSales: false };
   const andClauses: any[] = [];
 
   const paymentStatuses = mapValuesFromDict(normalizeCanonicalArray(input.paymentStatus), PAYMENT_STATUS_MAP);
@@ -1208,7 +1210,7 @@ export class DrugstoreOrderService {
 
   static async getOrderById(merchantId: string, orderId: string) {
     return DrugstoreOrder.findOne({
-      where: { merchantId, id: orderId },
+      where: { merchantId, id: orderId, isInstoreSales: false },
       include: [{ model: DrugstoreOrderItem, as: "items" }],
     });
   }
@@ -1219,12 +1221,12 @@ export class DrugstoreOrderService {
     payload: { deliveryStatus: DeliveryStatus; note?: string }
   ) {
     const order = await DrugstoreOrder.findOne({
-      where: { merchantId, id: orderId },
+      where: { merchantId, id: orderId, isInstoreSales: false },
       include: [{ model: DrugstoreOrderItem, as: "items" }],
     });
 
     if (!order) {
-      throw new Error("Drugstore order not found");
+      throw new HttpException(404, "Drugstore order not found");
     }
 
     if (order.deliveryStatus === payload.deliveryStatus) {
@@ -1307,6 +1309,10 @@ export class DrugstoreOrderService {
 
     const currentTotalOrders = currentOrders.length;
     const previousTotalOrders = previousOrders.length;
+    const currentOnlineOrders = currentOrders.filter((row) => !row.isInstoreSales).length;
+    const previousOnlineOrders = previousOrders.filter((row) => !row.isInstoreSales).length;
+    const currentInStoreOrders = currentOrders.filter((row) => row.isInstoreSales).length;
+    const previousInStoreOrders = previousOrders.filter((row) => row.isInstoreSales).length;
 
     return {
       range: window.range,
@@ -1324,6 +1330,14 @@ export class DrugstoreOrderService {
         totalOrders: {
           value: currentTotalOrders,
           growthPercentage: calculateGrowth(currentTotalOrders, previousTotalOrders),
+        },
+        onlineOrders: {
+          value: currentOnlineOrders,
+          growthPercentage: calculateGrowth(currentOnlineOrders, previousOnlineOrders),
+        },
+        inStoreOrders: {
+          value: currentInStoreOrders,
+          growthPercentage: calculateGrowth(currentInStoreOrders, previousInStoreOrders),
         },
         totalProducts: {
           value: currentProducts,

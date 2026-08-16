@@ -2353,7 +2353,7 @@
                 }
               ]
             },
-            "description": "Get the full merchant dashboard payload in one request.\n\nQuery params:\n- range: 12_months | 3_months | 30_days | 7_days | 24_hours.\n- startDate / endDate: Optional custom YYYY-MM-DD window. When both are provided, they override range.\n\nResponse sections:\n- filters\n- kpis\n- salesTrend\n- orderBreakdown\n- topSellingProducts\n- recentProductSales"
+            "description": "Get the full merchant dashboard payload in one request.\n\nQuery params:\n- range: 12_months | 3_months | 30_days | 7_days | 24_hours.\n- startDate / endDate: Optional custom YYYY-MM-DD window. When both are provided, they override range.\n\nResponse sections:\n- filters\n- kpis (including totalOrders, onlineOrders, and inStoreOrders metrics)\n- salesTrend\n- orderBreakdown\n- topSellingProducts\n- recentProductSales"
           }
         },
         {
@@ -2387,7 +2387,7 @@
                 }
               ]
             },
-            "description": "Get the merchant KPI cards only.\n\nQuery params:\n- range: 12_months | 3_months | 30_days | 7_days | 24_hours.\n- startDate / endDate: Optional custom YYYY-MM-DD window. When both are provided, they override range."
+            "description": "Get the merchant KPI cards only, including totalOrders, onlineOrders, and inStoreOrders.\n\nQuery params:\n- range: 12_months | 3_months | 30_days | 7_days | 24_hours.\n- startDate / endDate: Optional custom YYYY-MM-DD window. When both are provided, they override range."
           }
         },
         {
@@ -2546,7 +2546,7 @@
     },
     {
       "name": "Drugstore Orders",
-      "description": "Merchant-side order management endpoints for the signed-in merchant.",
+      "description": "Merchant-side online-order management endpoints for the signed-in merchant. In-store sales use the dedicated in-store-sales endpoints.",
       "item": [
         {
           "name": "Seed Drugstore Orders (Dev/Staging)",
@@ -2630,7 +2630,7 @@
                 }
               ]
             },
-            "description": "List drugstore orders for the signed-in merchant.\n\nQuery params:\n- page / limit: Pagination.\n- search: Search by order id or customer name.\n- paymentStatus: pending | paid | failed.\n- deliveryStatus: pending | picked_up | in_transit | delivered | cancelled.\n- startDate / endDate: Optional custom YYYY-MM-DD window.\n- range: Optional analytics-style preset 12_months | 3_months | 30_days | 7_days | 24_hours.\n- dateRange: Backward-compatible preset today | yesterday | last_7_days | last_30_days.\n- ageBucket: lt_24h | between_24h_48h | gt_48h.\n\nConsumption notes:\n- When startDate and endDate are both provided, they override range and dateRange.\n- This is the main table-feed endpoint for the merchant orders screen."
+            "description": "List online drugstore orders for the signed-in merchant. In-store sales are excluded; use /in-store-sales for those records.\n\nQuery params:\n- page / limit: Pagination.\n- search: Search by order id or customer name.\n- paymentStatus: pending | paid | failed.\n- deliveryStatus: pending | picked_up | in_transit | delivered | cancelled.\n- startDate / endDate: Optional custom YYYY-MM-DD window.\n- range: Optional analytics-style preset 12_months | 3_months | 30_days | 7_days | 24_hours.\n- dateRange: Backward-compatible preset today | yesterday | last_7_days | last_30_days.\n- ageBucket: lt_24h | between_24h_48h | gt_48h.\n\nConsumption notes:\n- When startDate and endDate are both provided, they override range and dateRange.\n- This is the main table-feed endpoint for the merchant online-orders screen."
           }
         },
         {
@@ -2728,7 +2728,7 @@
                 "status"
               ]
             },
-            "description": "Update a merchant-side delivery status and trigger reverse sync back to experience_1.\n\nPath params:\n- orderId: Merchant-side drugstore order id.\n\nBody fields:\n- deliveryStatus: pending | picked_up | in_transit | delivered | cancelled.\n- note: Optional timeline note or operational comment.",
+            "description": "Update an online merchant-side delivery status and trigger reverse sync back to experience_1. In-store sales cannot be updated through this route.\n\nPath params:\n- orderId: Merchant-side drugstore order id.\n\nBody fields:\n- deliveryStatus: pending | picked_up | in_transit | delivered | cancelled.\n- note: Optional timeline note or operational comment.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"deliveryStatus\": \"in_transit\",\n  \"note\": \"Dispatch rider has left the pharmacy.\"\n}"

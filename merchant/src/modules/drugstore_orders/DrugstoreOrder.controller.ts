@@ -227,7 +227,7 @@ export const listDrugstoreOrders = async (req: Request, res: Response, next: Nex
  * /api/v1/merchant/drugstore-orders:
  *   get:
  *     summary: "List drugstore orders"
- *     description: "List drugstore orders for the merchant API."
+ *     description: "List online drugstore orders only. In-store sales are available from /api/v1/merchant/in-store-sales."
  *     operationId: "merchant_get_api_v1_merchant_drugstore_orders"
  *     tags: ["Drugstore Orders"]
  *     security: [{ bearerAuth: [] }]
@@ -249,7 +249,7 @@ export const listDrugstoreOrders = async (req: Request, res: Response, next: Nex
  * /api/v1/merchant/drugstore-orders/export.csv:
  *   get:
  *     summary: "Export drugstore orders CSV"
- *     description: "Returns a CSV export."
+ *     description: "Returns an online-orders-only CSV export. Use /api/v1/merchant/in-store-sales/export.csv for in-store sales."
  *     operationId: "merchant_get_api_v1_merchant_drugstore_orders_export_csv"
  *     tags: ["Drugstore Orders"]
  *     security: [{ bearerAuth: [] }]
@@ -270,7 +270,7 @@ export const listDrugstoreOrders = async (req: Request, res: Response, next: Nex
  * /api/v1/merchant/drugstore-orders/{orderId}/status:
  *   patch:
  *     summary: "Update drugstore order status"
- *     description: "Update drugstore order status for the merchant API."
+ *     description: "Update an online drugstore order status. In-store sales use their dedicated cancel/return/refund endpoints."
  *     operationId: "merchant_patch_api_v1_merchant_drugstore_orders_orderId_status"
  *     tags: ["Drugstore Orders"]
  *     security: [{ bearerAuth: [] }]
