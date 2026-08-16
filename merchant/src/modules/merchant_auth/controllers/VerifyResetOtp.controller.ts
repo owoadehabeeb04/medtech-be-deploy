@@ -62,7 +62,8 @@ export const verifyResetOtp = async (req: Request, res: Response, next: NextFunc
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: object, additionalProperties: true }
+ *           schema:
+ *             $ref: "#/components/schemas/VerifyOtpRequest"
  *     responses:
  *       200:
  *         description: "Request completed successfully"

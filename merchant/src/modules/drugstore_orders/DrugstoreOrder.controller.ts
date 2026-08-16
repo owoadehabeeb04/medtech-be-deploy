@@ -202,11 +202,6 @@ export const listDrugstoreOrders = async (req: Request, res: Response, next: Nex
  *     operationId: "merchant_post_api_v1_merchant_drugstore_orders_seed"
  *     tags: ["Drugstore Orders"]
  *     security: [{ bearerAuth: [] }]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema: { type: object, additionalProperties: true }
  *     responses:
  *       200:
  *         description: "Request completed successfully"
@@ -283,7 +278,8 @@ export const listDrugstoreOrders = async (req: Request, res: Response, next: Nex
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: object, additionalProperties: true }
+ *           schema:
+ *             $ref: "#/components/schemas/DrugstoreOrderStatusRequest"
  *     responses:
  *       200:
  *         description: "Request completed successfully"

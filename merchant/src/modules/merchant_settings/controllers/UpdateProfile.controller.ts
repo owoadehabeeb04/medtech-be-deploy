@@ -65,7 +65,8 @@ export const updateProfile = async (
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: object, additionalProperties: true }
+ *           schema:
+ *             $ref: "#/components/schemas/UpdateProfileRequest"
  *     responses:
  *       200:
  *         description: "Request completed successfully"

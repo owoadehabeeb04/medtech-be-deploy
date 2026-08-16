@@ -62,7 +62,8 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: object, additionalProperties: true }
+ *           schema:
+ *             $ref: "#/components/schemas/ResetPasswordRequest"
  *     responses:
  *       200:
  *         description: "Request completed successfully"

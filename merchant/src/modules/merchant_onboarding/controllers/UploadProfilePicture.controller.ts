@@ -73,7 +73,8 @@ export const uploadProfilePicture = async (req: Request, res: Response, next: Ne
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: object, additionalProperties: true }
+ *           schema:
+ *             $ref: "#/components/schemas/UploadProfilePictureRequest"
  *     responses:
  *       200:
  *         description: "Request completed successfully"
