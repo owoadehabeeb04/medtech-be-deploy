@@ -745,6 +745,11 @@ export class SubscriptionService {
     });
     if (!transaction || transaction.status === TransactionStatus.SUCCESS) return;
 
+    if (transaction.type === TransactionType.WALLET_FUNDING) {
+      await WalletService.handleFundingWebhook(data);
+      return;
+    }
+
     await transaction.update({ status: TransactionStatus.SUCCESS });
 
     // If it's a subscription payment, activate the plan
@@ -770,13 +775,6 @@ export class SubscriptionService {
       });
     }
 
-    // If wallet funding, credit wallet
-    if (transaction.type === TransactionType.WALLET_FUNDING && transaction.walletId) {
-      const wallet = await Wallet.findByPk(transaction.walletId);
-      if (wallet) {
-        await wallet.update({ balance: wallet.balance + transaction.amount });
-      }
-    }
   }
 
   /**
