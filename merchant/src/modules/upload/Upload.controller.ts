@@ -52,7 +52,8 @@ export const uploadSingle = async (req: Request, res: Response, next: NextFuncti
  *       required: true
  *       content:
  *         multipart/form-data:
- *           schema: { type: object, additionalProperties: true }
+ *           schema:
+ *             $ref: "#/components/schemas/UploadSingleRequest"
  *     responses:
  *       200:
  *         description: "Request completed successfully"
@@ -81,7 +82,8 @@ export const uploadSingle = async (req: Request, res: Response, next: NextFuncti
  *       required: true
  *       content:
  *         multipart/form-data:
- *           schema: { type: object, additionalProperties: true }
+ *           schema:
+ *             $ref: "#/components/schemas/UploadBulkRequest"
  *     responses:
  *       200:
  *         description: "Request completed successfully"

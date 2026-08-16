@@ -1282,4 +1282,14 @@ const options: swaggerJsdoc.Options = {
 	apis: [path.join(srcPath, "modules/**/*.route.ts"), path.join(srcPath, "modules/**/*.controller.ts")],
 };
 
+// Keep request contracts explicit in the generated document. Joi request objects
+// reject unknown keys by default, so advertise the same contract to clients and
+// prevent Swagger UI from rendering arbitrary additionalProp placeholders.
+const experienceSchemas = (options.definition as any).components.schemas as Record<string, any>;
+for (const [schemaName, schema] of Object.entries(experienceSchemas)) {
+	if (schemaName.endsWith("Request") && schema && schema.type === "object" && !schema.allOf && schema.additionalProperties === undefined) {
+		schema.additionalProperties = false;
+	}
+}
+
 export const swaggerSpec = swaggerJsdoc(options) as any;

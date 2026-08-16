@@ -65,7 +65,8 @@ export const updatePreferences = async (
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: object, additionalProperties: true }
+ *           schema:
+ *             $ref: "#/components/schemas/UpdatePreferencesRequest"
  *     responses:
  *       200:
  *         description: "Request completed successfully"

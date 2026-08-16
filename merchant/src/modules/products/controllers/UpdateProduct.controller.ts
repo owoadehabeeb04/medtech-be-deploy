@@ -86,7 +86,8 @@ export default async (req: Request, res: Response, next: NextFunction) => {
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: object, additionalProperties: true }
+ *           schema:
+ *             $ref: "#/components/schemas/UpdateProductRequest"
  *     responses:
  *       200:
  *         description: "Request completed successfully"

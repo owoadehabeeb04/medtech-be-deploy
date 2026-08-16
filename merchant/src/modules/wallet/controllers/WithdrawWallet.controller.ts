@@ -46,7 +46,8 @@ export default async (req: Request, res: Response, next: NextFunction) => {
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: object, additionalProperties: true }
+ *           schema:
+ *             $ref: "#/components/schemas/WithdrawWalletRequest"
  *     responses:
  *       200:
  *         description: "Request completed successfully"

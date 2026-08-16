@@ -32,11 +32,6 @@ export default async (req: Request, res: Response, next: NextFunction) => {
  *     operationId: "merchant_post_api_v1_merchant_subscriptions_cancel"
  *     tags: ["Subscriptions"]
  *     security: [{ bearerAuth: [] }]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema: { type: object, additionalProperties: true }
  *     responses:
  *       200:
  *         description: "Request completed successfully"

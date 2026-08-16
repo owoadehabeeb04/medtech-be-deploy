@@ -64,7 +64,8 @@ console.log("Contact Support Result:", result);
  *       required: true
  *       content:
  *         application/json:
- *           schema: { type: object, additionalProperties: true }
+ *           schema:
+ *             $ref: "#/components/schemas/ContactSupportRequest"
  *     responses:
  *       200:
  *         description: "Request completed successfully"
