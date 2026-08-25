@@ -60,7 +60,7 @@ export default function (app: Application) {
 	apiRouter.use("/health", healthRouter);
 	apiRouter.use("/auth", merchantAuthRouter);
 
-	apiRouter.use("/upload", authMiddleware, uploadRouter);
+	apiRouter.use("/upload", uploadRouter);
 	apiRouter.use("/onboarding", authMiddleware, onboardingRouter);
 	apiRouter.use("/settings", settingsRouter);
 	apiRouter.use("/products", authMiddleware, productRouter);
