@@ -12,6 +12,7 @@ import { Subscription } from "./subscriptions/Subscription.model";
 import { ScheduledPlanChange } from "./subscriptions/ScheduledPlanChange.model";
 import { Wallet } from "./wallet/Wallet.model";
 import { Transaction } from "./transactions/Transaction.model";
+import { MerchantDeviceToken } from "./merchant_settings/MerchantDeviceToken.model";
 
 /**
  * Setup all Sequelize model associations
@@ -39,4 +40,5 @@ export {
   ScheduledPlanChange,
   Wallet,
   Transaction,
+  MerchantDeviceToken,
 };

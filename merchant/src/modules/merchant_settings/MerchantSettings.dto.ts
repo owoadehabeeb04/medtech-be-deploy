@@ -42,6 +42,16 @@ export interface UpdateNotificationsDTO {
       sms?: boolean;
       desktop?: boolean;
     };
+    walletFunded?: {
+      email?: boolean;
+      sms?: boolean;
+      desktop?: boolean;
+    };
+    offlineSaleRecorded?: {
+      email?: boolean;
+      sms?: boolean;
+      desktop?: boolean;
+    };
     lowStock?: {
       email?: boolean;
       sms?: boolean;
@@ -113,6 +123,16 @@ export interface UpdateAllSettingsDTO {
   emailNotificationsEnabled?: boolean;
   notificationPreferences?: {
     orderPlaced?: {
+      email?: boolean;
+      sms?: boolean;
+      desktop?: boolean;
+    };
+    walletFunded?: {
+      email?: boolean;
+      sms?: boolean;
+      desktop?: boolean;
+    };
+    offlineSaleRecorded?: {
       email?: boolean;
       sms?: boolean;
       desktop?: boolean;

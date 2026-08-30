@@ -100,6 +100,13 @@ export const applicationConfig = {
     secretKey: process.env.PAYSTACK_SECRET_KEY || "",
     publicKey: process.env.PAYSTACK_PUBLIC_KEY || "",
   },
+
+  firebase: {
+    projectId: process.env.FIREBASE_PROJECT_ID || "",
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL || "",
+    privateKey: process.env.FIREBASE_PRIVATE_KEY || "",
+    serviceAccountJson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON || "",
+  },
   
   otpExpiration: parseInt(process.env.OTP_EXPIRATION || "10", 10), // minutes
   

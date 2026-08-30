@@ -10,6 +10,7 @@ import { DrugstoreOrder } from "../drugstore_orders/DrugstoreOrder.model";
 import { DrugstoreOrderItem } from "../drugstore_orders/DrugstoreOrderItem.model";
 import { Merchant } from "../merchant/Merchant.model";
 import { StoreDetails } from "../store_details/StoreDetails.model";
+import { FirebaseMessagingService } from "../../service/Firebase/FirebaseMessaging.service";
 
 type ListProductsInput = {
   merchantId?: string;
@@ -617,6 +618,24 @@ export class DrugstoreInternalService {
       }
       throw error;
     }
+
+    void FirebaseMessagingService.sendEvent({
+      merchantId: payload.merchantId,
+      event: "orderPlaced",
+      title: "New order received",
+      body: `A new order worth ₦${toNumber(createdOrder.totalAmount).toLocaleString()} is waiting for your attention.`,
+      data: {
+        type: "new_order",
+        orderId: createdOrder.id,
+        sourceOrderId: createdOrder.sourceOrderId,
+        paymentReference: createdOrder.paymentReference,
+        totalAmount: createdOrder.totalAmount,
+        currency: createdOrder.currency,
+        fulfillmentMethod: createdOrder.fulfillmentMethod,
+      },
+    }).catch((error: any) => {
+      console.error("[Push] New order notification failed:", error?.message || error);
+    });
 
     return {
       merchantOrderId: createdOrder.id,
