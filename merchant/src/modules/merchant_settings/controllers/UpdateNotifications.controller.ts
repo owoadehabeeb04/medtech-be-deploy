@@ -56,8 +56,12 @@ export const updateNotifications = async (
  * @swagger
  * /api/v1/merchant/settings/notifications:
  *   patch:
- *     summary: "Update notifications"
- *     description: "Update notifications for the merchant API."
+ *     summary: "Update merchant notification preferences"
+ *     description: >
+ *       Partial, deep-merged update of notification settings. For web push, first
+ *       set pushNotificationsEnabled to true, then use each event's desktop flag
+ *       to control online orders (orderPlaced), wallet funding (walletFunded), and
+ *       offline sales (offlineSaleRecorded). Omitted values are not changed.
  *     operationId: "merchant_patch_api_v1_merchant_settings_notifications"
  *     tags: ["Merchant Settings"]
  *     security: [{ bearerAuth: [] }]
@@ -67,6 +71,24 @@ export const updateNotifications = async (
  *         application/json:
  *           schema:
  *             $ref: "#/components/schemas/UpdateNotificationsRequest"
+ *           examples:
+ *             enableMerchantWebPush:
+ *               summary: Enable all MVP browser-push events
+ *               value:
+ *                 pushNotificationsEnabled: true
+ *                 notificationPreferences:
+ *                   orderPlaced:
+ *                     desktop: true
+ *                   walletFunded:
+ *                     desktop: true
+ *                   offlineSaleRecorded:
+ *                     desktop: true
+ *             disableWalletPushOnly:
+ *               summary: Disable only wallet-funding browser pushes
+ *               value:
+ *                 notificationPreferences:
+ *                   walletFunded:
+ *                     desktop: false
  *     responses:
  *       200:
  *         description: "Request completed successfully"
@@ -74,6 +96,27 @@ export const updateNotifications = async (
  *           application/json:
  *             schema:
  *               $ref: "#/components/schemas/UpdateNotificationsResponse"
+ *             examples:
+ *               updated:
+ *                 value:
+ *                   statusCode: 200
+ *                   message: Notification settings updated successfully
+ *                   data:
+ *                     pushNotificationsEnabled: true
+ *                     emailNotificationsEnabled: false
+ *                     notificationPreferences:
+ *                       orderPlaced:
+ *                         email: false
+ *                         sms: false
+ *                         desktop: true
+ *                       walletFunded:
+ *                         email: false
+ *                         sms: false
+ *                         desktop: true
+ *                       offlineSaleRecorded:
+ *                         email: false
+ *                         sms: false
+ *                         desktop: true
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:

@@ -28,8 +28,20 @@ Never commit or send the service-account private key to the frontend.
 
 ## Frontend registration contract
 
-After the merchant grants browser notification permission and obtains an FCM token,
-the frontend calls the authenticated endpoint:
+The frontend should use this sequence, after the merchant clicks an explicit
+"Enable notifications" action:
+
+1. Request browser notification permission.
+2. Register the root `firebase-messaging-sw.js` service worker and call Firebase
+   `getToken()` with the public VAPID key.
+3. Generate and persist one random `deviceId` per browser profile (for example, a
+   UUID in `localStorage`). It identifies the browser profile; it is **not** the
+   FCM token.
+4. Enable the merchant's global push setting and the three MVP event preferences.
+5. Register the current FCM token with the backend. Register again on later app
+   starts whenever Firebase returns a new token.
+
+The registration call is authenticated:
 
 ```http
 POST /api/v1/merchant/settings/device-token
@@ -44,6 +56,24 @@ Content-Type: application/json
   "platform": "web",
   "browser": "Chrome",
   "userAgent": "optional user-agent string"
+}
+```
+
+The response intentionally does not return the FCM token. It returns the safe
+browser registration instead:
+
+```json
+{
+  "status": 200,
+  "message": "Notification device registered successfully",
+  "data": {
+    "id": "1c17dca0-645d-4fd9-b0bc-0bc1f23c1a38",
+    "deviceId": "stable-browser-id",
+    "platform": "web",
+    "browser": "Chrome",
+    "isActive": true,
+    "lastSeenAt": "2026-08-30T13:55:00.000Z"
+  }
 }
 ```
 
@@ -65,7 +95,23 @@ Content-Type: application/json
 
 ```json
 {
-  "pushNotificationsEnabled": true
+  "pushNotificationsEnabled": true,
+  "notificationPreferences": {
+    "orderPlaced": { "desktop": true },
+    "walletFunded": { "desktop": true },
+    "offlineSaleRecorded": { "desktop": true }
+  }
+}
+```
+
+This endpoint deep-merges the submitted settings, so the frontend can later turn
+off a single event without changing the other events:
+
+```json
+{
+  "notificationPreferences": {
+    "walletFunded": { "desktop": false }
+  }
 }
 ```
 
@@ -88,6 +134,24 @@ Authorization: Bearer <merchant-access-token>
 ```
 
 The response reports how many devices were attempted, sent, failed, or disabled.
+When `data.skipped` is present, use it to explain why no message was sent:
+`push_disabled`, `no_active_devices`, or `firebase_not_configured`.
+
+## Web-push payloads
+
+The root service worker receives a Firebase notification title/body plus string
+data fields. The frontend can use `data.type` to choose where notification clicks
+navigate:
+
+| Event | `data.type` | Other useful data |
+| --- | --- | --- |
+| New online order | `new_order` | `orderId`, `sourceOrderId`, `paymentReference`, `totalAmount`, `currency`, `fulfillmentMethod` |
+| Wallet funded | `wallet_funded` | `reference`, `amountKobo`, `balanceKobo`, `currency` |
+| Offline sale recorded | `offline_sale_recorded` | `orderId`, `displayOrderId`, `totalAmount`, `currency` |
+| Test notification | `notification_test` | no additional business ID |
+
+All FCM `data` values are strings. The service worker should safely parse only the
+fields it needs and choose a merchant-dashboard URL for each known `data.type`.
 
 Without a frontend browser token, TypeScript checks can verify the backend code but
 no real browser notification can be delivered. For an end-to-end test, use the

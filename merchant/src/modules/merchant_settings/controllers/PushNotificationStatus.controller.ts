@@ -43,13 +43,36 @@ export const getPushNotificationStatus = async (
  * @swagger
  * /api/v1/merchant/settings/notifications/push-status:
  *   get:
- *     summary: Get merchant push notification status
+ *     summary: Get merchant web-push readiness
+ *     description: >
+ *       Use this after registering a browser token, or when showing a notification
+ *       settings screen. firebase.configured confirms that this backend process can
+ *       use Firebase Admin; activeDeviceCount confirms registrations for the current
+ *       merchant. Browser permission and service-worker state remain frontend concerns.
+ *     operationId: merchant_get_web_push_status
  *     tags: [Merchant Settings]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Push notification configuration and device status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/MerchantPushStatusResponse"
+ *             examples:
+ *               ready:
+ *                 value:
+ *                   status: 200
+ *                   message: Push notification status retrieved successfully
+ *                   data:
+ *                     provider: firebase
+ *                     firebase:
+ *                       provider: firebase
+ *                       configured: true
+ *                       initializationError: null
+ *                     pushNotificationsEnabled: true
+ *                     activeDeviceCount: 1
  *       401:
  *         description: Authentication required
  */
