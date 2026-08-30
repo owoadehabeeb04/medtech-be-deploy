@@ -8,6 +8,10 @@ import { updateNotifications } from "./controllers/UpdateNotifications.controlle
 import { updatePreferences } from "./controllers/UpdatePreferences.controller";
 import { updateAllSettings } from "./controllers/UpdateAllSettings.controller";
 import { authMiddleware } from "../../middlewares/Auth.Middleware";
+import { registerDeviceToken } from "./controllers/RegisterDeviceToken.controller";
+import { removeDeviceToken } from "./controllers/RemoveDeviceToken.controller";
+import { getPushNotificationStatus } from "./controllers/PushNotificationStatus.controller";
+import { sendTestPushNotification } from "./controllers/TestPushNotification.controller";
 
 const router: Router = Router();
 
@@ -16,6 +20,11 @@ router.use(authMiddleware);
 
 
 router.get("/", getAllSettings);
+
+router.post("/device-token", registerDeviceToken);
+router.delete("/device-tokens/:deviceId", removeDeviceToken);
+router.get("/notifications/push-status", getPushNotificationStatus);
+router.post("/notifications/test", sendTestPushNotification);
 
 /**
  * @route PATCH /api/v1/merchant/settings/all

@@ -7,6 +7,8 @@ export async function runMigrations(sequelize: Sequelize): Promise<void> {
   await removeTermsAcceptedColumn(queryInterface);
   await addDrugstoreOrderFlowColumns(queryInterface);
   await addInStoreSalesFlag(queryInterface);
+  await addMerchantDeviceTokensTable(queryInterface);
+  await addMerchantPushPreferenceDefaults(queryInterface);
   await shiftOnboardingSteps(sequelize);
 }
 
@@ -99,6 +101,131 @@ async function addInStoreSalesFlag(queryInterface: any): Promise<void> {
   } catch (error: any) {
     if (error.message?.includes("does not exist")) return;
     console.error("[Migration] Error adding is_instore_sales column:", error.message);
+  }
+}
+
+async function addMerchantDeviceTokensTable(queryInterface: any): Promise<void> {
+  const tableName = "merchant_device_tokens";
+
+  try {
+    let tableExists = true;
+    try {
+      await queryInterface.describeTable(tableName);
+    } catch (error: any) {
+      if (!/does not exist|relation .* does not exist/i.test(error?.message || "")) {
+        throw error;
+      }
+      tableExists = false;
+    }
+
+    if (!tableExists) {
+      await queryInterface.createTable(tableName, {
+        id: {
+          type: DataTypes.UUID,
+          allowNull: false,
+          primaryKey: true,
+          defaultValue: DataTypes.UUIDV4,
+        },
+        merchant_id: {
+          type: DataTypes.UUID,
+          allowNull: false,
+          references: { model: "merchants", key: "id" },
+          onUpdate: "CASCADE",
+          onDelete: "CASCADE",
+        },
+        device_id: {
+          type: DataTypes.STRING(255),
+          allowNull: false,
+        },
+        token: {
+          type: DataTypes.TEXT,
+          allowNull: false,
+        },
+        platform: {
+          type: DataTypes.STRING(20),
+          allowNull: false,
+          defaultValue: "web",
+        },
+        browser: {
+          type: DataTypes.STRING(100),
+          allowNull: true,
+        },
+        user_agent: {
+          type: DataTypes.TEXT,
+          allowNull: true,
+        },
+        is_active: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: true,
+        },
+        last_seen_at: {
+          type: DataTypes.DATE,
+          allowNull: false,
+          defaultValue: DataTypes.NOW,
+        },
+        last_error_at: {
+          type: DataTypes.DATE,
+          allowNull: true,
+        },
+        last_error_code: {
+          type: DataTypes.STRING(120),
+          allowNull: true,
+        },
+        created_at: {
+          type: DataTypes.DATE,
+          allowNull: false,
+          defaultValue: DataTypes.NOW,
+        },
+        updated_at: {
+          type: DataTypes.DATE,
+          allowNull: false,
+          defaultValue: DataTypes.NOW,
+        },
+      });
+      console.log(`[Migration] Created ${tableName} table`);
+    }
+
+    await queryInterface.sequelize.query(
+      `CREATE UNIQUE INDEX IF NOT EXISTS merchant_device_tokens_merchant_device_unique
+       ON ${tableName} (merchant_id, device_id)`
+    );
+    await queryInterface.sequelize.query(
+      `CREATE INDEX IF NOT EXISTS merchant_device_tokens_merchant_active_idx
+       ON ${tableName} (merchant_id, is_active)`
+    );
+    await queryInterface.sequelize.query(
+      `CREATE INDEX IF NOT EXISTS merchant_device_tokens_token_idx
+       ON ${tableName} (token)`
+    );
+  } catch (error: any) {
+    if (error.message?.includes("does not exist")) return;
+    console.error(`[Migration] Error creating ${tableName} table:`, error.message);
+  }
+}
+
+async function addMerchantPushPreferenceDefaults(queryInterface: any): Promise<void> {
+  try {
+    await queryInterface.sequelize.query(`
+      UPDATE merchant_settings
+      SET notification_preferences =
+        COALESCE(notification_preferences, '{}'::jsonb) || jsonb_build_object(
+          'walletFunded', COALESCE(
+            notification_preferences->'walletFunded',
+            '{"email":false,"sms":false,"desktop":true}'::jsonb
+          ),
+          'offlineSaleRecorded', COALESCE(
+            notification_preferences->'offlineSaleRecorded',
+            '{"email":false,"sms":false,"desktop":true}'::jsonb
+          )
+        )
+      WHERE notification_preferences IS NULL
+         OR NOT (notification_preferences ? 'walletFunded')
+         OR NOT (notification_preferences ? 'offlineSaleRecorded')
+    `);
+  } catch (error: any) {
+    if (error.message?.includes("does not exist")) return;
+    console.error("[Migration] Error adding merchant push preference defaults:", error.message);
   }
 }
 

@@ -84,6 +84,16 @@ export const updateNotificationsSchema = Joi.object({
       sms: Joi.boolean().optional(),
       desktop: Joi.boolean().optional(),
     }).optional(),
+    walletFunded: Joi.object({
+      email: Joi.boolean().optional(),
+      sms: Joi.boolean().optional(),
+      desktop: Joi.boolean().optional(),
+    }).optional(),
+    offlineSaleRecorded: Joi.object({
+      email: Joi.boolean().optional(),
+      sms: Joi.boolean().optional(),
+      desktop: Joi.boolean().optional(),
+    }).optional(),
     lowStock: Joi.object({
       email: Joi.boolean().optional(),
       sms: Joi.boolean().optional(),
@@ -182,6 +192,16 @@ export const updateAllSettingsSchema = Joi.object({
   emailNotificationsEnabled: Joi.boolean().optional(),
   notificationPreferences: Joi.object({
     orderPlaced: Joi.object({
+      email: Joi.boolean().optional(),
+      sms: Joi.boolean().optional(),
+      desktop: Joi.boolean().optional(),
+    }).optional(),
+    walletFunded: Joi.object({
+      email: Joi.boolean().optional(),
+      sms: Joi.boolean().optional(),
+      desktop: Joi.boolean().optional(),
+    }).optional(),
+    offlineSaleRecorded: Joi.object({
       email: Joi.boolean().optional(),
       sms: Joi.boolean().optional(),
       desktop: Joi.boolean().optional(),

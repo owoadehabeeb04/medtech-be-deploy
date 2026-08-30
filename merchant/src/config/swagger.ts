@@ -446,12 +446,75 @@ const options: swaggerJsdoc.Options = {
         },
         NotificationChannelPreferenceRequest: {
           type: "object",
-          properties: { email: { type: "boolean" }, sms: { type: "boolean" }, desktop: { type: "boolean" } },
+          description: "All fields are optional and are deep-merged into the existing preference. For the current web-push MVP, desktop controls browser push delivery; email and sms are stored for their respective channels.",
+          properties: {
+            email: { type: "boolean", description: "Enable or disable email notifications for this event." },
+            sms: { type: "boolean", description: "Enable or disable SMS notifications for this event." },
+            desktop: { type: "boolean", description: "Enable or disable browser push notifications for this event." },
+          },
+        },
+        RegisterMerchantDeviceTokenRequest: {
+          type: "object",
+          description: "Registers or refreshes one browser profile for the authenticated merchant. Reusing the same deviceId updates the stored FCM token instead of creating a duplicate.",
+          required: ["deviceId", "token"],
+          properties: {
+            deviceId: {
+              type: "string",
+              minLength: 1,
+              maxLength: 255,
+              description: "A stable, frontend-generated identifier for this browser profile (for example, a UUID kept in localStorage). This is not the FCM token.",
+              example: "a5ce5631-351c-4a86-9b58-c5523f738d61",
+            },
+            token: {
+              type: "string",
+              minLength: 1,
+              maxLength: 4096,
+              description: "The current FCM registration token returned by Firebase getToken(). Send it again whenever Firebase returns a new token.",
+              example: "fcm-web-registration-token",
+            },
+            platform: {
+              type: "string",
+              enum: ["web"],
+              default: "web",
+              description: "Optional. Web is the only supported platform and is enforced by the backend.",
+            },
+            browser: {
+              type: "string",
+              maxLength: 100,
+              nullable: true,
+              description: "Optional browser label for support diagnostics, such as Chrome or Firefox.",
+              example: "Chrome",
+            },
+            userAgent: {
+              type: "string",
+              maxLength: 1000,
+              nullable: true,
+              description: "Optional navigator.userAgent value for support diagnostics.",
+            },
+          },
         },
         UpdateNotificationsRequest: {
           type: "object",
+          description: "Partial update. Omitted fields remain unchanged. Browser push requires pushNotificationsEnabled to be true; notificationPreferences.<event>.desktop can then opt individual events in or out.",
           properties: {
-            pushNotificationsEnabled: { type: "boolean" }, emailNotificationsEnabled: { type: "boolean" }, notificationPreferences: { type: "object", properties: { orderPlaced: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }, lowStock: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }, payoutAlert: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }, supportTicket: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" } } },
+            pushNotificationsEnabled: {
+              type: "boolean",
+              description: "Global master switch for all merchant browser push notifications. It must be true before a test or event notification can be sent.",
+              example: true,
+            },
+            emailNotificationsEnabled: { type: "boolean", description: "Global master switch for merchant email notifications.", example: true },
+            notificationPreferences: {
+              type: "object",
+              description: "Per-event channel preferences. Each nested object is merged, so send only the event and channels that are changing.",
+              properties: {
+                orderPlaced: { allOf: [{ $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }], description: "New online order is reflected into the merchant account." },
+                walletFunded: { allOf: [{ $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }], description: "Wallet funding is settled successfully." },
+                offlineSaleRecorded: { allOf: [{ $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }], description: "A new offline/in-store sale is recorded." },
+                lowStock: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" },
+                payoutAlert: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" },
+                supportTicket: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" },
+              },
+            },
           },
         },
         UpdatePreferencesRequest: {
@@ -2056,6 +2119,8 @@ const options: swaggerJsdoc.Options = {
           type: "object",
           properties: {
             orderPlaced: { $ref: "#/components/schemas/NotificationChannelPreference" },
+            walletFunded: { $ref: "#/components/schemas/NotificationChannelPreference" },
+            offlineSaleRecorded: { $ref: "#/components/schemas/NotificationChannelPreference" },
             lowStock: { $ref: "#/components/schemas/NotificationChannelPreference" },
             payoutAlert: { $ref: "#/components/schemas/NotificationChannelPreference" },
             supportTicket: { $ref: "#/components/schemas/NotificationChannelPreference" },
@@ -2187,6 +2252,75 @@ const options: swaggerJsdoc.Options = {
           ],
         },
         UpdateNotificationsResponse: {
+          type: "object",
+          description: "This notification-settings endpoint returns statusCode (rather than the status envelope used by the device and push-test endpoints).",
+          required: ["statusCode", "message", "data"],
+          properties: {
+            statusCode: { type: "integer", example: 200 },
+            message: { type: "string", example: "Notification settings updated successfully" },
+            data: {
+              type: "object",
+              properties: {
+                pushNotificationsEnabled: { type: "boolean" },
+                emailNotificationsEnabled: { type: "boolean" },
+                notificationPreferences: { $ref: "#/components/schemas/NotificationPreferences" },
+              },
+            },
+          },
+        },
+        MerchantNotificationDevice: {
+          type: "object",
+          description: "Safe browser-device registration returned to the frontend. The FCM token and user agent are intentionally never returned.",
+          required: ["id", "deviceId", "platform", "isActive", "lastSeenAt"],
+          properties: {
+            id: { type: "string", format: "uuid", example: "1c17dca0-645d-4fd9-b0bc-0bc1f23c1a38" },
+            deviceId: { type: "string", example: "a5ce5631-351c-4a86-9b58-c5523f738d61" },
+            platform: { type: "string", enum: ["web"], example: "web" },
+            browser: { type: "string", nullable: true, example: "Chrome" },
+            isActive: { type: "boolean", example: true },
+            lastSeenAt: { type: "string", format: "date-time", example: "2026-08-30T13:55:00.000Z" },
+          },
+        },
+        RegisterMerchantDeviceTokenResponse: {
+          allOf: [
+            { $ref: "#/components/schemas/SuccessResponse" },
+            {
+              type: "object",
+              properties: {
+                data: { $ref: "#/components/schemas/MerchantNotificationDevice" },
+              },
+            },
+          ],
+        },
+        RemoveMerchantDeviceTokenResponse: {
+          allOf: [
+            { $ref: "#/components/schemas/SuccessResponse" },
+            {
+              type: "object",
+              description: "This delete is idempotent: a 200 response with deactivated false means the device was already inactive or did not exist for this merchant.",
+              properties: {
+                data: {
+                  type: "object",
+                  required: ["deactivated"],
+                  properties: {
+                    deactivated: { type: "boolean", example: true },
+                  },
+                },
+              },
+            },
+          ],
+        },
+        FirebasePushProviderStatus: {
+          type: "object",
+          description: "Safe backend Firebase Admin status. It does not expose credentials or registration tokens.",
+          required: ["provider", "configured", "initializationError"],
+          properties: {
+            provider: { type: "string", enum: ["firebase"], example: "firebase" },
+            configured: { type: "boolean", description: "True only when Firebase Admin initialized successfully in this backend process.", example: true },
+            initializationError: { type: "string", nullable: true, description: "Null when Firebase Admin initialized successfully; otherwise a safe diagnostic message for the backend team.", example: null },
+          },
+        },
+        MerchantPushStatusResponse: {
           allOf: [
             { $ref: "#/components/schemas/SuccessResponse" },
             {
@@ -2194,12 +2328,45 @@ const options: swaggerJsdoc.Options = {
               properties: {
                 data: {
                   type: "object",
+                  required: ["provider", "firebase", "pushNotificationsEnabled", "activeDeviceCount"],
                   properties: {
-                    pushNotificationsEnabled: { type: "boolean" },
-                    emailNotificationsEnabled: { type: "boolean" },
-                    notificationPreferences: { $ref: "#/components/schemas/NotificationPreferences" },
+                    provider: { type: "string", enum: ["firebase"], example: "firebase" },
+                    firebase: { $ref: "#/components/schemas/FirebasePushProviderStatus" },
+                    pushNotificationsEnabled: { type: "boolean", description: "Merchant's global push master switch.", example: true },
+                    activeDeviceCount: { type: "integer", minimum: 0, description: "Number of active registered browser profiles for the authenticated merchant.", example: 1 },
                   },
                 },
+              },
+            },
+          ],
+        },
+        MerchantPushDeliveryResult: {
+          type: "object",
+          description: "Best-effort FCM delivery summary. A business operation remains successful even when push delivery fails.",
+          required: ["provider", "event", "attempted", "sent", "failed", "invalidTokens"],
+          properties: {
+            provider: { type: "string", enum: ["firebase"], example: "firebase" },
+            event: { type: "string", enum: ["orderPlaced", "walletFunded", "offlineSaleRecorded", "test"], example: "test" },
+            attempted: { type: "integer", minimum: 0, example: 1 },
+            sent: { type: "integer", minimum: 0, example: 1 },
+            failed: { type: "integer", minimum: 0, example: 0 },
+            invalidTokens: { type: "integer", minimum: 0, description: "Invalid FCM tokens deactivated by this attempt.", example: 0 },
+            skipped: {
+              type: "string",
+              nullable: true,
+              enum: ["push_disabled", "event_disabled", "no_active_devices", "firebase_not_configured"],
+              description: "Present only when no FCM send is attempted for this reason.",
+              example: null,
+            },
+          },
+        },
+        MerchantPushTestResponse: {
+          allOf: [
+            { $ref: "#/components/schemas/SuccessResponse" },
+            {
+              type: "object",
+              properties: {
+                data: { $ref: "#/components/schemas/MerchantPushDeliveryResult" },
               },
             },
           ],

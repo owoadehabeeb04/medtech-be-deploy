@@ -10,6 +10,7 @@ import {
   PaymentMethod,
 } from "../../constants/enums";
 import { HttpException } from "@medtech/utils";
+import { FirebaseMessagingService } from "../../service/Firebase/FirebaseMessaging.service";
 
 export class WalletService {
   /**
@@ -264,7 +265,7 @@ export class WalletService {
     if (!transaction) return;
 
     const amount = Number(data?.amount);
-    await this.settleFundingTransaction(reference, {
+    const result = await this.settleFundingTransaction(reference, {
       source: "paystack_webhook",
       expectedAmount: Number.isFinite(amount) ? amount : undefined,
       metadata: {
@@ -272,6 +273,8 @@ export class WalletService {
         channel: data?.channel || null,
       },
     });
+
+    this.queueWalletFundingNotification(reference, result);
   }
 
   /**
@@ -335,6 +338,8 @@ export class WalletService {
       },
     });
 
+    this.queueWalletFundingNotification(reference, result);
+
     return {
       message: result.wasAlreadySettled
         ? "This funding has already been confirmed and credited to your wallet."
@@ -344,6 +349,33 @@ export class WalletService {
         balanceInNaira: result.wallet.balance / 100,
       },
     };
+  }
+
+  private static queueWalletFundingNotification(
+    reference: string,
+    result: {
+      amount: number;
+      wasAlreadySettled: boolean;
+      wallet: Wallet;
+    }
+  ) {
+    if (result.wasAlreadySettled) return;
+
+    void FirebaseMessagingService.sendEvent({
+      merchantId: result.wallet.merchantId,
+      event: "walletFunded",
+      title: "Wallet funded successfully",
+      body: `₦${(result.amount / 100).toLocaleString()} has been added to your wallet.`,
+      data: {
+        type: "wallet_funded",
+        reference,
+        amountKobo: result.amount,
+        balanceKobo: result.wallet.balance,
+        currency: result.wallet.currency,
+      },
+    }).catch((error: any) => {
+      console.error("[Push] Wallet funding notification failed:", error?.message || error);
+    });
   }
 
   private static async settleFundingTransaction(

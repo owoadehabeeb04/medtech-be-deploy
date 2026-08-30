@@ -169,6 +169,8 @@ async function seedDatabase() {
         emailNotificationsEnabled: true,
         notificationPreferences: {
           orderPlaced: { email: true, sms: false, desktop: true },
+          walletFunded: { email: true, sms: false, desktop: true },
+          offlineSaleRecorded: { email: true, sms: false, desktop: true },
           lowStock: { email: true, sms: false, desktop: true },
           payoutAlert: { email: true, sms: false, desktop: true },
           supportTicket: { email: true, sms: false, desktop: true },
