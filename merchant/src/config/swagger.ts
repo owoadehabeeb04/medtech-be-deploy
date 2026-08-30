@@ -448,10 +448,21 @@ const options: swaggerJsdoc.Options = {
           type: "object",
           properties: { email: { type: "boolean" }, sms: { type: "boolean" }, desktop: { type: "boolean" } },
         },
+        RegisterMerchantDeviceTokenRequest: {
+          type: "object",
+          required: ["deviceId", "token"],
+          properties: {
+            deviceId: { type: "string", example: "merchant-browser-uuid" },
+            token: { type: "string", description: "FCM web registration token" },
+            platform: { type: "string", enum: ["web"], default: "web" },
+            browser: { type: "string", nullable: true },
+            userAgent: { type: "string", nullable: true },
+          },
+        },
         UpdateNotificationsRequest: {
           type: "object",
           properties: {
-            pushNotificationsEnabled: { type: "boolean" }, emailNotificationsEnabled: { type: "boolean" }, notificationPreferences: { type: "object", properties: { orderPlaced: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }, lowStock: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }, payoutAlert: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }, supportTicket: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" } } },
+            pushNotificationsEnabled: { type: "boolean" }, emailNotificationsEnabled: { type: "boolean" }, notificationPreferences: { type: "object", properties: { orderPlaced: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }, walletFunded: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }, offlineSaleRecorded: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }, lowStock: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }, payoutAlert: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }, supportTicket: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" } } },
           },
         },
         UpdatePreferencesRequest: {
@@ -2056,6 +2067,8 @@ const options: swaggerJsdoc.Options = {
           type: "object",
           properties: {
             orderPlaced: { $ref: "#/components/schemas/NotificationChannelPreference" },
+            walletFunded: { $ref: "#/components/schemas/NotificationChannelPreference" },
+            offlineSaleRecorded: { $ref: "#/components/schemas/NotificationChannelPreference" },
             lowStock: { $ref: "#/components/schemas/NotificationChannelPreference" },
             payoutAlert: { $ref: "#/components/schemas/NotificationChannelPreference" },
             supportTicket: { $ref: "#/components/schemas/NotificationChannelPreference" },

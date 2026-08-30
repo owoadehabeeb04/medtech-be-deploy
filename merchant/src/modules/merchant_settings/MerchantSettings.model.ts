@@ -43,6 +43,8 @@ export class MerchantSettings extends Model<MerchantSettings> {
   @AllowNull(false)
   @Default({
     orderPlaced: { email: false, sms: false, desktop: true },
+    walletFunded: { email: false, sms: false, desktop: true },
+    offlineSaleRecorded: { email: false, sms: false, desktop: true },
     lowStock: { email: false, sms: false, desktop: true },
     payoutAlert: { email: false, sms: false, desktop: true },
     supportTicket: { email: false, sms: false, desktop: true },
@@ -50,6 +52,8 @@ export class MerchantSettings extends Model<MerchantSettings> {
   @Column(DataType.JSONB)
   declare notificationPreferences: {
     orderPlaced: { email: boolean; sms: boolean; desktop: boolean };
+    walletFunded: { email: boolean; sms: boolean; desktop: boolean };
+    offlineSaleRecorded: { email: boolean; sms: boolean; desktop: boolean };
     lowStock: { email: boolean; sms: boolean; desktop: boolean };
     payoutAlert: { email: boolean; sms: boolean; desktop: boolean };
     supportTicket: { email: boolean; sms: boolean; desktop: boolean };

@@ -20,6 +20,7 @@ import { RefreshToken } from "../refresh_tokens/RefreshToken.model";
 import { Subscription } from "../subscriptions/Subscription.model";
 import { Wallet } from "../wallet/Wallet.model";
 import { Transaction } from "../transactions/Transaction.model";
+import { MerchantDeviceToken } from "../merchant_settings/MerchantDeviceToken.model";
 
 @Table({
   tableName: "merchants",
@@ -120,6 +121,9 @@ export class Merchant extends Model<Merchant> {
 
   @HasMany(() => Transaction)
   declare transactions: Transaction[];
+
+  @HasMany(() => MerchantDeviceToken)
+  declare deviceTokens: MerchantDeviceToken[];
 
   // Computed property for full name
   get fullName(): string {

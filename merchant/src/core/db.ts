@@ -6,6 +6,7 @@ import { MerchantVerification } from "../modules/merchant_verification/MerchantV
 import { StoreDetails } from "../modules/store_details/StoreDetails.model";
 import { PaymentDetails } from "../modules/payment_details/PaymentDetails.model";
 import { MerchantSettings } from "../modules/merchant_settings/MerchantSettings.model";
+import { MerchantDeviceToken } from "../modules/merchant_settings/MerchantDeviceToken.model";
 import { Product } from "../modules/products/Product.model";
 import { Discount } from "../modules/discounts/Discount.model";
 import { Category } from "../modules/categories/Category.model";
@@ -46,7 +47,7 @@ const connection = async (): Promise<Sequelize> => {
 		define: {
 			underscored: true,
 		},
-		models: [Merchant, MerchantVerification, StoreDetails, PaymentDetails, MerchantSettings, Product, Discount, Category, RefreshToken, Plan, Subscription, ScheduledPlanChange, Wallet, Transaction, DrugstoreOrder, DrugstoreOrderItem],
+		models: [Merchant, MerchantVerification, StoreDetails, PaymentDetails, MerchantSettings, MerchantDeviceToken, Product, Discount, Category, RefreshToken, Plan, Subscription, ScheduledPlanChange, Wallet, Transaction, DrugstoreOrder, DrugstoreOrderItem],
 	});
 
 	try {
