@@ -9,7 +9,7 @@ import { MerchantSettings } from "../modules/merchant_settings/MerchantSettings.
 import { MerchantDeviceToken } from "../modules/merchant_settings/MerchantDeviceToken.model";
 import { Product } from "../modules/products/Product.model";
 import { Discount } from "../modules/discounts/Discount.model";
-import { Category } from "../modules/categories/Category.model";
+import { ProductCategory } from "../modules/categories/ProductCategory.model";
 import { RefreshToken } from "../modules/refresh_tokens/RefreshToken.model";
 import { Plan } from "../modules/subscriptions/Plan.model";
 import { Subscription } from "../modules/subscriptions/Subscription.model";
@@ -21,6 +21,7 @@ import { DrugstoreOrderItem } from "../modules/drugstore_orders/DrugstoreOrderIt
 import { setupAssociations } from "../modules/associations";
 import { seedPlans } from "../modules/subscriptions/plan-seeds";
 import { runMigrations } from "./migrations";
+import { ProductCategoryService } from "../modules/categories/ProductCategory.service";
 
 const { postgres } = applicationConfig;
 
@@ -47,7 +48,7 @@ const connection = async (): Promise<Sequelize> => {
 		define: {
 			underscored: true,
 		},
-		models: [Merchant, MerchantVerification, StoreDetails, PaymentDetails, MerchantSettings, MerchantDeviceToken, Product, Discount, Category, RefreshToken, Plan, Subscription, ScheduledPlanChange, Wallet, Transaction, DrugstoreOrder, DrugstoreOrderItem],
+		models: [Merchant, MerchantVerification, StoreDetails, PaymentDetails, MerchantSettings, MerchantDeviceToken, Product, Discount, ProductCategory, RefreshToken, Plan, Subscription, ScheduledPlanChange, Wallet, Transaction, DrugstoreOrder, DrugstoreOrderItem],
 	});
 
 	try {
@@ -55,6 +56,11 @@ const connection = async (): Promise<Sequelize> => {
 
 		// Setup model associations
 		setupAssociations();
+
+		// Run idempotent migrations before development schema sync. Product indexes
+		// reference migrated columns such as category_id, so syncing first can fail
+		// before the migration has added those columns.
+		await runMigrations(sequelize);
 
 		// Keep development startup safe by default. Sequelize's alter mode can
 		// attempt to drop a foreign-key constraint that has already been removed
@@ -64,8 +70,14 @@ const connection = async (): Promise<Sequelize> => {
 			await sequelize.sync(alterSchema ? { alter: true } : undefined);
 		}
 
-		// Run one-time migrations (idempotent, safe for all environments)
-		await runMigrations(sequelize);
+		// The taxonomy is platform-wide. Synchronization runs inside a transaction-scoped
+		// advisory lock so multiple application instances cannot seed the same key at once.
+		const taxonomyResult = await ProductCategoryService.syncTaxonomyAndBackfill();
+		console.log(
+			`[Taxonomy] Sync complete created=${taxonomyResult.seed.created} ` +
+			`updated=${taxonomyResult.seed.updated} mapped=${taxonomyResult.backfill.mapped} ` +
+			`ambiguous=${taxonomyResult.backfill.ambiguous} flagged=${taxonomyResult.backfill.flagged}`
+		);
 
 		// Seed subscription plans
 		await seedPlans();

@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { ProductService } from "../Product.service";
 import { createProductSchema } from "../Product.schema";
 import { validateSchema } from "@medtech/utils";
-import { CategoryService } from "../../categories/Category.service";
+import { ProductCategoryService } from "../../categories/ProductCategory.service";
 
 export default async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -29,18 +29,9 @@ export default async (req: Request, res: Response, next: NextFunction) => {
       return next();
     }
 
-    if (value.category) {
-      const categoryNames = await CategoryService.getCategoryNames(merchantId);
-      if (!categoryNames.includes(value.category.trim())) {
-        res.status(400);
-        res.response = {
-          message: `Invalid category. Available categories: ${categoryNames.join(", ")}`,
-          statusCode: 400,
-        };
-        return next();
-      }
-      value.category = value.category.trim();
-    }
+    const category = await ProductCategoryService.resolveForProduct(value.categoryId, value.category);
+    value.categoryId = category.id;
+    value.category = category.name;
 
     const product = await ProductService.createProduct(merchantId, value);
 

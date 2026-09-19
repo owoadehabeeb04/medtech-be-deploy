@@ -934,17 +934,34 @@ const options: swaggerJsdoc.Options = {
 				CatalogProductsResponse: {
 					type: "object",
 					description: "Passthrough of the merchant service's product catalog.",
-					properties: { products: { type: "array", items: { type: "object" } }, pagination: { type: "object" } },
+					properties: { products: { type: "array", items: { $ref: "#/components/schemas/CatalogProductResponse" } }, pagination: { type: "object" } },
 				},
 				CatalogProductResponse: {
 					type: "object",
-					description: "Passthrough of a single merchant product.",
-					properties: { id: { type: "string", format: "uuid" }, name: { type: "string" }, priceKobo: { type: "number" }, stock: { type: "number" } },
+					description: "Passthrough of a merchant product. categoryId is the canonical detailed taxonomy ID; category is the legacy display name retained for compatibility.",
+					properties: {
+						id: { type: "string", format: "uuid" },
+						merchantId: { type: "string", format: "uuid" },
+						name: { type: "string" },
+						description: { type: "string", nullable: true },
+						category: { type: "string" },
+						categoryId: { type: "string", format: "uuid", nullable: true },
+						brand: { type: "string" },
+						sku: { type: "string", nullable: true },
+						price: { type: "number" },
+						vat: { type: "number" },
+						discountPercentage: { type: "number" },
+						inventory: { type: "integer" },
+						status: { type: "string", enum: ["in_stock", "low_stock", "out_of_stock"] },
+						images: { type: "array", items: { type: "object" } },
+						isActive: { type: "boolean" },
+						requiresPrescription: { type: "boolean" },
+					},
 				},
 				CatalogCategoriesResponse: {
-					type: "object",
-					description: "Passthrough of the merchant service's category list for the given merchant.",
-					properties: { categories: { type: "array", items: { type: "object" } } },
+					type: "array",
+					description: "Global category nodes returned by the Merchant service. Each node includes its breadcrumb, childCount, and isSelectable flag.",
+					items: { $ref: "#/components/schemas/DrugstoreCategoryGroupResponse" },
 				},
 				ProductAvailabilityResponse: {
 					type: "object",
@@ -1154,24 +1171,28 @@ const options: swaggerJsdoc.Options = {
 				// ---------------------------------------------------------------
 				DrugstoreCategoryGroupResponse: {
 					type: "object",
-					description: "Cross-pharmacy taxonomy used for the home screen's Browse by Category and its subcategory drill-down.",
+					description: "A node in the platform-wide product category tree. Groups are navigation nodes; detailed categories have isSelectable=true.",
 					properties: {
 						id: { type: "string", format: "uuid" },
-						name: { type: "string", example: "Health & Wellness" },
-						slug: { type: "string", example: "health-wellness" },
-						imageUrl: { type: "string", nullable: true },
+						key: { type: "string", example: "cosmetics-beauty-products.hair-care-styling.shampoo" },
+						name: { type: "string", example: "Shampoo" },
+						parentId: { type: "string", format: "uuid", nullable: true },
 						sortOrder: { type: "number" },
-						subcategories: {
+						isActive: { type: "boolean" },
+						isSelectable: { type: "boolean" },
+						childCount: { type: "number" },
+						breadcrumb: {
 							type: "array",
 							items: {
 								type: "object",
 								properties: {
-									name: { type: "string", description: "Pass as the `category` filter on GET /drugstore/catalog/products.", example: "Antibiotics" },
-									slug: { type: "string", example: "antibiotics" },
-									imageUrl: { type: "string", nullable: true },
+									id: { type: "string", format: "uuid" },
+									key: { type: "string" },
+									name: { type: "string" },
 								},
 							},
 						},
+						children: { type: "array", items: { $ref: "#/components/schemas/DrugstoreCategoryGroupResponse" } },
 					},
 				},
 				TimeSlotsResponse: {

@@ -1,12 +1,11 @@
 import { Request, Response, NextFunction } from "express";
-import { CategoryService } from "../Category.service";
+import { ProductCategoryService } from "../ProductCategory.service";
 
 export default async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const merchantId = (req as any).merchant?.id;
     const { categoryId } = req.params;
 
-    if (!merchantId) {
+    if (!(req as any).merchant?.id) {
       res.status(401);
       res.response = {
         message: "Unauthorized",
@@ -24,7 +23,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
       return next();
     }
 
-    const category = await CategoryService.getCategoryById(merchantId, categoryId);
+    const category = await ProductCategoryService.getById(categoryId, true);
 
     res.status(200);
     res.response = {
@@ -41,8 +40,8 @@ export default async (req: Request, res: Response, next: NextFunction) => {
  * @swagger
  * /api/v1/merchant/categories/{categoryId}:
  *   get:
- *     summary: "Get category"
- *     description: "Get category for the merchant API."
+ *     summary: "Get a global product category and its children"
+ *     description: "Returns a category node, its breadcrumb, child count, and nested active children. Groups are navigation nodes; detailed selectable categories have isSelectable=true."
  *     operationId: "merchant_get_api_v1_merchant_categories_categoryId"
  *     tags: ["Categories"]
  *     security: [{ bearerAuth: [] }]
@@ -50,7 +49,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
  *       - in: path
  *         name: categoryId
  *         required: true
- *         schema: { type: string }
+ *         schema: { type: string, format: uuid }
  *     responses:
  *       200:
  *         description: "Request completed successfully"

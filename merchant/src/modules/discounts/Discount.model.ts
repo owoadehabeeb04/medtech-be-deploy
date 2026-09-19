@@ -71,6 +71,10 @@ export class Discount extends Model<Discount> {
   @Column(DataType.JSONB)
   declare applicableCategories: string[] | null; // Array of category names
 
+  @AllowNull(true)
+  @Column({ field: "applicable_category_ids", type: DataType.JSONB })
+  declare applicableCategoryIds: string[] | null; // Array of global product category IDs
+
   // Constraints
   @AllowNull(true)
   @Column(DataType.DECIMAL(10, 2))

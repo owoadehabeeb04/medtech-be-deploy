@@ -14,6 +14,7 @@ import {
   PrimaryKey,
 } from "sequelize-typescript";
 import { Merchant } from "../merchant/Merchant.model";
+import { ProductCategory } from "../categories/ProductCategory.model";
 import { ProductStatus } from "../../constants/enums";
 
 interface ProductImage {
@@ -29,6 +30,8 @@ interface ProductImage {
   indexes: [
     { fields: ["merchant_id"] },
     { fields: ["category"] },
+    { fields: ["category_id"] },
+    { fields: ["category_review_required"] },
     { fields: ["status"] },
     { fields: ["is_active"] },
     { fields: ["deleted_at"] },
@@ -62,6 +65,21 @@ export class Product extends Model<Product> {
   @Index
   @Column(DataType.STRING(100))
   declare category: string; // "Antibiotics", "Vitamins & Nutrition", etc.
+
+  @ForeignKey(() => ProductCategory)
+  @AllowNull(true)
+  @Index
+  @Column({ field: "category_id", type: DataType.UUID })
+  declare categoryId: string | null;
+
+  @BelongsTo(() => ProductCategory)
+  declare productCategory: ProductCategory | null;
+
+  @AllowNull(false)
+  @Default(false)
+  @Index
+  @Column({ field: "category_review_required", type: DataType.BOOLEAN })
+  declare categoryReviewRequired: boolean;
 
   @AllowNull(false)
   @Column(DataType.STRING(100))

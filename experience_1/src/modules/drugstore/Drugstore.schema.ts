@@ -5,6 +5,7 @@ export const getCatalogProductsQuerySchema = Joi.object({
 	limit: Joi.number().integer().min(1).max(100).default(20),
 	search: Joi.string().trim().allow(""),
 	category: Joi.string().trim(),
+	categoryId: Joi.string().uuid(),
 	merchantId: Joi.string().uuid().optional().description("Omit to browse/search across every pharmacy instead of one."),
 	brand: Joi.alternatives().try(Joi.array().items(Joi.string().trim()), Joi.string().trim()),
 	priceMin: Joi.number().min(0),
@@ -15,6 +16,7 @@ export const getCatalogProductsQuerySchema = Joi.object({
 
 export const catalogBrandsQuerySchema = Joi.object({
 	category: Joi.string().trim().optional(),
+	categoryId: Joi.string().uuid().optional(),
 	merchantId: Joi.string().uuid().optional(),
 });
 

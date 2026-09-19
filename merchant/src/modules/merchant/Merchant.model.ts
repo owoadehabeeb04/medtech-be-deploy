@@ -15,7 +15,6 @@ import { PaymentDetails } from "../payment_details/PaymentDetails.model";
 import { MerchantSettings } from "../merchant_settings/MerchantSettings.model";
 import { Product } from "../products/Product.model";
 import { Discount } from "../discounts/Discount.model";
-import { Category } from "../categories/Category.model";
 import { RefreshToken } from "../refresh_tokens/RefreshToken.model";
 import { Subscription } from "../subscriptions/Subscription.model";
 import { Wallet } from "../wallet/Wallet.model";
@@ -106,9 +105,6 @@ export class Merchant extends Model<Merchant> {
 
   @HasMany(() => Discount)
   declare discounts: Discount[];
-
-  @HasMany(() => Category)
-  declare categories: Category[];
 
   @HasMany(() => RefreshToken)
   declare refreshTokens: RefreshToken[];

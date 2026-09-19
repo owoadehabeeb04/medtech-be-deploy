@@ -36,9 +36,7 @@ import { DrugstorePrescription } from "../modules/drugstore/DrugstorePrescriptio
 import { DrugstoreWallet } from "../modules/drugstore/DrugstoreWallet.model";
 import { DrugstoreWalletTransaction } from "../modules/drugstore/DrugstoreWalletTransaction.model";
 import { DrugstoreSavedCard } from "../modules/drugstore/DrugstoreSavedCard.model";
-import { DrugstoreCategoryGroup } from "../modules/drugstore/DrugstoreCategoryGroup.model";
 import { ensureSpecialitySeedData } from "../modules/speciality/Speciality.seed";
-import { ensureDrugstoreCategoryGroupSeedData } from "../modules/drugstore/DrugstoreCategoryGroup.seed";
 import { applicationConfig } from "../config";
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
@@ -61,7 +59,6 @@ const connection = async () => {
 		DrugstoreWallet,
 		DrugstoreWalletTransaction,
 		DrugstoreSavedCard,
-		DrugstoreCategoryGroup,
 	];
 	const models = [...user_mod, ...extra_user_mod, ...permission_mod, ...medic_mod, ...doctor_settings_mod, ...doctor_reviews_mod, ...drugstore_mod];
 	const dbHost = process.env.EXPERIENCE1_DB_HOST || process.env.DB_HOST;
@@ -100,7 +97,6 @@ const connection = async () => {
 			await sequelize.sync({ alter: true });
 		}
 		await ensureSpecialitySeedData();
-		await ensureDrugstoreCategoryGroupSeedData();
 		console.log("Connection has been established successfully.");
 	} catch (error) {
 		console.error("Unable to connect to the database:", error);

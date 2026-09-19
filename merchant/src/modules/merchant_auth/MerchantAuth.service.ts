@@ -3,7 +3,6 @@ import { Merchant } from "../merchant/Merchant.model";
 import { StoreDetails } from "../store_details/StoreDetails.model";
 import { PaymentDetails } from "../payment_details/PaymentDetails.model";
 import { MerchantSettings } from "../merchant_settings/MerchantSettings.model";
-import { Category } from "../categories/Category.model";
 import { Wallet } from "../wallet/Wallet.model";
 import { Subscription } from "../subscriptions/Subscription.model";
 import { Plan } from "../subscriptions/Plan.model";
@@ -176,9 +175,6 @@ export class MerchantAuthService {
     await MerchantSettings.create({
       merchantId: merchant.id,
     });
-
-    // Seed default categories (Antibiotics, Pain Relief)
-    await Category.seedDefaultCategories(merchant.id);
 
     // Create wallet
     await Wallet.create({ merchantId: merchant.id });

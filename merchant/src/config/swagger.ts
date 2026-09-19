@@ -177,11 +177,12 @@ const options: swaggerJsdoc.Options = {
         },
         CreateProductRequest: {
           type: "object",
-          required: ["name", "category", "brand", "price", "vat", "inventory", "images"],
+          required: ["name", "categoryId", "brand", "price", "vat", "inventory", "images"],
           properties: {
             name: { type: "string", minLength: 2, maxLength: 255, example: "Paracetamol 500mg" },
             description: { type: "string", maxLength: 2000, example: "Pain relief tablets" },
-            category: { type: "string", example: "Pain Relief" },
+            categoryId: { type: "string", format: "uuid", description: "Detailed selectable category ID returned by GET /api/v1/merchant/categories or the category search endpoint.", example: "9f2b7f34-8d3f-4f4a-9c5f-65b0b8f2d44a" },
+            category: { type: "string", deprecated: true, description: "Legacy category name. Supported temporarily for existing clients; use categoryId for new product requests.", example: "Analgesics (Pain Relievers)" },
             brand: { type: "string", example: "Emzor" },
             sku: { type: "string", maxLength: 100, example: "PCM-500-001" },
             price: { type: "number", minimum: 0, example: 1500 },
@@ -213,7 +214,8 @@ const options: swaggerJsdoc.Options = {
           properties: {
             name: { type: "string", minLength: 2, maxLength: 255 },
             description: { type: "string", maxLength: 2000 },
-            category: { type: "string" },
+            categoryId: { type: "string", format: "uuid", description: "Detailed selectable category ID. Send this when changing a product's category." },
+            category: { type: "string", deprecated: true, description: "Legacy category name; use categoryId." },
             brand: { type: "string" },
             sku: { type: "string", maxLength: 100 },
             price: { type: "number", minimum: 0 },
@@ -245,23 +247,6 @@ const options: swaggerJsdoc.Options = {
           required: ["inventory"],
           properties: { inventory: { type: "integer", minimum: 0, example: 50 } },
         },
-        CreateCategoryRequest: {
-          type: "object",
-          required: ["name"],
-          properties: {
-            name: { type: "string", minLength: 2, maxLength: 100, example: "Antibiotics" },
-            description: { type: "string", maxLength: 500, example: "Prescription medicines" },
-          },
-        },
-        UpdateCategoryRequest: {
-          type: "object",
-          description: "All fields are optional; send only the fields to change.",
-          properties: {
-            name: { type: "string", minLength: 2, maxLength: 100 },
-            description: { type: "string", maxLength: 500 },
-            isActive: { type: "boolean" },
-          },
-        },
         CreateDiscountRequest: {
           type: "object",
           required: ["code", "type", "amount", "startDate", "endDate"],
@@ -272,6 +257,7 @@ const options: swaggerJsdoc.Options = {
             applyToAllProducts: { type: "boolean", default: false },
             applicableProducts: { type: "array", items: { type: "string", format: "uuid" } },
             applicableCategories: { type: "array", items: { type: "string", example: "Pain Relief" } },
+            applicableCategoryIds: { type: "array", items: { type: "string", format: "uuid" }, description: "Global product category IDs used for discount applicability." },
             minOrderAmount: { type: "number", minimum: 0 },
             status: { type: "string", enum: ["active", "inactive"], default: "active" },
             startDate: { type: "string", format: "date-time", example: "2026-08-01T00:00:00.000Z" },
@@ -290,6 +276,7 @@ const options: swaggerJsdoc.Options = {
             applyToAllProducts: { type: "boolean" },
             applicableProducts: { type: "array", items: { type: "string", format: "uuid" } },
             applicableCategories: { type: "array", items: { type: "string" } },
+            applicableCategoryIds: { type: "array", items: { type: "string", format: "uuid" }, description: "Global product category IDs used for discount applicability." },
             minOrderAmount: { type: "number", minimum: 0 },
             status: { type: "string", enum: ["active", "inactive"] },
             startDate: { type: "string", format: "date-time" },
@@ -791,7 +778,7 @@ const options: swaggerJsdoc.Options = {
         InternalCategoriesResponse: {
           allOf: [
             { $ref: "#/components/schemas/SuccessResponse" },
-            { type: "object", properties: { data: { type: "array", items: { $ref: "#/components/schemas/Category" } } } },
+            { type: "object", properties: { data: { type: "array", items: { $ref: "#/components/schemas/ProductCategoryNode" } } } },
           ],
         },
         PharmacyRatingSummary: {
@@ -1948,30 +1935,63 @@ const options: swaggerJsdoc.Options = {
             },
           ],
         },
-        Category: {
+        ProductCategoryNode: {
           type: "object",
+          description: "A node in the global product category tree. Groups are navigation nodes; detailed categories have isSelectable=true.",
           properties: {
             id: { type: "string", format: "uuid" },
-            merchantId: { type: "string", format: "uuid" },
-            name: { type: "string", example: "Antibiotics" },
-            description: { type: "string", nullable: true },
-            isDefault: { type: "boolean", description: "true for the two pre-seeded categories created at signup." },
+            key: { type: "string", example: "cosmetics-beauty-products.hair-care-styling.shampoo" },
+            name: { type: "string", example: "Shampoo" },
+            parentId: { type: "string", format: "uuid", nullable: true },
+            sortOrder: { type: "integer" },
             isActive: { type: "boolean" },
-            createdAt: { type: "string", format: "date-time" },
-            updatedAt: { type: "string", format: "date-time" },
-            deletedAt: { type: "string", format: "date-time", nullable: true },
+            isSelectable: { type: "boolean" },
+            childCount: { type: "integer" },
+            breadcrumb: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "string", format: "uuid" },
+                  key: { type: "string" },
+                  name: { type: "string" },
+                },
+              },
+            },
+            children: { type: "array", items: { $ref: "#/components/schemas/ProductCategoryNode" } },
           },
+        },
+        Category: {
+          allOf: [{ $ref: "#/components/schemas/ProductCategoryNode" }],
+          description: "Deprecated alias for ProductCategoryNode retained for generated-client compatibility.",
+        },
+        CategorySearchResponse: {
+          allOf: [
+            { $ref: "#/components/schemas/SuccessResponse" },
+            {
+              type: "object",
+              properties: {
+                data: {
+                  type: "object",
+                  properties: {
+                    query: { type: "string", example: "Shampoo" },
+                    results: { type: "array", items: { $ref: "#/components/schemas/ProductCategoryNode" } },
+                  },
+                },
+              },
+            },
+          ],
         },
         CategoryResponse: {
           allOf: [
             { $ref: "#/components/schemas/SuccessResponse" },
-            { type: "object", properties: { data: { $ref: "#/components/schemas/Category" } } },
+            { type: "object", properties: { data: { $ref: "#/components/schemas/ProductCategoryNode" } } },
           ],
         },
         CategoryListResponse: {
           allOf: [
             { $ref: "#/components/schemas/SuccessResponse" },
-            { type: "object", properties: { data: { type: "array", items: { $ref: "#/components/schemas/Category" } } } },
+            { type: "object", properties: { data: { type: "array", items: { $ref: "#/components/schemas/ProductCategoryNode" } } } },
           ],
         },
         ProductImage: {
@@ -1990,6 +2010,8 @@ const options: swaggerJsdoc.Options = {
             name: { type: "string" },
             description: { type: "string", nullable: true },
             category: { type: "string", example: "Antibiotics" },
+            categoryId: { type: "string", format: "uuid", nullable: true },
+            categoryReviewRequired: { type: "boolean", description: "True when an existing legacy category name could not be mapped unambiguously to the global taxonomy. Send categoryId to resolve it." },
             brand: { type: "string", example: "GSK" },
             sku: { type: "string", nullable: true },
             price: { type: "number", example: 1500.0 },
