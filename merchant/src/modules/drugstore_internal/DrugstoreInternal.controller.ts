@@ -34,6 +34,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
       limit: Number(req.query.limit || 20),
       search: req.query.search ? String(req.query.search) : undefined,
       category: req.query.category ? String(req.query.category) : undefined,
+      categoryId: req.query.categoryId ? String(req.query.categoryId) : undefined,
       brands: parseBrands(req.query.brand),
       priceMin: req.query.priceMin !== undefined ? Number(req.query.priceMin) : undefined,
       priceMax: req.query.priceMax !== undefined ? Number(req.query.priceMax) : undefined,
@@ -79,10 +80,26 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  * /api/v1/merchant/internal/drugstore/product-brands:
  *   get:
  *     summary: "Get distinct brands"
- *     description: "Signed service-to-service merchant endpoint."
+ *     description: "Signed service-to-service endpoint. Returns brands available in active products, optionally filtered by merchantId and the canonical categoryId."
  *     operationId: "merchant_get_api_v1_merchant_internal_drugstore_product_brands"
  *     tags: ["Internal Drugstore"]
  *     security: [{ internalAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: merchantId
+ *         required: false
+ *         description: "Scope brands to one pharmacy. Omit for cross-pharmacy results."
+ *         schema: { type: string, format: uuid }
+ *       - in: query
+ *         name: categoryId
+ *         required: false
+ *         description: "Filter by a detailed selectable global category ID."
+ *         schema: { type: string, format: uuid }
+ *       - in: query
+ *         name: category
+ *         required: false
+ *         description: "Legacy category name filter retained during product migration; prefer categoryId."
+ *         schema: { type: string }
  *     responses:
  *       200:
  *         description: "Request completed successfully"
@@ -101,10 +118,43 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  * /api/v1/merchant/internal/drugstore/products:
  *   get:
  *     summary: "List products"
- *     description: "Signed service-to-service merchant endpoint."
+ *     description: "Signed service-to-service endpoint. Omit merchantId for cross-pharmacy catalog search; pass categoryId to filter by a detailed selectable global category."
  *     operationId: "merchant_get_api_v1_merchant_internal_drugstore_products"
  *     tags: ["Internal Drugstore"]
  *     security: [{ internalAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: merchantId
+ *         required: false
+ *         description: "Scope products to one pharmacy. Omit for cross-pharmacy results."
+ *         schema: { type: string, format: uuid }
+ *       - in: query
+ *         name: categoryId
+ *         required: false
+ *         description: "Filter by a detailed selectable global category ID from the taxonomy API."
+ *         schema: { type: string, format: uuid }
+ *       - in: query
+ *         name: category
+ *         required: false
+ *         description: "Legacy category name filter retained during migration; prefer categoryId."
+ *         schema: { type: string }
+ *       - in: query
+ *         name: search
+ *         required: false
+ *         schema: { type: string }
+ *       - in: query
+ *         name: brand
+ *         required: false
+ *         description: "Comma-separated brand names."
+ *         schema: { type: string }
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema: { type: integer, minimum: 1, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
  *     responses:
  *       200:
  *         description: "Request completed successfully"
@@ -152,10 +202,26 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  * /api/v1/merchant/internal/drugstore/categories:
  *   get:
  *     summary: "List categories"
- *     description: "Signed service-to-service merchant endpoint."
+ *     description: "Signed service-to-service endpoint for the single platform-wide taxonomy. Omit parentId to return the five roots; pass parentId to drill into one level; pass search to return matching nodes with breadcrumbs and descendants."
  *     operationId: "merchant_get_api_v1_merchant_internal_drugstore_categories"
  *     tags: ["Internal Drugstore"]
  *     security: [{ internalAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: parentId
+ *         required: false
+ *         description: "Return direct children of this category ID."
+ *         schema: { type: string, format: uuid }
+ *       - in: query
+ *         name: search
+ *         required: false
+ *         description: "Search category names or stable keys, for example Veterinary or Shampoo."
+ *         schema: { type: string }
+ *       - in: query
+ *         name: includeChildren
+ *         required: false
+ *         description: "When true, include the nested active descendant tree in each returned node."
+ *         schema: { type: boolean, default: false }
  *     responses:
  *       200:
  *         description: "Request completed successfully"
@@ -334,8 +400,9 @@ export const getProduct = async (req: Request, res: Response, next: NextFunction
 export const getDistinctBrands = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const category = req.query.category ? String(req.query.category) : undefined;
+    const categoryId = req.query.categoryId ? String(req.query.categoryId) : undefined;
     const merchantId = req.query.merchantId ? String(req.query.merchantId).trim() : undefined;
-    const data = await DrugstoreInternalService.getDistinctBrands({ category, merchantId });
+    const data = await DrugstoreInternalService.getDistinctBrands({ category, categoryId, merchantId });
 
     res.status(200);
     res.response = {
@@ -368,8 +435,11 @@ export const getTopSellingProducts = async (req: Request, res: Response, next: N
 
 export const listCategories = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const merchantId = requiredQuery(req, "merchantId");
-    const data = await DrugstoreInternalService.listCategories(merchantId);
+    const data = await DrugstoreInternalService.listCategories({
+      parentId: req.query.parentId ? String(req.query.parentId) : undefined,
+      search: req.query.search ? String(req.query.search) : undefined,
+      includeChildren: req.query.includeChildren === "true",
+    });
 
     res.status(200);
     res.response = {

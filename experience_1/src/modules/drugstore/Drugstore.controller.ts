@@ -99,6 +99,11 @@ const handleServiceError = (req: Request, next: NextFunction, error: any, fallba
  *       - name: category
  *         in: query
  *         schema: { type: string }
+ *         description: "Legacy category name filter. Prefer categoryId returned by the category tree/search endpoints."
+ *       - name: categoryId
+ *         in: query
+ *         schema: { type: string, format: uuid }
+ *         description: "Detailed selectable category ID. Products are filtered by the canonical global taxonomy."
  *       - name: merchantId
  *         in: query
  *         schema: { type: string, format: uuid }
@@ -150,13 +155,16 @@ export const getCatalogProducts: RequestHandler = async (req, res, next) => {
  * /api/v1/main/drugstore/catalog/brands:
  *   get:
  *     summary: List distinct brand values available for filtering
- *     description: Powers the Filters → Brands screen's checkbox list. Cross-pharmacy by default; narrow with category and/or merchantId.
+ *     description: Powers the Filters → Brands screen's checkbox list. Cross-pharmacy by default; narrow with categoryId and/or merchantId. The legacy category name remains supported during migration.
  *     tags: [Drugstore]
  *     security: [{ bearerAuth: [] }]
  *     parameters:
  *       - name: category
  *         in: query
  *         schema: { type: string }
+ *       - name: categoryId
+ *         in: query
+ *         schema: { type: string, format: uuid }
  *       - name: merchantId
  *         in: query
  *         schema: { type: string, format: uuid }
@@ -178,7 +186,7 @@ export const getCatalogBrands: RequestHandler = async (req, res, next) => {
 	const query = validateSchema(catalogBrandsQuerySchema, req.query, next);
 	if (!query) return;
 
-	const [error, result] = await manageAsyncOps(DrugstoreService.getCatalogBrands(query.category, query.merchantId));
+	const [error, result] = await manageAsyncOps(DrugstoreService.getCatalogBrands(query.category, query.categoryId, query.merchantId));
 	if (error) return handleServiceError(req, next, error, "D101B");
 	return handleResult(req, res, next, result);
 };
@@ -389,7 +397,7 @@ export const getPharmacyReviews: RequestHandler = async (req, res, next) => {
  *               properties:
  *                 message: { type: string, example: "Success" }
  *                 data: { $ref: '#/components/schemas/CatalogProductResponse' }
- *       400: { description: merchantId query param is required, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+ *       400: { description: Validation failed, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
  *       401: { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
  *       403: { description: Forbidden — caller must be a consumer or doctor, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
  */
@@ -531,14 +539,29 @@ export const checkProductAvailability: RequestHandler = async (req, res, next) =
  * /api/v1/main/drugstore/catalog/categories:
  *   get:
  *     summary: List catalog categories for a pharmacy
- *     description: Passthrough to the merchant service's category list. Requires a merchantId query param.
+ *     description: Passthrough to the global category tree in the Merchant service. merchantId remains accepted for compatibility but is not required because categories are platform-wide.
  *     tags: [Drugstore]
  *     security: [{ bearerAuth: [] }]
  *     parameters:
  *       - name: merchantId
  *         in: query
- *         required: true
+ *         required: false
  *         schema: { type: string, format: uuid }
+ *       - name: parentId
+ *         in: query
+ *         required: false
+ *         schema: { type: string, format: uuid }
+ *         description: Return the direct children of this category.
+ *       - name: search
+ *         in: query
+ *         required: false
+ *         schema: { type: string, example: Shampoo }
+ *         description: Search category names/keys; matching groups include their descendants.
+ *       - name: includeChildren
+ *         in: query
+ *         required: false
+ *         schema: { type: boolean, default: false }
+ *         description: Include the nested active descendant tree in each returned node.
  *     responses:
  *       200:
  *         description: Success
@@ -549,23 +572,19 @@ export const checkProductAvailability: RequestHandler = async (req, res, next) =
  *               properties:
  *                 message: { type: string, example: "Success" }
  *                 data: { $ref: '#/components/schemas/CatalogCategoriesResponse' }
- *       400: { description: merchantId query param is required, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+ *       400: { description: Validation failed, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
  *       401: { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
  *       403: { description: Forbidden — caller must be a consumer or doctor, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
  */
 export const getCatalogCategories: RequestHandler = async (req, res, next) => {
-	const merchantId = String(req.query.merchantId || "").trim();
-	if (!merchantId) {
-		return next(
-			req.context.manageApplicationErrors({
-				message: "merchantId query param is required",
-				statusCode: 400,
-				errorCode: req.context.errorCode(ERR_USER, "D104"),
-			})
-		);
-	}
-
-	const [error, result] = await req.context.manageAsyncOps(DrugstoreService.getCatalogCategories(merchantId));
+	const [error, result] = await req.context.manageAsyncOps(
+		DrugstoreService.getCatalogCategories({
+			merchantId: req.query.merchantId ? String(req.query.merchantId).trim() : undefined,
+			parentId: req.query.parentId ? String(req.query.parentId).trim() : undefined,
+			search: req.query.search ? String(req.query.search).trim() : undefined,
+			includeChildren: req.query.includeChildren === "true",
+		})
+	);
 	if (error) return handleServiceError(req, next, error, "D105");
 	return handleResult(req, res, next, result);
 };

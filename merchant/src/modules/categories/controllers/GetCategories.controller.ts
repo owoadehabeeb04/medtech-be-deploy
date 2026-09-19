@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { CategoryService } from "../Category.service";
+import { ProductCategoryService } from "../ProductCategory.service";
 
 export default async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -14,8 +14,9 @@ export default async (req: Request, res: Response, next: NextFunction) => {
       return next();
     }
 
-    const includeInactive = req.query.includeInactive === "true";
-    const categories = await CategoryService.getAllCategories(merchantId, includeInactive);
+    const parentId = req.query.parentId ? String(req.query.parentId).trim() : undefined;
+    const includeChildren = req.query.includeChildren === "true";
+    const categories = await ProductCategoryService.list({ parentId, includeChildren });
 
     res.status(200);
     res.response = {
@@ -32,11 +33,22 @@ export default async (req: Request, res: Response, next: NextFunction) => {
  * @swagger
  * /api/v1/merchant/categories:
  *   get:
- *     summary: "Get categories"
- *     description: "Get categories for the merchant API."
+ *     summary: "Browse the global product category tree"
+ *     description: "Returns the five top-level categories by default. Pass parentId to retrieve one level of children, or includeChildren=true to include the descendant tree in each returned node. Categories are platform-managed and read-only for merchants."
  *     operationId: "merchant_get_api_v1_merchant_categories"
  *     tags: ["Categories"]
  *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - name: parentId
+ *         in: query
+ *         required: false
+ *         description: "Return the direct children of this category. Omit it to return the five top-level categories."
+ *         schema: { type: string, format: uuid }
+ *       - name: includeChildren
+ *         in: query
+ *         required: false
+ *         description: "When true, include the nested children under each returned category."
+ *         schema: { type: boolean, default: false }
  *     responses:
  *       200:
  *         description: "Request completed successfully"

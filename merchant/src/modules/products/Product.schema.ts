@@ -33,12 +33,16 @@ export const createProductSchema = Joi.object({
     .trim()
     .min(2)
     .max(100)
-    .required()
+    .optional()
     .messages({
       "string.min": "Category name must be at least 2 characters",
       "string.max": "Category name cannot exceed 100 characters",
       "any.required": "Product category is required",
     }),
+
+  categoryId: Joi.string().uuid().optional().messages({
+    "string.guid": "categoryId must be a valid category UUID",
+  }),
 
   brand: Joi.string().trim().min(1).max(100).required().messages({
     "string.min": "Brand name is required",
@@ -108,7 +112,9 @@ export const createProductSchema = Joi.object({
     }),
 
   isActive: Joi.boolean().default(true),
-}).custom((value, helpers) => {
+})
+  .or("category", "categoryId")
+  .custom((value, helpers) => {
   // Validate that maxQuantity >= minQuantity
   if (value.maxQuantity && value.minQuantity && value.maxQuantity < value.minQuantity) {
     return helpers.error("Maximum quantity must be greater than or equal to minimum quantity");
@@ -129,6 +135,9 @@ export const updateProductSchema = Joi.object({
       "string.min": "Category name must be at least 2 characters",
       "string.max": "Category name cannot exceed 100 characters",
     }),
+  categoryId: Joi.string().uuid().optional().messages({
+    "string.guid": "categoryId must be a valid category UUID",
+  }),
   brand: Joi.string().trim().min(1).max(100).optional(),
   sku: Joi.string().trim().max(100).optional(),
   price: Joi.number().min(0).optional(),

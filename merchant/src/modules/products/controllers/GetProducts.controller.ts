@@ -22,6 +22,8 @@ export default async (req: Request, res: Response, next: NextFunction) => {
       limit = "20",
       search,
       category,
+      categoryId,
+      categoryReviewRequired,
       status,
       isActive,
     } = req.query;
@@ -31,6 +33,9 @@ export default async (req: Request, res: Response, next: NextFunction) => {
       limit: parseInt(limit as string, 10),
       search: search as string,
       category: category as string,
+      categoryId: categoryId as string,
+      categoryReviewRequired:
+        categoryReviewRequired === "true" ? true : categoryReviewRequired === "false" ? false : undefined,
       status: status as any,
       isActive: isActive === "true" ? true : isActive === "false" ? false : undefined,
     };
@@ -53,10 +58,38 @@ export default async (req: Request, res: Response, next: NextFunction) => {
  * /api/v1/merchant/products:
  *   get:
  *     summary: "Get products"
- *     description: "Get products for the merchant API."
+ *     description: "Get products for the authenticated merchant. Prefer categoryId from the global category tree; the legacy category name remains supported during migration."
  *     operationId: "merchant_get_api_v1_merchant_products"
  *     tags: ["Products"]
  *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: categoryId
+ *         required: false
+ *         description: "Filter by a detailed selectable global category ID."
+ *         schema: { type: string, format: uuid }
+ *       - in: query
+ *         name: category
+ *         required: false
+ *         description: "Legacy category name filter retained during migration; prefer categoryId."
+ *         schema: { type: string }
+ *       - in: query
+ *         name: categoryReviewRequired
+ *         required: false
+ *         description: "Filter products whose legacy category still needs manual mapping."
+ *         schema: { type: boolean }
+ *       - in: query
+ *         name: search
+ *         required: false
+ *         schema: { type: string }
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema: { type: integer, minimum: 1, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema: { type: integer, minimum: 1, default: 20 }
  *     responses:
  *       200:
  *         description: "Request completed successfully"

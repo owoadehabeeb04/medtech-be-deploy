@@ -6,22 +6,37 @@ import { Dialect } from "sequelize";
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 import { Merchant } from "../modules/merchant/Merchant.model";
+import { MerchantVerification } from "../modules/merchant_verification/MerchantVerification.model";
 import { StoreDetails } from "../modules/store_details/StoreDetails.model";
 import { PaymentDetails } from "../modules/payment_details/PaymentDetails.model";
 import { MerchantSettings } from "../modules/merchant_settings/MerchantSettings.model";
-import { Category } from "../modules/categories/Category.model";
+import { MerchantDeviceToken } from "../modules/merchant_settings/MerchantDeviceToken.model";
+import { ProductCategory } from "../modules/categories/ProductCategory.model";
+import { ProductCategoryService } from "../modules/categories/ProductCategory.service";
 import { Product } from "../modules/products/Product.model";
 import { Discount } from "../modules/discounts/Discount.model";
 import { RefreshToken } from "../modules/refresh_tokens/RefreshToken.model";
+import { Plan } from "../modules/subscriptions/Plan.model";
+import { Subscription } from "../modules/subscriptions/Subscription.model";
+import { ScheduledPlanChange } from "../modules/subscriptions/ScheduledPlanChange.model";
+import { Wallet } from "../modules/wallet/Wallet.model";
+import { Transaction } from "../modules/transactions/Transaction.model";
+import { DrugstoreOrder } from "../modules/drugstore_orders/DrugstoreOrder.model";
+import { DrugstoreOrderItem } from "../modules/drugstore_orders/DrugstoreOrderItem.model";
 import { hashPassword } from "@medtech/utils";
 import { ProductStatus, DiscountType, DiscountStatus } from "../constants/enums";
 import { setupAssociations } from "../modules/associations";
+import { runMigrations } from "../core/migrations";
 
 const DB_HOST = process.env.DB_HOST || "localhost";
 const DB_PORT = parseInt(process.env.DB_PORT || "5432", 10);
 const DB_USERNAME = process.env.DB_USERNAME || "postgres";
 const DB_PASSWORD = process.env.DB_PASSWORD || "";
 const DB_NAME = process.env.DB_NAME || "merchant_db";
+const USE_SSL = DB_HOST.includes("rds.amazonaws.com") || process.env.NODE_ENV === "production";
+const dialectOptions = USE_SSL
+  ? { ssl: { require: true, rejectUnauthorized: false } }
+  : undefined;
 
 async function createDatabaseIfNotExists() {
   const adminSequelize = new Sequelize({
@@ -32,12 +47,7 @@ async function createDatabaseIfNotExists() {
     password: DB_PASSWORD,
     database: "postgres",
     logging: false,
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false,
-      },
-    },
+    dialectOptions,
   });
 
   try {
@@ -66,24 +76,28 @@ const sequelize = new Sequelize({
   password: DB_PASSWORD,
   database: DB_NAME,
   logging: false,
-  dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false,
-    },
-  },
+  dialectOptions,
   define: {
     underscored: true,
   },
   models: [
     Merchant,
+    MerchantVerification,
     StoreDetails,
     PaymentDetails,
     MerchantSettings,
-    Category,
+    MerchantDeviceToken,
+    ProductCategory,
     Product,
     Discount,
     RefreshToken,
+    Plan,
+    Subscription,
+    ScheduledPlanChange,
+    Wallet,
+    Transaction,
+    DrugstoreOrder,
+    DrugstoreOrderItem,
   ],
 });
 
@@ -95,8 +109,10 @@ async function seedDatabase() {
 
     setupAssociations();
 
+    await runMigrations(sequelize);
     const alterSchema = process.env.DB_SYNC_ALTER === "true";
     await sequelize.sync(alterSchema ? { alter: true } : undefined);
+    await ProductCategoryService.syncTaxonomyAndBackfill();
 
     const hashedPassword = await hashPassword("Admin@123");
 
@@ -194,14 +210,11 @@ async function seedDatabase() {
       });
     }
 
-    await Category.seedDefaultCategories(merchant.id);
-
-    const categories = await Category.findAll({
-      where: { merchantId: merchant.id, isActive: true },
+    const defaultProductCategory = await ProductCategory.findOne({
+      where: { key: "drugs-medications.analgesics-pain-relievers", isActive: true, isSelectable: true },
     });
 
-    if (categories.length > 0) {
-      const categoryName = categories[0].name;
+    if (defaultProductCategory) {
 
       const existingProduct = await Product.findOne({
         where: { merchantId: merchant.id, name: "Paracetamol 500mg" },
@@ -212,7 +225,8 @@ async function seedDatabase() {
           merchantId: merchant.id,
           name: "Paracetamol 500mg",
           description: "Pain relief and fever reducer. Take 1-2 tablets every 4-6 hours as needed.",
-          category: categoryName,
+          category: defaultProductCategory.name,
+          categoryId: defaultProductCategory.id,
           brand: "GSK",
           sku: "PRC-500-001",
           price: 500.00,

@@ -4,6 +4,7 @@ import { CreateDiscountDTO, UpdateDiscountDTO, ValidateDiscountDTO } from "./Dis
 import { DiscountStatus, DiscountType } from "../../constants/enums";
 import { Op } from "sequelize";
 import { HttpException } from "@medtech/utils";
+import { ProductCategoryService } from "../categories/ProductCategory.service";
 
 export class DiscountService {
   /**
@@ -130,6 +131,10 @@ export class DiscountService {
       throw new HttpException(400, "Percentage discount cannot exceed 100");
     }
 
+    if (data.applicableCategoryIds?.length) {
+      await this.validateCategoryIds(data.applicableCategoryIds);
+    }
+
     // Ensure code is uppercase
     const discount = await Discount.create({
       ...data,
@@ -181,6 +186,10 @@ export class DiscountService {
       data.amount > 100
     ) {
       throw new HttpException(400, "Percentage discount cannot exceed 100");
+    }
+
+    if (data.applicableCategoryIds?.length) {
+      await this.validateCategoryIds(data.applicableCategoryIds);
     }
 
     await discount.update(data);
@@ -256,23 +265,28 @@ export class DiscountService {
       // Check if any product categories match
       if (
         !isApplicable &&
-        discount.applicableCategories &&
-        discount.applicableCategories.length > 0
+        ((discount.applicableCategories && discount.applicableCategories.length > 0) ||
+          (discount.applicableCategoryIds && discount.applicableCategoryIds.length > 0))
       ) {
         const products = await Product.findAll({
           where: {
             merchantId,
             id: { [Op.in]: productIds },
           },
-          attributes: ["category"],
+          attributes: ["category", "categoryId"],
         });
 
         const categories = products.map((p) => p.category);
         const matchingCategories = categories.filter((cat) =>
-          discount.applicableCategories!.includes(cat)
+          (discount.applicableCategories || []).includes(cat)
         );
 
-        if (matchingCategories.length > 0) {
+        const categoryIds = products.map((p) => p.categoryId).filter(Boolean) as string[];
+        const matchingCategoryIds = categoryIds.filter((categoryId) =>
+          (discount.applicableCategoryIds || []).includes(categoryId)
+        );
+
+        if (matchingCategories.length > 0 || matchingCategoryIds.length > 0) {
           isApplicable = true;
         }
       }
@@ -319,6 +333,12 @@ export class DiscountService {
     });
 
     return discount;
+  }
+
+  private static async validateCategoryIds(categoryIds: string[]): Promise<void> {
+    for (const categoryId of categoryIds) {
+      await ProductCategoryService.getSelectableById(categoryId);
+    }
   }
 
   /**

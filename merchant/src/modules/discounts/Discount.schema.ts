@@ -47,6 +47,10 @@ export const createDiscountSchema = Joi.object({
       "any.only": "Invalid category in applicableCategories",
     }),
 
+  applicableCategoryIds: Joi.array().items(Joi.string().uuid()).optional().messages({
+    "array.base": "applicableCategoryIds must be an array of category IDs",
+  }),
+
   minOrderAmount: Joi.number().min(0).optional().messages({
     "number.min": "Minimum order amount must be positive",
   }),
@@ -87,7 +91,8 @@ export const createDiscountSchema = Joi.object({
     if (
       !value.applyToAllProducts &&
       (!value.applicableProducts || value.applicableProducts.length === 0) &&
-      (!value.applicableCategories || value.applicableCategories.length === 0)
+      (!value.applicableCategories || value.applicableCategories.length === 0) &&
+      (!value.applicableCategoryIds || value.applicableCategoryIds.length === 0)
     ) {
       return helpers.error(
         "Must specify applicable products or categories when not applying to all products"
@@ -135,6 +140,10 @@ export const updateDiscountSchema = Joi.object({
     .messages({
       "any.only": "Invalid category in applicableCategories",
     }),
+
+  applicableCategoryIds: Joi.array().items(Joi.string().uuid()).optional().messages({
+    "array.base": "applicableCategoryIds must be an array of category IDs",
+  }),
 
   minOrderAmount: Joi.number().min(0).optional().messages({
     "number.min": "Minimum order amount must be positive",
