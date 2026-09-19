@@ -5,6 +5,7 @@ export interface GetCatalogProductsQueryDTO {
 	limit?: number;
 	search?: string;
 	category?: string;
+	categoryId?: string;
 	merchantId?: string;
 	brand?: string | string[];
 	priceMin?: number;

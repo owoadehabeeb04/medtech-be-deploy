@@ -1,6 +1,6 @@
 import { Op, Transaction } from "sequelize";
 import { HttpException } from "@medtech/utils";
-import { Category } from "../categories/Category.model";
+import { ProductCategoryService } from "../categories/ProductCategory.service";
 import { Discount } from "../discounts/Discount.model";
 import { DiscountService } from "../discounts/Discount.service";
 import { Product } from "../products/Product.model";
@@ -18,6 +18,7 @@ type ListProductsInput = {
   limit?: number;
   search?: string;
   category?: string;
+  categoryId?: string;
   brands?: string[];
   priceMin?: number;
   priceMax?: number;
@@ -161,7 +162,9 @@ export class DrugstoreInternalService {
       ];
     }
 
-    if (input.category) {
+    if (input.categoryId) {
+      where.categoryId = input.categoryId;
+    } else if (input.category) {
       where.category = input.category;
     }
 
@@ -209,9 +212,10 @@ export class DrugstoreInternalService {
     return product;
   }
 
-  static async getDistinctBrands(input: { category?: string; merchantId?: string }) {
+  static async getDistinctBrands(input: { category?: string; categoryId?: string; merchantId?: string }) {
     const where: any = { isActive: true, brand: { [Op.ne]: null } };
-    if (input.category) where.category = input.category;
+    if (input.categoryId) where.categoryId = input.categoryId;
+    else if (input.category) where.category = input.category;
     if (input.merchantId) where.merchantId = input.merchantId;
 
     const rows = await Product.findAll({
@@ -387,13 +391,14 @@ export class DrugstoreInternalService {
     };
   }
 
-  static async listCategories(merchantId: string) {
-    return Category.findAll({
-      where: { merchantId, isActive: true },
-      order: [
-        ["isDefault", "DESC"],
-        ["name", "ASC"],
-      ],
+  static async listCategories(options: { parentId?: string; search?: string; includeChildren?: boolean } = {}) {
+    if (options.search) {
+      return ProductCategoryService.search(options.search);
+    }
+
+    return ProductCategoryService.list({
+      parentId: options.parentId,
+      includeChildren: options.includeChildren,
     });
   }
 

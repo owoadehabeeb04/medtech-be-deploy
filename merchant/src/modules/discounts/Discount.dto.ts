@@ -7,6 +7,7 @@ export interface CreateDiscountDTO {
   applyToAllProducts?: boolean;
   applicableProducts?: string[]; // Array of product IDs
   applicableCategories?: string[]; // Array of category names
+  applicableCategoryIds?: string[]; // Array of global product category IDs
   minOrderAmount?: number;
   status: DiscountStatus;
   startDate: Date;
@@ -22,6 +23,7 @@ export interface UpdateDiscountDTO {
   applyToAllProducts?: boolean;
   applicableProducts?: string[];
   applicableCategories?: string[];
+  applicableCategoryIds?: string[];
   minOrderAmount?: number;
   status?: DiscountStatus;
   startDate?: Date;

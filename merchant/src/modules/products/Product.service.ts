@@ -18,6 +18,8 @@ export class ProductService {
       limit?: number;
       search?: string;
       category?: string;
+      categoryId?: string;
+      categoryReviewRequired?: boolean;
       status?: ProductStatus;
       isActive?: boolean;
     } = {}
@@ -27,6 +29,8 @@ export class ProductService {
       limit = 20,
       search,
       category,
+      categoryId,
+      categoryReviewRequired,
       status,
       isActive,
     } = options;
@@ -44,8 +48,14 @@ export class ProductService {
       ];
     }
 
-    if (category) {
+    if (categoryId) {
+      where.categoryId = categoryId;
+    } else if (category) {
       where.category = category;
+    }
+
+    if (categoryReviewRequired !== undefined) {
+      where.categoryReviewRequired = categoryReviewRequired;
     }
 
     if (status) {
@@ -173,7 +183,11 @@ export class ProductService {
       }
     }
 
-    await product.update(data);
+    await product.update(
+      data.categoryId !== undefined
+        ? { ...data, categoryReviewRequired: false }
+        : data
+    );
     return product;
   }
 

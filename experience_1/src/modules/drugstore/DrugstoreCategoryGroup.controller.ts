@@ -47,10 +47,22 @@ const handleResponse = async (
  * @swagger
  * /api/v1/main/drugstore/categories:
  *   get:
- *     summary: Browse the top-level drugstore category groups
- *     description: Cross-pharmacy taxonomy used to power the "Browse by Category" home screen (e.g. Health & Wellness, Mother & Baby). Each group carries its own subcategory list for drill-down.
+ *     summary: Browse the global product category tree
+ *     description: Returns the platform-wide category tree from the Merchant service. Omit parentId to show the five top-level categories; pass parentId to drill into a branch, or search to find matching categories and their descendants.
  *     tags: [Drugstore]
  *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - name: parentId
+ *         in: query
+ *         schema: { type: string, format: uuid }
+ *         description: Return direct children of this category.
+ *       - name: search
+ *         in: query
+ *         schema: { type: string, example: Shampoo }
+ *         description: Search names/keys; matching groups include their descendants.
+ *       - name: includeChildren
+ *         in: query
+ *         schema: { type: boolean, default: false }
  *     responses:
  *       200:
  *         description: Success
@@ -65,14 +77,24 @@ const handleResponse = async (
  *       403: { description: Forbidden — caller must be a consumer or doctor, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
  */
 export const listCategoryGroups: RequestHandler = async (req, res, next) =>
-	handleResponse(req, res, next, DrugstoreCategoryGroupService.listGroups(), "D190");
+	handleResponse(
+		req,
+		res,
+		next,
+		DrugstoreCategoryGroupService.listGroups({
+			parentId: req.query.parentId ? String(req.query.parentId) : undefined,
+			search: req.query.search ? String(req.query.search) : undefined,
+			includeChildren: req.query.includeChildren === "true",
+		}),
+		"D190"
+	);
 
 /**
  * @swagger
  * /api/v1/main/drugstore/categories/{slug}:
  *   get:
- *     summary: Get a category group and its subcategories
- *     description: "Each subcategory's `name` is the value to pass as the `category` filter on GET /drugstore/catalog/products for the subcategory drill-down screen."
+ *     summary: Get a global category and its descendants
+ *     description: Returns the selected category, its breadcrumb, and active descendants. Use the returned detailed category id as categoryId when filtering products.
  *     tags: [Drugstore]
  *     security: [{ bearerAuth: [] }]
  *     parameters:

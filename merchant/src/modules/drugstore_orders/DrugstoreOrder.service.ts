@@ -4,6 +4,7 @@ import { Op, Transaction } from "sequelize";
 import { DrugstoreOrder } from "./DrugstoreOrder.model";
 import { DrugstoreOrderItem } from "./DrugstoreOrderItem.model";
 import { Product } from "../products/Product.model";
+import { ProductCategory } from "../categories/ProductCategory.model";
 import { applicationConfig } from "../../config";
 import { ExperienceOneInternalClient } from "../drugstore_internal/ExperienceOneInternalClient";
 import { ProductStatus } from "../../constants/enums";
@@ -788,12 +789,36 @@ const addDaysToDate = (date: Date, days: number): Date => {
 const toDateOnly = (date: Date): string => date.toISOString().slice(0, 10);
 
 const buildSeedProducts = async (merchantId: string, transaction: Transaction): Promise<Product[]> => {
+  const categoryKeys = [
+    "drugs-medications.analgesics-pain-relievers",
+    "drugs-medications.antibiotics",
+    "drugs-medications.vitamins-supplements",
+  ];
+  const categories = await ProductCategory.findAll({
+    where: {
+      key: { [Op.in]: categoryKeys },
+      isActive: true,
+      isSelectable: true,
+    },
+    transaction,
+  });
+  const categoryByKey = new Map(categories.map((category) => [category.key, category]));
+  const missingCategory = categoryKeys.find((key) => !categoryByKey.has(key));
+  if (missingCategory) {
+    throw new HttpException(500, `Product taxonomy category ${missingCategory} is not seeded`);
+  }
+
+  const analgesics = categoryByKey.get(categoryKeys[0])!;
+  const antibiotics = categoryByKey.get(categoryKeys[1])!;
+  const vitamins = categoryByKey.get(categoryKeys[2])!;
+
   const sampleProducts = [
     {
       merchantId,
       name: "Paracetamol 500mg Tablets",
       description: "Pain relief tablet pack for quick merchant order demos.",
-      category: "Pain Relief",
+      category: analgesics.name,
+      categoryId: analgesics.id,
       brand: "Emzor",
       sku: `SEED-PARA-${merchantId.slice(0, 8)}`,
       price: 2500,
@@ -817,7 +842,8 @@ const buildSeedProducts = async (merchantId: string, transaction: Transaction): 
       merchantId,
       name: "Amoxicillin 500mg Capsules",
       description: "Prescription antibiotic sample product for seeded drugstore orders.",
-      category: "Antibiotics",
+      category: antibiotics.name,
+      categoryId: antibiotics.id,
       brand: "M&G",
       sku: `SEED-AMOX-${merchantId.slice(0, 8)}`,
       price: 7200,
@@ -841,7 +867,8 @@ const buildSeedProducts = async (merchantId: string, transaction: Transaction): 
       merchantId,
       name: "Vitamin C 1000mg",
       description: "Supplement sample product used for seeded merchant order rows.",
-      category: "Vitamins & Nutrition",
+      category: vitamins.name,
+      categoryId: vitamins.id,
       brand: "Nature Made",
       sku: `SEED-VITC-${merchantId.slice(0, 8)}`,
       price: 4800,

@@ -5,7 +5,6 @@ import { MerchantSettings } from "./merchant_settings/MerchantSettings.model";
 import { MerchantVerification } from "./merchant_verification/MerchantVerification.model";
 import { Product } from "./products/Product.model";
 import { Discount } from "./discounts/Discount.model";
-import { Category } from "./categories/Category.model";
 import { RefreshToken } from "./refresh_tokens/RefreshToken.model";
 import { Plan } from "./subscriptions/Plan.model";
 import { Subscription } from "./subscriptions/Subscription.model";
@@ -33,7 +32,6 @@ export {
   MerchantVerification,
   Product,
   Discount,
-  Category,
   RefreshToken,
   Plan,
   Subscription,

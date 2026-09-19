@@ -1,0 +1,349 @@
+[
+  {
+    "key": "drugs-medications",
+    "name": "Drugs / Medications",
+    "children": [
+      { "key": "drugs-medications.analgesics-pain-relievers", "name": "Analgesics (Pain Relievers)", "children": [] },
+      { "key": "drugs-medications.antibiotics", "name": "Antibiotics", "children": [] },
+      { "key": "drugs-medications.antivirals", "name": "Antivirals", "children": [] },
+      { "key": "drugs-medications.antifungals", "name": "Antifungals", "children": [] },
+      { "key": "drugs-medications.antiparasitic", "name": "Antiparasitic", "children": [] },
+      { "key": "drugs-medications.anti-inflammatory-drugs", "name": "Anti-inflammatory Drugs", "children": [] },
+      { "key": "drugs-medications.antihistamines-antiallergics", "name": "Antihistamines / Antiallergics", "children": [] },
+      { "key": "drugs-medications.antihypertensives", "name": "Antihypertensives", "children": [] },
+      { "key": "drugs-medications.antidiabetic-drugs", "name": "Antidiabetic Drugs", "children": [] },
+      { "key": "drugs-medications.cardiovascular-drugs", "name": "Cardiovascular Drugs", "children": [] },
+      { "key": "drugs-medications.anticoagulants-antiplatelets", "name": "Anticoagulants & Antiplatelets", "children": [] },
+      { "key": "drugs-medications.lipid-lowering-drugs", "name": "Lipid-Lowering Drugs", "children": [] },
+      { "key": "drugs-medications.respiratory-drugs", "name": "Respiratory Drugs", "children": [] },
+      { "key": "drugs-medications.gastrointestinal-drugs", "name": "Gastrointestinal Drugs", "children": [] },
+      { "key": "drugs-medications.antidepressants", "name": "Antidepressants", "children": [] },
+      { "key": "drugs-medications.antipsychotics", "name": "Antipsychotics", "children": [] },
+      { "key": "drugs-medications.anxiolytics-sedatives", "name": "Anxiolytics & Sedatives", "children": [] },
+      { "key": "drugs-medications.anticonvulsants-antiepileptics", "name": "Anticonvulsants / Antiepileptics", "children": [] },
+      { "key": "drugs-medications.hormonal-drugs", "name": "Hormonal Drugs", "children": [] },
+      { "key": "drugs-medications.contraceptives", "name": "Contraceptives", "children": [] },
+      { "key": "drugs-medications.corticosteroids", "name": "Corticosteroids", "children": [] },
+      { "key": "drugs-medications.muscle-relaxants", "name": "Muscle Relaxants", "children": [] },
+      { "key": "drugs-medications.antiemetics", "name": "Antiemetics (Anti-nausea/Vomiting)", "children": [] },
+      { "key": "drugs-medications.laxatives-bowel-preparations", "name": "Laxatives & Bowel Preparations", "children": [] },
+      { "key": "drugs-medications.dermatological-drugs", "name": "Dermatological Drugs", "children": [] },
+      { "key": "drugs-medications.ophthalmic-drugs", "name": "Ophthalmic Drugs (Eye Medications)", "children": [] },
+      { "key": "drugs-medications.otic-drugs", "name": "Otic Drugs (Ear Medications)", "children": [] },
+      { "key": "drugs-medications.urological-drugs", "name": "Urological Drugs", "children": [] },
+      { "key": "drugs-medications.renal-electrolyte-preparations", "name": "Renal & Electrolyte Preparations", "children": [] },
+      { "key": "drugs-medications.vitamins-supplements", "name": "Vitamins & Supplements", "children": [] },
+      { "key": "drugs-medications.minerals-nutritional-preparations", "name": "Minerals & Nutritional Preparations", "children": [] },
+      { "key": "drugs-medications.vaccines-immunological-products", "name": "Vaccines & Immunological Products", "children": [] },
+      { "key": "drugs-medications.antiseptics-disinfectants", "name": "Antiseptics & Disinfectants", "children": [] },
+      { "key": "drugs-medications.anesthetics", "name": "Anesthetics", "children": [] },
+      { "key": "drugs-medications.oncology-anticancer-drugs", "name": "Oncology / Anticancer Drugs", "children": [] },
+      { "key": "drugs-medications.emergency-critical-care-drugs", "name": "Emergency & Critical-Care Drugs", "children": [] },
+      { "key": "drugs-medications.blood-hematological-drugs", "name": "Blood & Hematological Drugs", "children": [] },
+      { "key": "drugs-medications.reproductive-fertility-medications", "name": "Reproductive & Fertility Medications", "children": [] },
+      { "key": "drugs-medications.neurological-drugs", "name": "Neurological Drugs", "children": [] }
+    ]
+  },
+  {
+    "key": "veterinary-products",
+    "name": "Veterinary Products",
+    "children": [
+      {
+        "key": "veterinary-products.veterinary-medicines",
+        "name": "Veterinary Medicines",
+        "children": [
+          { "key": "veterinary-products.veterinary-medicines.antibiotics-antibacterials", "name": "Antibiotics & Antibacterials", "children": [] },
+          { "key": "veterinary-products.veterinary-medicines.antiparasitics-internal", "name": "Antiparasitics – Internal (Dewormers)", "children": [] },
+          { "key": "veterinary-products.veterinary-medicines.antiparasitics-external", "name": "Antiparasitics – External (Flea, Tick & Mite Control)", "children": [] },
+          { "key": "veterinary-products.veterinary-medicines.antifungals", "name": "Antifungals", "children": [] },
+          { "key": "veterinary-products.veterinary-medicines.antivirals", "name": "Antivirals", "children": [] },
+          { "key": "veterinary-products.veterinary-medicines.anti-inflammatory-pain-relief", "name": "Anti-inflammatory & Pain Relief", "children": [] },
+          { "key": "veterinary-products.veterinary-medicines.antihistamines-allergy-medicines", "name": "Antihistamines & Allergy Medicines", "children": [] },
+          { "key": "veterinary-products.veterinary-medicines.gastrointestinal-medicines", "name": "Gastrointestinal Medicines", "children": [] },
+          { "key": "veterinary-products.veterinary-medicines.respiratory-medicines", "name": "Respiratory Medicines", "children": [] },
+          { "key": "veterinary-products.veterinary-medicines.cardiovascular-medicines", "name": "Cardiovascular Medicines", "children": [] },
+          { "key": "veterinary-products.veterinary-medicines.hormonal-reproductive-medicines", "name": "Hormonal & Reproductive Medicines", "children": [] },
+          { "key": "veterinary-products.veterinary-medicines.neurological-medicines", "name": "Neurological Medicines", "children": [] },
+          { "key": "veterinary-products.veterinary-medicines.ophthalmic-medicines", "name": "Ophthalmic Medicines", "children": [] },
+          { "key": "veterinary-products.veterinary-medicines.dermatological-medicines", "name": "Dermatological Medicines", "children": [] },
+          { "key": "veterinary-products.veterinary-medicines.ear-otic-medicines", "name": "Ear & Otic Medicines", "children": [] },
+          { "key": "veterinary-products.veterinary-medicines.vitamins-minerals-supplements", "name": "Vitamins, Minerals & Supplements", "children": [] },
+          { "key": "veterinary-products.veterinary-medicines.vaccines-immunological-products", "name": "Vaccines & Immunological Products", "children": [] },
+          { "key": "veterinary-products.veterinary-medicines.sedatives-anaesthetics-emergency-medicines", "name": "Sedatives, Anaesthetics & Emergency Medicines", "children": [] }
+        ]
+      },
+      {
+        "key": "veterinary-products.animal-health-care",
+        "name": "Animal Health & Care",
+        "children": [
+          { "key": "veterinary-products.animal-health-care.wound-care-antiseptics", "name": "Wound Care & Antiseptics", "children": [] },
+          { "key": "veterinary-products.animal-health-care.disinfectants-sanitisers", "name": "Disinfectants & Sanitisers", "children": [] },
+          { "key": "veterinary-products.animal-health-care.skin-coat-care", "name": "Skin & Coat Care", "children": [] },
+          { "key": "veterinary-products.animal-health-care.ear-eye-care", "name": "Ear & Eye Care", "children": [] },
+          { "key": "veterinary-products.animal-health-care.dental-oral-care", "name": "Dental & Oral Care", "children": [] },
+          { "key": "veterinary-products.animal-health-care.hoof-foot-care", "name": "Hoof & Foot Care", "children": [] },
+          { "key": "veterinary-products.animal-health-care.grooming-hygiene-products", "name": "Grooming & Hygiene Products", "children": [] },
+          { "key": "veterinary-products.animal-health-care.flea-tick-parasite-prevention", "name": "Flea, Tick & Parasite Prevention", "children": [] }
+        ]
+      },
+      {
+        "key": "veterinary-products.animal-nutrition",
+        "name": "Animal Nutrition",
+        "children": [
+          { "key": "veterinary-products.animal-nutrition.pet-food", "name": "Pet Food", "children": [] },
+          { "key": "veterinary-products.animal-nutrition.livestock-feed", "name": "Livestock Feed", "children": [] },
+          { "key": "veterinary-products.animal-nutrition.feed-supplements", "name": "Feed Supplements", "children": [] },
+          { "key": "veterinary-products.animal-nutrition.mineral-vitamin-supplements", "name": "Mineral & Vitamin Supplements", "children": [] },
+          { "key": "veterinary-products.animal-nutrition.milk-replacers", "name": "Milk Replacers", "children": [] },
+          { "key": "veterinary-products.animal-nutrition.electrolytes-rehydration-products", "name": "Electrolytes & Rehydration Products", "children": [] },
+          { "key": "veterinary-products.animal-nutrition.growth-performance-supplements", "name": "Growth & Performance Supplements", "children": [] }
+        ]
+      },
+      {
+        "key": "veterinary-products.veterinary-equipment-supplies",
+        "name": "Veterinary Equipment & Supplies",
+        "children": [
+          { "key": "veterinary-products.veterinary-equipment-supplies.syringes-needles", "name": "Syringes & Needles", "children": [] },
+          { "key": "veterinary-products.veterinary-equipment-supplies.diagnostic-kits-tests", "name": "Diagnostic Kits & Tests", "children": [] },
+          { "key": "veterinary-products.veterinary-equipment-supplies.thermometers-monitoring-equipment", "name": "Thermometers & Monitoring Equipment", "children": [] },
+          { "key": "veterinary-products.veterinary-equipment-supplies.surgical-instruments", "name": "Surgical Instruments", "children": [] },
+          { "key": "veterinary-products.veterinary-equipment-supplies.bandages-dressings", "name": "Bandages & Dressings", "children": [] },
+          { "key": "veterinary-products.veterinary-equipment-supplies.catheters-tubes", "name": "Catheters & Tubes", "children": [] },
+          { "key": "veterinary-products.veterinary-equipment-supplies.protective-equipment", "name": "Protective Equipment", "children": [] },
+          { "key": "veterinary-products.veterinary-equipment-supplies.kennel-cage-housing-supplies", "name": "Kennel, Cage & Housing Supplies", "children": [] }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "cosmetics-beauty-products",
+    "name": "Cosmetics & Beauty Products",
+    "children": [
+      {
+        "key": "cosmetics-beauty-products.skincare",
+        "name": "Skincare",
+        "children": [
+          { "key": "cosmetics-beauty-products.skincare.cleansers", "name": "Cleansers", "children": [] },
+          { "key": "cosmetics-beauty-products.skincare.toners", "name": "Toners", "children": [] },
+          { "key": "cosmetics-beauty-products.skincare.moisturisers", "name": "Moisturisers", "children": [] },
+          { "key": "cosmetics-beauty-products.skincare.serums", "name": "Serums", "children": [] },
+          { "key": "cosmetics-beauty-products.skincare.face-masks", "name": "Face Masks", "children": [] },
+          { "key": "cosmetics-beauty-products.skincare.exfoliators-scrubs", "name": "Exfoliators & Scrubs", "children": [] },
+          { "key": "cosmetics-beauty-products.skincare.sunscreen-sun-protection", "name": "Sunscreen & Sun Protection", "children": [] },
+          { "key": "cosmetics-beauty-products.skincare.acne-blemish-care", "name": "Acne & Blemish Care", "children": [] },
+          { "key": "cosmetics-beauty-products.skincare.body-lotions-creams", "name": "Body Lotions & Creams", "children": [] },
+          { "key": "cosmetics-beauty-products.skincare.body-oils", "name": "Body Oils", "children": [] },
+          { "key": "cosmetics-beauty-products.skincare.hand-foot-care", "name": "Hand & Foot Care", "children": [] },
+          { "key": "cosmetics-beauty-products.skincare.lip-care", "name": "Lip Care", "children": [] }
+        ]
+      },
+      {
+        "key": "cosmetics-beauty-products.makeup",
+        "name": "Makeup",
+        "children": [
+          { "key": "cosmetics-beauty-products.makeup.foundation", "name": "Foundation", "children": [] },
+          { "key": "cosmetics-beauty-products.makeup.concealer", "name": "Concealer", "children": [] },
+          { "key": "cosmetics-beauty-products.makeup.powder", "name": "Powder", "children": [] },
+          { "key": "cosmetics-beauty-products.makeup.blush-bronzer", "name": "Blush & Bronzer", "children": [] },
+          { "key": "cosmetics-beauty-products.makeup.highlighter", "name": "Highlighter", "children": [] },
+          { "key": "cosmetics-beauty-products.makeup.eyeshadow", "name": "Eyeshadow", "children": [] },
+          { "key": "cosmetics-beauty-products.makeup.eyeliner", "name": "Eyeliner", "children": [] },
+          { "key": "cosmetics-beauty-products.makeup.mascara", "name": "Mascara", "children": [] },
+          { "key": "cosmetics-beauty-products.makeup.eyebrow-products", "name": "Eyebrow Products", "children": [] },
+          { "key": "cosmetics-beauty-products.makeup.lipstick", "name": "Lipstick", "children": [] },
+          { "key": "cosmetics-beauty-products.makeup.lip-gloss", "name": "Lip Gloss", "children": [] },
+          { "key": "cosmetics-beauty-products.makeup.lip-liner", "name": "Lip Liner", "children": [] },
+          { "key": "cosmetics-beauty-products.makeup.makeup-brushes-tools", "name": "Makeup Brushes & Tools", "children": [] }
+        ]
+      },
+      {
+        "key": "cosmetics-beauty-products.hair-care-styling",
+        "name": "Hair Care & Styling",
+        "children": [
+          { "key": "cosmetics-beauty-products.hair-care-styling.shampoo", "name": "Shampoo", "children": [] },
+          { "key": "cosmetics-beauty-products.hair-care-styling.conditioner", "name": "Conditioner", "children": [] },
+          { "key": "cosmetics-beauty-products.hair-care-styling.hair-oils", "name": "Hair Oils", "children": [] },
+          { "key": "cosmetics-beauty-products.hair-care-styling.hair-creams-moisturisers", "name": "Hair Creams & Moisturisers", "children": [] },
+          { "key": "cosmetics-beauty-products.hair-care-styling.hair-treatments-masks", "name": "Hair Treatments & Masks", "children": [] },
+          { "key": "cosmetics-beauty-products.hair-care-styling.relaxers-texturisers", "name": "Relaxers & Texturisers", "children": [] },
+          { "key": "cosmetics-beauty-products.hair-care-styling.hair-colour", "name": "Hair Colour", "children": [] },
+          { "key": "cosmetics-beauty-products.hair-care-styling.edge-control-styling-products", "name": "Edge Control & Styling Products", "children": [] },
+          { "key": "cosmetics-beauty-products.hair-care-styling.hair-styling-tools", "name": "Hair Styling Tools", "children": [] },
+          { "key": "cosmetics-beauty-products.hair-care-styling.hair-extensions-wigs", "name": "Hair Extensions & Wigs", "children": [] }
+        ]
+      },
+      {
+        "key": "cosmetics-beauty-products.nail-beauty-care",
+        "name": "Nail & Beauty Care",
+        "children": [
+          { "key": "cosmetics-beauty-products.nail-beauty-care.nail-polish", "name": "Nail Polish", "children": [] },
+          { "key": "cosmetics-beauty-products.nail-beauty-care.gel-acrylic-products", "name": "Gel & Acrylic Products", "children": [] },
+          { "key": "cosmetics-beauty-products.nail-beauty-care.nail-treatments", "name": "Nail Treatments", "children": [] },
+          { "key": "cosmetics-beauty-products.nail-beauty-care.nail-tools-accessories", "name": "Nail Tools & Accessories", "children": [] },
+          { "key": "cosmetics-beauty-products.nail-beauty-care.false-nails", "name": "False Nails", "children": [] },
+          { "key": "cosmetics-beauty-products.nail-beauty-care.manicure-pedicure-products", "name": "Manicure & Pedicure Products", "children": [] }
+        ]
+      },
+      {
+        "key": "cosmetics-beauty-products.fragrance",
+        "name": "Fragrance",
+        "children": [
+          { "key": "cosmetics-beauty-products.fragrance.perfumes", "name": "Perfumes", "children": [] },
+          { "key": "cosmetics-beauty-products.fragrance.eau-de-toilette", "name": "Eau de Toilette", "children": [] },
+          { "key": "cosmetics-beauty-products.fragrance.body-mists", "name": "Body Mists", "children": [] },
+          { "key": "cosmetics-beauty-products.fragrance.perfume-oils", "name": "Perfume Oils", "children": [] },
+          { "key": "cosmetics-beauty-products.fragrance.fragrance-sets", "name": "Fragrance Sets", "children": [] },
+          { "key": "cosmetics-beauty-products.fragrance.deodorant-body-sprays", "name": "Deodorant & Body Sprays", "children": [] }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "personal-care-products",
+    "name": "Personal Care Products",
+    "children": [
+      {
+        "key": "personal-care-products.bath-body",
+        "name": "Bath & Body",
+        "children": [
+          { "key": "personal-care-products.bath-body.bath-shower-gels", "name": "Bath & Shower Gels", "children": [] },
+          { "key": "personal-care-products.bath-body.body-wash", "name": "Body Wash", "children": [] },
+          { "key": "personal-care-products.bath-body.bar-soaps", "name": "Bar Soaps", "children": [] },
+          { "key": "personal-care-products.bath-body.bath-salts", "name": "Bath Salts", "children": [] },
+          { "key": "personal-care-products.bath-body.body-scrubs", "name": "Body Scrubs", "children": [] },
+          { "key": "personal-care-products.bath-body.body-lotions-creams", "name": "Body Lotions & Creams", "children": [] },
+          { "key": "personal-care-products.bath-body.body-oils", "name": "Body Oils", "children": [] }
+        ]
+      },
+      {
+        "key": "personal-care-products.oral-care",
+        "name": "Oral Care",
+        "children": [
+          { "key": "personal-care-products.oral-care.toothpaste", "name": "Toothpaste", "children": [] },
+          { "key": "personal-care-products.oral-care.toothbrushes", "name": "Toothbrushes", "children": [] },
+          { "key": "personal-care-products.oral-care.mouthwash", "name": "Mouthwash", "children": [] },
+          { "key": "personal-care-products.oral-care.dental-floss", "name": "Dental Floss", "children": [] },
+          { "key": "personal-care-products.oral-care.teeth-whitening-products", "name": "Teeth Whitening Products", "children": [] },
+          { "key": "personal-care-products.oral-care.denture-care", "name": "Denture Care", "children": [] }
+        ]
+      },
+      {
+        "key": "personal-care-products.hair-scalp-care",
+        "name": "Hair & Scalp Care",
+        "children": [
+          { "key": "personal-care-products.hair-scalp-care.shampoo", "name": "Shampoo", "children": [] },
+          { "key": "personal-care-products.hair-scalp-care.conditioner", "name": "Conditioner", "children": [] },
+          { "key": "personal-care-products.hair-scalp-care.hair-oils", "name": "Hair Oils", "children": [] },
+          { "key": "personal-care-products.hair-scalp-care.hair-treatments", "name": "Hair Treatments", "children": [] },
+          { "key": "personal-care-products.hair-scalp-care.scalp-treatments", "name": "Scalp Treatments", "children": [] },
+          { "key": "personal-care-products.hair-scalp-care.hair-styling-products", "name": "Hair Styling Products", "children": [] }
+        ]
+      },
+      {
+        "key": "personal-care-products.deodorants-intimate-hygiene",
+        "name": "Deodorants & Intimate Hygiene",
+        "children": [
+          { "key": "personal-care-products.deodorants-intimate-hygiene.deodorants", "name": "Deodorants", "children": [] },
+          { "key": "personal-care-products.deodorants-intimate-hygiene.antiperspirants", "name": "Antiperspirants", "children": [] },
+          { "key": "personal-care-products.deodorants-intimate-hygiene.feminine-hygiene-products", "name": "Feminine Hygiene Products", "children": [] },
+          { "key": "personal-care-products.deodorants-intimate-hygiene.intimate-wash", "name": "Intimate Wash", "children": [] },
+          { "key": "personal-care-products.deodorants-intimate-hygiene.pantyliners", "name": "Pantyliners", "children": [] },
+          { "key": "personal-care-products.deodorants-intimate-hygiene.sanitary-pads", "name": "Sanitary Pads", "children": [] },
+          { "key": "personal-care-products.deodorants-intimate-hygiene.tampons", "name": "Tampons", "children": [] },
+          { "key": "personal-care-products.deodorants-intimate-hygiene.menstrual-cups", "name": "Menstrual Cups", "children": [] }
+        ]
+      },
+      {
+        "key": "personal-care-products.shaving-grooming",
+        "name": "Shaving & Grooming",
+        "children": [
+          { "key": "personal-care-products.shaving-grooming.razors", "name": "Razors", "children": [] },
+          { "key": "personal-care-products.shaving-grooming.shaving-cream-gel", "name": "Shaving Cream & Gel", "children": [] },
+          { "key": "personal-care-products.shaving-grooming.aftershave", "name": "Aftershave", "children": [] },
+          { "key": "personal-care-products.shaving-grooming.beard-care", "name": "Beard Care", "children": [] },
+          { "key": "personal-care-products.shaving-grooming.trimmers-grooming-tools", "name": "Trimmers & Grooming Tools", "children": [] },
+          { "key": "personal-care-products.shaving-grooming.hair-removal-products", "name": "Hair Removal Products", "children": [] }
+        ]
+      },
+      {
+        "key": "personal-care-products.personal-hygiene",
+        "name": "Personal Hygiene",
+        "children": [
+          { "key": "personal-care-products.personal-hygiene.hand-wash-sanitiser", "name": "Hand Wash & Sanitiser", "children": [] },
+          { "key": "personal-care-products.personal-hygiene.wet-wipes", "name": "Wet Wipes", "children": [] },
+          { "key": "personal-care-products.personal-hygiene.tissues", "name": "Tissues", "children": [] },
+          { "key": "personal-care-products.personal-hygiene.cotton-wool-buds", "name": "Cotton Wool & Buds", "children": [] },
+          { "key": "personal-care-products.personal-hygiene.personal-cleansing-products", "name": "Personal Cleansing Products", "children": [] }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "supermarket-grocery-products",
+    "name": "Supermarket / Grocery Products",
+    "children": [
+      {
+        "key": "supermarket-grocery-products.food-beverages",
+        "name": "Food & Beverages",
+        "children": [
+          { "key": "supermarket-grocery-products.food-beverages.rice-grains-cereals", "name": "Rice, Grains & Cereals", "children": [] },
+          { "key": "supermarket-grocery-products.food-beverages.pasta-noodles", "name": "Pasta & Noodles", "children": [] },
+          { "key": "supermarket-grocery-products.food-beverages.flour-baking-products", "name": "Flour & Baking Products", "children": [] },
+          { "key": "supermarket-grocery-products.food-beverages.canned-preserved-foods", "name": "Canned & Preserved Foods", "children": [] },
+          { "key": "supermarket-grocery-products.food-beverages.cooking-oils-fats", "name": "Cooking Oils & Fats", "children": [] },
+          { "key": "supermarket-grocery-products.food-beverages.sauces-spices-seasonings", "name": "Sauces, Spices & Seasonings", "children": [] },
+          { "key": "supermarket-grocery-products.food-beverages.snacks-confectionery", "name": "Snacks & Confectionery", "children": [] },
+          { "key": "supermarket-grocery-products.food-beverages.biscuits-crackers", "name": "Biscuits & Crackers", "children": [] },
+          { "key": "supermarket-grocery-products.food-beverages.bread-bakery", "name": "Bread & Bakery", "children": [] },
+          { "key": "supermarket-grocery-products.food-beverages.breakfast-foods", "name": "Breakfast Foods", "children": [] },
+          { "key": "supermarket-grocery-products.food-beverages.dairy-eggs", "name": "Dairy & Eggs", "children": [] },
+          { "key": "supermarket-grocery-products.food-beverages.meat-poultry", "name": "Meat & Poultry", "children": [] },
+          { "key": "supermarket-grocery-products.food-beverages.fish-seafood", "name": "Fish & Seafood", "children": [] },
+          { "key": "supermarket-grocery-products.food-beverages.frozen-foods", "name": "Frozen Foods", "children": [] },
+          { "key": "supermarket-grocery-products.food-beverages.fresh-fruits-vegetables", "name": "Fresh Fruits & Vegetables", "children": [] },
+          { "key": "supermarket-grocery-products.food-beverages.beverages-soft-drinks", "name": "Beverages & Soft Drinks", "children": [] },
+          { "key": "supermarket-grocery-products.food-beverages.water", "name": "Water", "children": [] },
+          { "key": "supermarket-grocery-products.food-beverages.tea-coffee", "name": "Tea & Coffee", "children": [] }
+        ]
+      },
+      {
+        "key": "supermarket-grocery-products.household-cleaning",
+        "name": "Household & Cleaning",
+        "children": [
+          { "key": "supermarket-grocery-products.household-cleaning.laundry-detergents", "name": "Laundry Detergents", "children": [] },
+          { "key": "supermarket-grocery-products.household-cleaning.dishwashing-products", "name": "Dishwashing Products", "children": [] },
+          { "key": "supermarket-grocery-products.household-cleaning.surface-cleaners", "name": "Surface Cleaners", "children": [] },
+          { "key": "supermarket-grocery-products.household-cleaning.toilet-bathroom-cleaners", "name": "Toilet & Bathroom Cleaners", "children": [] },
+          { "key": "supermarket-grocery-products.household-cleaning.disinfectants", "name": "Disinfectants", "children": [] },
+          { "key": "supermarket-grocery-products.household-cleaning.air-fresheners", "name": "Air Fresheners", "children": [] },
+          { "key": "supermarket-grocery-products.household-cleaning.pest-control-products", "name": "Pest Control Products", "children": [] },
+          { "key": "supermarket-grocery-products.household-cleaning.cleaning-tools-accessories", "name": "Cleaning Tools & Accessories", "children": [] },
+          { "key": "supermarket-grocery-products.household-cleaning.tissues-paper-products", "name": "Tissues & Paper Products", "children": [] }
+        ]
+      },
+      {
+        "key": "supermarket-grocery-products.baby-infant",
+        "name": "Baby & Infant",
+        "children": [
+          { "key": "supermarket-grocery-products.baby-infant.baby-food", "name": "Baby Food", "children": [] },
+          { "key": "supermarket-grocery-products.baby-infant.baby-formula", "name": "Baby Formula", "children": [] },
+          { "key": "supermarket-grocery-products.baby-infant.diapers-nappies", "name": "Diapers & Nappies", "children": [] },
+          { "key": "supermarket-grocery-products.baby-infant.baby-wipes", "name": "Baby Wipes", "children": [] },
+          { "key": "supermarket-grocery-products.baby-infant.baby-toiletries", "name": "Baby Toiletries", "children": [] },
+          { "key": "supermarket-grocery-products.baby-infant.baby-feeding-accessories", "name": "Baby Feeding Accessories", "children": [] }
+        ]
+      },
+      {
+        "key": "supermarket-grocery-products.personal-household-essentials",
+        "name": "Personal & Household Essentials",
+        "children": [
+          { "key": "supermarket-grocery-products.personal-household-essentials.batteries-household-utilities", "name": "Batteries & Household Utilities", "children": [] },
+          { "key": "supermarket-grocery-products.personal-household-essentials.kitchen-supplies", "name": "Kitchen Supplies", "children": [] },
+          { "key": "supermarket-grocery-products.personal-household-essentials.food-storage", "name": "Food Storage", "children": [] },
+          { "key": "supermarket-grocery-products.personal-household-essentials.disposable-products", "name": "Disposable Products", "children": [] },
+          { "key": "supermarket-grocery-products.personal-household-essentials.stationery-basic-household-items", "name": "Stationery & Basic Household Items", "children": [] }
+        ]
+      }
+    ]
+  }
+]

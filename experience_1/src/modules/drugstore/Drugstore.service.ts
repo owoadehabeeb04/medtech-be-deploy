@@ -34,6 +34,7 @@ type MerchantProduct = {
 	name: string;
 	description?: string | null;
 	category?: string | null;
+	categoryId?: string | null;
 	brand?: string | null;
 	sku?: string | null;
 	price: number;
@@ -430,9 +431,10 @@ export class DrugstoreService {
 		};
 	}
 
-	static async getCatalogBrands(category?: string, merchantId?: string): Promise<ApiResponse> {
+	static async getCatalogBrands(category?: string, categoryId?: string, merchantId?: string): Promise<ApiResponse> {
 		const data = await DrugstoreMerchantClient.get<{ brands: string[] }>("/api/v1/merchant/internal/drugstore/product-brands", {
 			category,
+			categoryId,
 			merchantId,
 		});
 		return {
@@ -509,8 +511,8 @@ export class DrugstoreService {
 		};
 	}
 
-	static async getCatalogCategories(merchantId: string): Promise<ApiResponse> {
-		const data = await DrugstoreMerchantClient.get(this.categoryPath, { merchantId });
+	static async getCatalogCategories(query: { merchantId?: string; parentId?: string; search?: string; includeChildren?: boolean } = {}): Promise<ApiResponse> {
+		const data = await DrugstoreMerchantClient.get(this.categoryPath, query);
 		return {
 			status: true,
 			code: 200,
