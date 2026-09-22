@@ -39,7 +39,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
     res.response = {
       message: "Product created successfully",
       statusCode: 201,
-      data: product,
+      data: await ProductCategoryService.attachCategoryHierarchy(product),
     };
     return next();
   } catch (error) {

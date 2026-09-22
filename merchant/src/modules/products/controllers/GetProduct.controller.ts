@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { ProductService } from "../Product.service";
 import { HttpException } from "@medtech/utils";
+import { ProductCategoryService } from "../../categories/ProductCategory.service";
 
 export default async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -43,7 +44,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
     res.response = {
       message: "Product retrieved successfully",
       statusCode: 200,
-      data: product,
+      data: await ProductCategoryService.attachCategoryHierarchy(product),
     };
     return next();
   } catch (error) {

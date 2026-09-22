@@ -938,7 +938,7 @@ const options: swaggerJsdoc.Options = {
 				},
 				CatalogProductResponse: {
 					type: "object",
-					description: "Passthrough of a merchant product. categoryId is the canonical detailed taxonomy ID; category is the legacy display name retained for compatibility.",
+					description: "Passthrough of a merchant product. categoryId is the selected detailed taxonomy category ID; parentCategory provides its immediate parent and categoryPath provides the full hierarchy. category remains the selected category name for compatibility.",
 					properties: {
 						id: { type: "string", format: "uuid" },
 						merchantId: { type: "string", format: "uuid" },
@@ -946,6 +946,28 @@ const options: swaggerJsdoc.Options = {
 						description: { type: "string", nullable: true },
 						category: { type: "string" },
 						categoryId: { type: "string", format: "uuid", nullable: true },
+						parentCategory: {
+							type: "object",
+							nullable: true,
+							description: "Immediate parent category for the selected category.",
+							properties: {
+								id: { type: "string", format: "uuid" },
+								key: { type: "string" },
+								name: { type: "string" },
+							},
+						},
+						categoryPath: {
+							type: "array",
+							description: "Full category path from the top-level group through the selected detailed category.",
+							items: {
+								type: "object",
+								properties: {
+									id: { type: "string", format: "uuid" },
+									key: { type: "string" },
+									name: { type: "string" },
+								},
+							},
+						},
 						brand: { type: "string" },
 						sku: { type: "string", nullable: true },
 						price: { type: "number" },
