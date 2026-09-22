@@ -20,13 +20,7 @@ async function ensureProductCategoriesTable(queryInterface: any): Promise<void> 
   const tableName = "product_categories";
 
   try {
-    let tableExists = true;
-    try {
-      await queryInterface.describeTable(tableName);
-    } catch (error: any) {
-      if (!/does not exist|relation .* does not exist/i.test(error?.message || "")) throw error;
-      tableExists = false;
-    }
+    const tableExists = await queryInterface.tableExists(tableName);
 
     if (!tableExists) {
       await queryInterface.createTable(tableName, {

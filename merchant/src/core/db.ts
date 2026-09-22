@@ -27,7 +27,6 @@ const { postgres } = applicationConfig;
 
 const connection = async (): Promise<Sequelize> => {
   console.log("Connecting to database...");
-  console.log(postgres);
 	const sequelize = new Sequelize({
 		dialect: "postgres" as Dialect,
 		host: postgres.host,
