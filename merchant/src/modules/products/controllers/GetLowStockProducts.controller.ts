@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { ProductService } from "../Product.service";
+import { ProductCategoryService } from "../../categories/ProductCategory.service";
 
 export default async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -21,7 +22,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
     res.response = {
       message: "Low stock products retrieved successfully",
       statusCode: 200,
-      data: products,
+      data: await ProductCategoryService.attachCategoryHierarchy(products),
     };
     return next();
   } catch (error) {

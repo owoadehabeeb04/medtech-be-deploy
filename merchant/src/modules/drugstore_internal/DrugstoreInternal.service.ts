@@ -163,7 +163,8 @@ export class DrugstoreInternalService {
     }
 
     if (input.categoryId) {
-      where.categoryId = input.categoryId;
+      const matchingCategoryIds = await ProductCategoryService.getSelectableCategoryIdsForFilter(input.categoryId);
+      where.categoryId = { [Op.in]: matchingCategoryIds };
     } else if (input.category) {
       where.category = input.category;
     }
@@ -214,8 +215,10 @@ export class DrugstoreInternalService {
 
   static async getDistinctBrands(input: { category?: string; categoryId?: string; merchantId?: string }) {
     const where: any = { isActive: true, brand: { [Op.ne]: null } };
-    if (input.categoryId) where.categoryId = input.categoryId;
-    else if (input.category) where.category = input.category;
+    if (input.categoryId) {
+      const matchingCategoryIds = await ProductCategoryService.getSelectableCategoryIdsForFilter(input.categoryId);
+      where.categoryId = { [Op.in]: matchingCategoryIds };
+    } else if (input.category) where.category = input.category;
     if (input.merchantId) where.merchantId = input.merchantId;
 
     const rows = await Product.findAll({

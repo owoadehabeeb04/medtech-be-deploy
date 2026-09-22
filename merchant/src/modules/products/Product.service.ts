@@ -6,6 +6,7 @@ import { CreateProductDTO, UpdateProductDTO, UpdateProductStockDTO } from "./Pro
 import { ProductStatus } from "../../constants/enums";
 import { Op } from "sequelize";
 import { HttpException } from "@medtech/utils";
+import { ProductCategoryService } from "../categories/ProductCategory.service";
 
 export class ProductService {
   /**
@@ -49,7 +50,8 @@ export class ProductService {
     }
 
     if (categoryId) {
-      where.categoryId = categoryId;
+      const matchingCategoryIds = await ProductCategoryService.getSelectableCategoryIdsForFilter(categoryId);
+      where.categoryId = { [Op.in]: matchingCategoryIds };
     } else if (category) {
       where.category = category;
     }
