@@ -54,7 +54,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
     res.response = {
       message: "Product updated successfully",
       statusCode: 200,
-      data: product,
+      data: await ProductCategoryService.attachCategoryHierarchy(product),
     };
     return next();
   } catch (error) {

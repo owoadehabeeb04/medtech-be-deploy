@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { HttpException } from "@medtech/utils";
 import { DrugstoreInternalService } from "./DrugstoreInternal.service";
+import { ProductCategoryService } from "../categories/ProductCategory.service";
 
 const requiredQuery = (req: Request, key: string): string => {
   const value = String(req.query[key] || "").trim();
@@ -41,6 +42,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
       sortBy: req.query.sortBy ? (String(req.query.sortBy) as any) : undefined,
       sortDirection: req.query.sortDirection ? (String(req.query.sortDirection) as any) : undefined,
     });
+    data.products = await ProductCategoryService.attachCategoryHierarchy(data.products);
 
     res.status(200);
     res.response = {
@@ -80,7 +82,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  * /api/v1/merchant/internal/drugstore/product-brands:
  *   get:
  *     summary: "Get distinct brands"
- *     description: "Signed service-to-service endpoint. Returns brands available in active products, optionally filtered by merchantId and the canonical categoryId."
+ *     description: "Signed service-to-service endpoint. Returns brands available in active products, optionally filtered by merchantId and a global categoryId. A category group includes products from all selectable descendants."
  *     operationId: "merchant_get_api_v1_merchant_internal_drugstore_product_brands"
  *     tags: ["Internal Drugstore"]
  *     security: [{ internalAuth: [] }]
@@ -93,7 +95,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  *       - in: query
  *         name: categoryId
  *         required: false
- *         description: "Filter by a detailed selectable global category ID."
+ *         description: "Global category ID. A group includes products in all selectable descendant categories; a detailed category filters to that category."
  *         schema: { type: string, format: uuid }
  *       - in: query
  *         name: category
@@ -118,7 +120,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  * /api/v1/merchant/internal/drugstore/products:
  *   get:
  *     summary: "List products"
- *     description: "Signed service-to-service endpoint. Omit merchantId for cross-pharmacy catalog search; pass categoryId to filter by a detailed selectable global category."
+ *     description: "Signed service-to-service endpoint. Omit merchantId for cross-pharmacy catalog search. A categoryId may identify a group or a detailed category; groups include products from all selectable descendants."
  *     operationId: "merchant_get_api_v1_merchant_internal_drugstore_products"
  *     tags: ["Internal Drugstore"]
  *     security: [{ internalAuth: [] }]
@@ -131,7 +133,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  *       - in: query
  *         name: categoryId
  *         required: false
- *         description: "Filter by a detailed selectable global category ID from the taxonomy API."
+ *         description: "Global category ID from the taxonomy API. A group includes products in all selectable descendant categories; a detailed category filters to that category."
  *         schema: { type: string, format: uuid }
  *       - in: query
  *         name: category
@@ -383,7 +385,8 @@ export const getProduct = async (req: Request, res: Response, next: NextFunction
       throw new HttpException(400, "productId param is required");
     }
 
-    const data = await DrugstoreInternalService.getProduct(merchantId, productId);
+    const product = await DrugstoreInternalService.getProduct(merchantId, productId);
+    const data = await ProductCategoryService.attachCategoryHierarchy(product);
 
     res.status(200);
     res.response = {
@@ -419,7 +422,11 @@ export const getDistinctBrands = async (req: Request, res: Response, next: NextF
 export const getTopSellingProducts = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const limit = Math.max(1, Math.min(50, Number(req.query.limit || 20)));
-    const data = await DrugstoreInternalService.getTopSellingProducts(limit);
+    const result = await DrugstoreInternalService.getTopSellingProducts(limit);
+    const data = {
+      ...result,
+      products: await ProductCategoryService.attachCategoryHierarchy(result.products),
+    };
 
     res.status(200);
     res.response = {

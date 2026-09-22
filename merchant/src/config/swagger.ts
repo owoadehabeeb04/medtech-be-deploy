@@ -2011,6 +2011,28 @@ const options: swaggerJsdoc.Options = {
             description: { type: "string", nullable: true },
             category: { type: "string", example: "Antibiotics" },
             categoryId: { type: "string", format: "uuid", nullable: true },
+            parentCategory: {
+              type: "object",
+              nullable: true,
+              description: "Immediate parent category for the selected category; null if the category has no parent or cannot be resolved.",
+              properties: {
+                id: { type: "string", format: "uuid" },
+                key: { type: "string" },
+                name: { type: "string", example: "Hair Care & Styling" },
+              },
+            },
+            categoryPath: {
+              type: "array",
+              description: "Full category path from the top-level group through the selected detailed category.",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "string", format: "uuid" },
+                  key: { type: "string" },
+                  name: { type: "string" },
+                },
+              },
+            },
             categoryReviewRequired: { type: "boolean", description: "True when an existing legacy category name could not be mapped unambiguously to the global taxonomy. Send categoryId to resolve it." },
             brand: { type: "string", example: "GSK" },
             sku: { type: "string", nullable: true },

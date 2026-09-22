@@ -40,6 +40,8 @@ export type TaxonomySyncResult = {
   backfill: { mapped: number; ambiguous: number; flagged: number };
 };
 
+export type ProductCategoryReference = { id: string; key: string; name: string };
+
 const normalize = (value: unknown): string => String(value || "").trim().toLowerCase();
 
 const sortRows = (rows: ProductCategory[]): ProductCategory[] =>
@@ -261,6 +263,62 @@ export class ProductCategoryService {
     if (!category) throw new HttpException(400, "Invalid or inactive categoryId");
     if (!category.isSelectable) throw new HttpException(400, "Select a detailed category, not a category group");
     return category;
+  }
+
+  static async attachCategoryHierarchy(products: Product | Product[]): Promise<any> {
+    const isArray = Array.isArray(products);
+    const productRows = (isArray ? products : [products]) as Product[];
+    if (productRows.length === 0) return isArray ? [] : null;
+
+    // Read categories including inactive rows so existing products retain their
+    // historical category path if a category is later deactivated.
+    const categories = await ProductCategory.findAll({
+      attributes: ["id", "key", "name", "parentId"],
+    });
+    const byId = new Map(categories.map((category) => [category.id, category]));
+
+    const enrich = (product: Product) => {
+      const data = product.toJSON() as Record<string, any>;
+      const path: ProductCategoryReference[] = [];
+      const visited = new Set<string>();
+      let current = data.categoryId ? byId.get(data.categoryId) : undefined;
+
+      while (current && !visited.has(current.id)) {
+        visited.add(current.id);
+        path.unshift({ id: current.id, key: current.key, name: current.name });
+        current = current.parentId ? byId.get(current.parentId) : undefined;
+      }
+
+      return {
+        ...data,
+        parentCategory: path.length > 1 ? path[path.length - 2] : null,
+        categoryPath: path,
+      };
+    };
+
+    return isArray ? productRows.map(enrich) : enrich(productRows[0]);
+  }
+
+  static async getSelectableCategoryIdsForFilter(categoryId: string): Promise<string[]> {
+    const rows = await ProductCategory.findAll({
+      attributes: ["id", "parentId", "isSelectable"],
+      where: { isActive: true },
+    });
+    const category = rows.find((row) => row.id === categoryId);
+    if (!category) throw new HttpException(400, "Invalid or inactive categoryId");
+
+    const childrenByParent = buildChildrenMap(rows);
+    const selectableIds: string[] = [];
+    const visited = new Set<string>();
+    const visit = (row: ProductCategory) => {
+      if (visited.has(row.id)) return;
+      visited.add(row.id);
+      if (row.isSelectable) selectableIds.push(row.id);
+      for (const child of childrenByParent.get(row.id) || []) visit(child);
+    };
+
+    visit(category);
+    return selectableIds;
   }
 
   static async resolveForProduct(categoryId?: string, legacyName?: string): Promise<ProductCategory> {

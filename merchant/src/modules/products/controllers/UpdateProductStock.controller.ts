@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { ProductService } from "../Product.service";
 import { updateStockSchema } from "../Product.schema";
 import { validateSchema } from "@medtech/utils";
+import { ProductCategoryService } from "../../categories/ProductCategory.service";
 
 export default async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -45,7 +46,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
     res.response = {
       message: "Product stock updated successfully",
       statusCode: 200,
-      data: product,
+      data: await ProductCategoryService.attachCategoryHierarchy(product),
     };
     return next();
   } catch (error) {
