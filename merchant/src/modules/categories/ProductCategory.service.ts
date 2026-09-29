@@ -44,8 +44,12 @@ export type ProductCategoryReference = { id: string; key: string; name: string }
 
 const normalize = (value: unknown): string => String(value || "").trim().toLowerCase();
 
+const categoryNameCollator = new Intl.Collator("en", { sensitivity: "base" });
+
 const sortRows = (rows: ProductCategory[]): ProductCategory[] =>
-  [...rows].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
+  [...rows].sort(
+    (a, b) => categoryNameCollator.compare(a.name, b.name) || a.key.localeCompare(b.key, "en")
+  );
 
 const flattenSeed = (
   nodes: ProductCategorySeedNode[],
