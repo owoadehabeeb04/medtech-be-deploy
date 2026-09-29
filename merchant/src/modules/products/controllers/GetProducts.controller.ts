@@ -62,7 +62,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
  * /api/v1/merchant/products:
  *   get:
  *     summary: "Get products"
- *     description: "Get products for the authenticated merchant. Pass categoryId from the global category tree; selecting a group returns products assigned to any selectable descendant, while selecting a detailed category returns products assigned directly to it. The legacy category name remains supported during migration."
+ *     description: "Get products for the authenticated merchant, sorted by product name ascending. Pass categoryId from the global category tree; selecting a group returns products assigned to any selectable descendant, while selecting a detailed category returns products assigned directly to it. The legacy category name remains supported during migration."
  *     operationId: "merchant_get_api_v1_merchant_products"
  *     tags: ["Products"]
  *     security: [{ bearerAuth: [] }]

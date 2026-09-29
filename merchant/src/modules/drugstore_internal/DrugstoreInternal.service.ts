@@ -179,8 +179,15 @@ export class DrugstoreInternalService {
       if (input.priceMax !== undefined) where.price[Op.lte] = input.priceMax;
     }
 
-    const sortBy = input.sortBy || "createdAt";
-    const sortDirection = input.sortDirection === "asc" ? "ASC" : "DESC";
+    const hasExplicitSort = input.sortBy !== undefined || input.sortDirection !== undefined;
+    const sortBy = input.sortBy || (hasExplicitSort ? "createdAt" : "name");
+    const sortDirection = input.sortDirection
+      ? input.sortDirection === "asc"
+        ? "ASC"
+        : "DESC"
+      : hasExplicitSort
+        ? "DESC"
+        : "ASC";
     const order = [[sortBy, sortDirection]] as any;
 
     const { rows, count } = await Product.findAndCountAll({

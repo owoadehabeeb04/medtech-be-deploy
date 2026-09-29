@@ -34,7 +34,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
  * /api/v1/merchant/categories/search:
  *   get:
  *     summary: Search the global product category tree
- *     description: Search category names and stable keys. A matching group includes its descendants; a matching detailed category includes its full breadcrumb so duplicate names such as Shampoo remain distinguishable.
+ *     description: Search category names and stable keys. Results and descendant sibling lists are alphabetized by display name. A matching group includes its descendants; a matching detailed category includes its full root-to-leaf breadcrumb so duplicate names such as Shampoo remain distinguishable.
  *     operationId: merchant_get_api_v1_merchant_categories_search
  *     tags: [Categories]
  *     security: [{ bearerAuth: [] }]

@@ -41,7 +41,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
  * /api/v1/merchant/categories/{categoryId}:
  *   get:
  *     summary: "Get a global product category and its children"
- *     description: "Returns a category node, its breadcrumb, child count, and nested active children. Groups are navigation nodes; detailed selectable categories have isSelectable=true."
+ *     description: "Returns a category node, its breadcrumb, child count, and nested active children. Descendants are alphabetized by display name at every sibling level; breadcrumbs remain root-to-leaf. Groups are navigation nodes; detailed selectable categories have isSelectable=true."
  *     operationId: "merchant_get_api_v1_merchant_categories_categoryId"
  *     tags: ["Categories"]
  *     security: [{ bearerAuth: [] }]

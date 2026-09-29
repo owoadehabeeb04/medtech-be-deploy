@@ -34,7 +34,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
  * /api/v1/merchant/categories:
  *   get:
  *     summary: "Browse the global product category tree"
- *     description: "Returns the five top-level categories by default. Pass parentId to retrieve one level of children, or includeChildren=true to include the descendant tree in each returned node. Categories are platform-managed and read-only for merchants."
+ *     description: "Returns categories alphabetically by display name at every sibling level. The five top-level categories are returned by default. Pass parentId to retrieve one level of children, or includeChildren=true to include the alphabetized descendant tree in each returned node. Categories are platform-managed and read-only for merchants."
  *     operationId: "merchant_get_api_v1_merchant_categories"
  *     tags: ["Categories"]
  *     security: [{ bearerAuth: [] }]
