@@ -10,8 +10,8 @@ export const getCatalogProductsQuerySchema = Joi.object({
 	brand: Joi.alternatives().try(Joi.array().items(Joi.string().trim()), Joi.string().trim()),
 	priceMin: Joi.number().min(0),
 	priceMax: Joi.number().min(0),
-	sortBy: Joi.string().valid("createdAt", "price", "name").default("createdAt"),
-	sortDirection: Joi.string().valid("asc", "desc").default("desc"),
+	sortBy: Joi.string().valid("createdAt", "price", "name"),
+	sortDirection: Joi.string().valid("asc", "desc"),
 });
 
 export const catalogBrandsQuerySchema = Joi.object({

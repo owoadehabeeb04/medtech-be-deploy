@@ -48,7 +48,7 @@ const handleResponse = async (
  * /api/v1/main/drugstore/categories:
  *   get:
  *     summary: Browse the global product category tree
- *     description: Returns the platform-wide category tree from the Merchant service. Omit parentId to show the five top-level categories; pass parentId to drill into a branch, or search to find matching categories and their descendants.
+ *     description: Returns the platform-wide category tree from the Merchant service with sibling categories alphabetized by display name. Omit parentId to show the five top-level categories; pass parentId to drill into a branch, or search to find matching categories and their descendants. Breadcrumbs remain root-to-leaf.
  *     tags: [Drugstore]
  *     security: [{ bearerAuth: [] }]
  *     parameters:

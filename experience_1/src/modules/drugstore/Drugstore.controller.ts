@@ -83,7 +83,7 @@ const handleServiceError = (req: Request, next: NextFunction, error: any, fallba
  * /api/v1/main/drugstore/catalog/products:
  *   get:
  *     summary: List catalog products
- *     description: "Passthrough to the merchant service's product catalog. Omit merchantId to search/browse across every pharmacy at once (used for global search and category drill-down) — supply it to scope to a single pharmacy's catalog."
+ *     description: "Passthrough to the merchant service's product catalog. With no sorting options, products are listed by name ascending; explicit sortBy/sortDirection values retain their existing behavior. Omit merchantId to search/browse across every pharmacy at once (used for global search and category drill-down) — supply it to scope to a single pharmacy's catalog."
  *     tags: [Drugstore]
  *     security: [{ bearerAuth: [] }]
  *     parameters:
@@ -122,10 +122,12 @@ const handleServiceError = (req: Request, next: NextFunction, error: any, fallba
  *         schema: { type: number, minimum: 0 }
  *       - name: sortBy
  *         in: query
- *         schema: { type: string, enum: [createdAt, price, name], default: createdAt }
+ *         description: Defaults to name when neither sorting option is supplied.
+ *         schema: { type: string, enum: [createdAt, price, name] }
  *       - name: sortDirection
  *         in: query
- *         schema: { type: string, enum: [asc, desc], default: desc }
+ *         description: Existing sort defaults apply whenever either sorting option is supplied.
+ *         schema: { type: string, enum: [asc, desc] }
  *     responses:
  *       200:
  *         description: Success
@@ -539,7 +541,7 @@ export const checkProductAvailability: RequestHandler = async (req, res, next) =
  * /api/v1/main/drugstore/catalog/categories:
  *   get:
  *     summary: List catalog categories for a pharmacy
- *     description: Passthrough to the global category tree in the Merchant service. merchantId remains accepted for compatibility but is not required because categories are platform-wide.
+ *     description: Passthrough to the global category tree in the Merchant service; sibling categories are alphabetized by display name. merchantId remains accepted for compatibility but is not required because categories are platform-wide.
  *     tags: [Drugstore]
  *     security: [{ bearerAuth: [] }]
  *     parameters:

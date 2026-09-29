@@ -1193,7 +1193,7 @@ const options: swaggerJsdoc.Options = {
 				// ---------------------------------------------------------------
 				DrugstoreCategoryGroupResponse: {
 					type: "object",
-					description: "A node in the platform-wide product category tree. Groups are navigation nodes; detailed categories have isSelectable=true.",
+					description: "A node in the platform-wide product category tree. Sibling categories are returned alphabetically by display name; breadcrumbs remain root-to-leaf. Groups are navigation nodes; detailed categories have isSelectable=true.",
 					properties: {
 						id: { type: "string", format: "uuid" },
 						key: { type: "string", example: "cosmetics-beauty-products.hair-care-styling.shampoo" },

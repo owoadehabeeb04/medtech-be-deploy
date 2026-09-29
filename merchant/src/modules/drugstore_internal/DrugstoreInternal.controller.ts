@@ -120,7 +120,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  * /api/v1/merchant/internal/drugstore/products:
  *   get:
  *     summary: "List products"
- *     description: "Signed service-to-service endpoint. Omit merchantId for cross-pharmacy catalog search. A categoryId may identify a group or a detailed category; groups include products from all selectable descendants."
+ *     description: "Signed service-to-service endpoint. Products default to name-ascending order when no sort options are supplied; explicit sortBy/sortDirection values retain their existing behavior. Omit merchantId for cross-pharmacy catalog search. A categoryId may identify a group or a detailed category; groups include products from all selectable descendants."
  *     operationId: "merchant_get_api_v1_merchant_internal_drugstore_products"
  *     tags: ["Internal Drugstore"]
  *     security: [{ internalAuth: [] }]
@@ -157,6 +157,16 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  *         name: limit
  *         required: false
  *         schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+ *       - in: query
+ *         name: sortBy
+ *         required: false
+ *         description: "When neither sorting option is supplied, products default to name ascending."
+ *         schema: { type: string, enum: [createdAt, price, name] }
+ *       - in: query
+ *         name: sortDirection
+ *         required: false
+ *         description: "Existing sort defaults apply whenever either sort option is supplied."
+ *         schema: { type: string, enum: [asc, desc] }
  *     responses:
  *       200:
  *         description: "Request completed successfully"
@@ -204,7 +214,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  * /api/v1/merchant/internal/drugstore/categories:
  *   get:
  *     summary: "List categories"
- *     description: "Signed service-to-service endpoint for the single platform-wide taxonomy. Omit parentId to return the five roots; pass parentId to drill into one level; pass search to return matching nodes with breadcrumbs and descendants."
+ *     description: "Signed service-to-service endpoint for the single platform-wide taxonomy. Category results and descendants are alphabetized by display name at each sibling level. Omit parentId to return the five roots; pass parentId to drill into one level; pass search to return matching nodes with breadcrumbs and descendants. Breadcrumbs remain root-to-leaf."
  *     operationId: "merchant_get_api_v1_merchant_internal_drugstore_categories"
  *     tags: ["Internal Drugstore"]
  *     security: [{ internalAuth: [] }]
