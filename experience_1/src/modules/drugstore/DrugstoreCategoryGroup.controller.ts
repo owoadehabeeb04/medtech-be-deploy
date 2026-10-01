@@ -1,6 +1,6 @@
-import { INTERNAL_SERVER_ERROR } from "http-status";
 import { NextFunction, Request, RequestHandler, Response } from "express";
 import { ERR_USER } from "../../constants/error-codes";
+import { handleDrugstoreProxyError } from "./DrugstoreProxyError";
 import { categoryGroupSlugParamSchema } from "./DrugstoreCategoryGroup.schema";
 import { DrugstoreCategoryGroupService } from "./DrugstoreCategoryGroup.service";
 
@@ -15,20 +15,14 @@ const handleResponse = async (
 	const [error, data] = await manageAsyncOps(serviceCall);
 
 	if (error) {
-		return next(
-			manageApplicationErrors({
-				message: error.message,
-				statusCode: INTERNAL_SERVER_ERROR,
-				errorCode: errorCode(ERR_USER, errorSuffix),
-			})
-		);
+		return handleDrugstoreProxyError(req, res, next, error, errorSuffix);
 	}
 
 	if (!data.status) {
 		return next(
 			manageApplicationErrors({
 				message: data.message,
-				statusCode: data.code || INTERNAL_SERVER_ERROR,
+				statusCode: data.code || 500,
 				errorCode: errorCode(ERR_USER, errorSuffix),
 			})
 		);

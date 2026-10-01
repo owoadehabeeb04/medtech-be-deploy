@@ -28,6 +28,7 @@ import { DrugstoreService } from "./Drugstore.service";
 import { DrugstorePharmacyService } from "./DrugstorePharmacy.service";
 import { DrugstoreAddressService } from "./DrugstoreAddress.service";
 import { DrugstorePrescriptionService } from "./DrugstorePrescription.service";
+import { handleDrugstoreProxyError } from "./DrugstoreProxyError";
 
 const OK = 200;
 const UNAUTHORIZED = 401;
@@ -148,7 +149,7 @@ export const getCatalogProducts: RequestHandler = async (req, res, next) => {
 	if (!query) return;
 
 	const [error, result] = await manageAsyncOps(DrugstoreService.getCatalogProducts(query));
-	if (error) return handleServiceError(req, next, error, "D101");
+	if (error) return handleDrugstoreProxyError(req, res, next, error, "D101");
 	return handleResult(req, res, next, result);
 };
 
