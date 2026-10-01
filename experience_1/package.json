@@ -10,6 +10,7 @@
 		"postman:generate": "node scripts/generate-postman-assets.mjs",
 		"verify:endpoints:smoke": "node scripts/verify-endpoints.mjs",
 		"verify:endpoints:newman": "node scripts/run-newman.mjs",
+		"test:drugstore-proxy-errors": "ts-node --files --project tsconfig.json scripts/test-drugstore-proxy-error.ts",
 		"verify:endpoints": "npm run build && npm run postman:generate && npm run verify:endpoints:smoke"
 	},
 	"dependencies": {
