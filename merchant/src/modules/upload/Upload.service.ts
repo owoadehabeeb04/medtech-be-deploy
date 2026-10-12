@@ -22,7 +22,17 @@ export class UploadService {
 
   private static getS3Client(): S3Client {
     if (!this.s3Client) {
-      if (!aws.accessKey || !aws.s3BucketName || !aws.region || !aws.secretKey) {
+      const missing = [
+        ["AWS_ACCESS_KEY_ID", aws.accessKey],
+        ["AWS_SECRET_ACCESS_KEY", aws.secretKey],
+        ["AWS_DEFAULT_REGION", aws.region],
+        ["AWS_BUCKET", aws.s3BucketName],
+      ]
+        .filter(([, value]) => !value)
+        .map(([name]) => name);
+
+      if (missing.length > 0) {
+        console.error(`[Upload] Missing required AWS environment variables: ${missing.join(", ")}`);
         throw new Error("Missing required AWS environment variables");
       }
 
@@ -77,8 +87,20 @@ export class UploadService {
         size: file.size,
         mimetype: file.mimetype,
       };
-    } catch (error) {
-      throw new Error("Failed to upload file to S3");
+    } catch (error: any) {
+      // Log the real cause (never the credentials) — the client only gets the S3 error name
+      console.error("[Upload] S3 upload failed", {
+        bucket: aws.s3BucketName,
+        region: aws.region,
+        folder,
+        mimetype: file.mimetype,
+        size: file.size,
+        errorName: error?.name,
+        errorCode: error?.Code || error?.code,
+        httpStatus: error?.$metadata?.httpStatusCode,
+        message: error?.message,
+      });
+      throw new Error(`Failed to upload file to S3${error?.name ? ` (${error.name})` : ""}`);
     }
   }
 
@@ -96,8 +118,8 @@ export class UploadService {
         files: uploadedFiles,
         totalSize,
       };
-    } catch (error) {
-      throw new Error("Failed to upload files to S3");
+    } catch (error: any) {
+      throw new Error(error?.message?.startsWith("Failed to upload file to S3") ? error.message.replace("file", "files") : "Failed to upload files to S3");
     }
   }
 }

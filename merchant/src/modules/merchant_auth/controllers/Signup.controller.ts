@@ -56,7 +56,7 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
  * /api/v1/merchant/auth/signup:
  *   post:
  *     summary: "Signup"
- *     description: "Signup for the merchant API."
+ *     description: "Emails a 4-digit verification code that expires after OTP_EXPIRATION minutes (default 10); the email states the expiry. Use POST /auth/resend-otp if the code is lost or expired."
  *     operationId: "merchant_post_api_v1_merchant_auth_signup"
  *     tags: ["Authentication"]
  *     security: []

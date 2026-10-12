@@ -8,10 +8,21 @@ export interface VerifyOtpDTO {
   otp: string;
 }
 
+export interface ResendOtpDTO {
+  email: string;
+  purpose: "signup" | "reset-password";
+}
+
+export interface CheckPhoneDTO {
+  phoneNumber: string;
+  phoneCountryCode?: string;
+}
+
 export interface CompleteSignupDTO {
   email: string;
   businessName: string;
   phoneNumber: string;
+  phoneCountryCode?: string;
   password: string;
   confirmPassword: string;
   licenseUrl?: string;

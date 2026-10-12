@@ -4,6 +4,7 @@ import { getOnboardingStatus } from "./controllers/GetOnboardingStatus.controlle
 import { uploadValidId } from "./controllers/UploadValidId.controller";
 import { uploadProfilePicture } from "./controllers/UploadProfilePicture.controller";
 import { verifyBankAccount } from "./controllers/VerifyBankAccount.controller";
+import { submitStoreAddress } from "./controllers/SubmitStoreAddress.controller";
 import { getBankList } from "./controllers/GetBankList.controller";
 
 const router: Router = Router();
@@ -37,5 +38,6 @@ router.get("/banks", getBankList);
 router.post("/upload-valid-id", uploadValidId); // Accepts JSON with validIdUrl
 router.post("/upload-profile-picture", uploadProfilePicture); // Accepts JSON with profilePictureUrl
 router.post("/verify-bank", verifyBankAccount);
+router.post("/store-address", submitStoreAddress); // Verifies the address with Google and stores coordinates
 
 export default router;

@@ -17,6 +17,10 @@ export class MerchantVerificationService {
     return MerchantVerification.getSessionByEmail(email, path);
   }
 
+  static async getLatestSessionByEmail(email: string, path: string): Promise<MerchantVerification | null> {
+    return MerchantVerification.getLatestByEmail(email, path);
+  }
+
   static async delSession(sessionId: string): Promise<number> {
     return MerchantVerification.delSession(sessionId);
   }

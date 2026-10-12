@@ -57,7 +57,7 @@ export const updateStore = async (
  * /api/v1/merchant/settings/store:
  *   patch:
  *     summary: "Update store"
- *     description: "Update store for the merchant API."
+ *     description: "Updates store details. Whenever businessAddress, city or state changes, the address is verified with Google Geocoding and its latitude, longitude and formattedAddress are saved; pharmacy search by location depends on these. An address that cannot be found, or is only a city/state, is rejected and the previous address is kept."
  *     operationId: "merchant_patch_api_v1_merchant_settings_store"
  *     tags: ["Merchant Settings"]
  *     security: [{ bearerAuth: [] }]
@@ -75,7 +75,9 @@ export const updateStore = async (
  *             schema:
  *               $ref: "#/components/schemas/UpdateStoreResponse"
  *       400:
- *         description: "Invalid request or validation failed"
+ *         description: "Invalid request, or the address could not be found / is too general"
+ *       503:
+ *         description: "Address verification is temporarily unavailable"
  *       401:
  *         description: "Authentication required"
  *       409:

@@ -153,3 +153,9 @@ export const reviewPrescriptionSchema = Joi.object({
 	reviewerName: Joi.string().trim().max(120).allow(""),
 	reviewerId: Joi.string().trim().max(120).allow(""),
 });
+
+export const createPharmacyReviewSchema = Joi.object({
+	orderId: Joi.string().uuid().required(),
+	rating: Joi.number().integer().min(1).max(5).required(),
+	comment: Joi.string().trim().max(1000).allow("").optional(),
+});

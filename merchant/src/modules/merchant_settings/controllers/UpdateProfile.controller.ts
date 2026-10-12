@@ -57,7 +57,7 @@ export const updateProfile = async (
  * /api/v1/merchant/settings/profile:
  *   patch:
  *     summary: "Update profile"
- *     description: "Update profile for the merchant API."
+ *     description: "Updates name and phone. A phone number already used by another merchant (in any written form, e.g. 0803… vs +234803…) is rejected."
  *     operationId: "merchant_patch_api_v1_merchant_settings_profile"
  *     tags: ["Merchant Settings"]
  *     security: [{ bearerAuth: [] }]
@@ -75,7 +75,7 @@ export const updateProfile = async (
  *             schema:
  *               $ref: "#/components/schemas/UpdateProfileResponse"
  *       400:
- *         description: "Invalid request or validation failed"
+ *         description: "Invalid request, or the phone number is already registered (message: Phone number has already been registered)"
  *       401:
  *         description: "Authentication required"
  *       409:

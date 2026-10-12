@@ -96,6 +96,22 @@ export const applicationConfig = {
     uploadPreset: process.env.CLOUDINARY_UPLOAD_PRESET || "",
   },
   
+  upload: {
+    maxFileSizeBytes: (Number(process.env.UPLOAD_MAX_FILE_SIZE_MB) || 10) * 1024 * 1024,
+    maxFiles: 10,
+    allowedExtensions: ["jpeg", "jpg", "png", "pdf", "svg"],
+  },
+
+  geocoding: {
+    googleApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
+    // Overridable so tests can point the geocoder at a local stub
+    baseUrl: process.env.GEOCODING_BASE_URL || "https://maps.googleapis.com/maps/api/geocode/json",
+  },
+
+  nearbyPharmacies: {
+    defaultRadiusKm: Number(process.env.NEARBY_DEFAULT_RADIUS_KM) || 10,
+  },
+
   paystack: {
     secretKey: process.env.PAYSTACK_SECRET_KEY || "",
     publicKey: process.env.PAYSTACK_PUBLIC_KEY || "",

@@ -54,7 +54,7 @@ export const completeSignup = async (req: Request, res: Response, next: NextFunc
  * /api/v1/merchant/auth/complete-signup:
  *   post:
  *     summary: "Complete signup"
- *     description: "Complete signup for the merchant API."
+ *     description: "Creates the merchant account after the email OTP was verified. A phone number can only be registered once: 0803…, 803… and +234803… are treated as the same number."
  *     operationId: "merchant_post_api_v1_merchant_auth_complete_signup"
  *     tags: ["Authentication"]
  *     security: []
@@ -72,7 +72,7 @@ export const completeSignup = async (req: Request, res: Response, next: NextFunc
  *             schema:
  *               $ref: "#/components/schemas/CompleteSignupResponse"
  *       400:
- *         description: "Invalid request or validation failed"
+ *         description: "Invalid request, OTP not verified, or the email/phone number is already registered (message: Phone number has already been registered)"
  *       401:
  *         description: "Authentication or signature rejected"
  *       409:

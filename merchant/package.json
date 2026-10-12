@@ -6,7 +6,8 @@
 		"dev": "nodemon --exec ts-node --project tsconfig.json src/app.ts",
 		"build": "tsc --build && copyfiles \"src/view/emails/**/*\" dist/",
 		"build:watch": "tsc --watch",
-		"seed": "ts-node --project tsconfig.json src/scripts/seed.ts"
+		"seed": "ts-node --project tsconfig.json src/scripts/seed.ts",
+		"backfill:store-coordinates": "ts-node --project tsconfig.json src/scripts/backfillStoreCoordinates.ts"
 	},
 	"dependencies": {
 		"@medtech/utils": "*",

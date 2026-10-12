@@ -57,7 +57,7 @@ export const updateAllSettings = async (
  * /api/v1/merchant/settings/all:
  *   patch:
  *     summary: "Update all settings"
- *     description: "Update all settings for the merchant API."
+ *     description: "Applies profile, store, payment, notification and preference changes in one call. If nothing could be saved, returns 400 with the real reason (for example a duplicate phone number or an address that cannot be found). If only some sections fail, returns 207 and lists each failure in data.errors and in the message."
  *     operationId: "merchant_patch_api_v1_merchant_settings_all"
  *     tags: ["Merchant Settings"]
  *     security: [{ bearerAuth: [] }]
@@ -75,7 +75,9 @@ export const updateAllSettings = async (
  *             schema:
  *               $ref: "#/components/schemas/UpdateAllSettingsResponse"
  *       400:
- *         description: "Invalid request or validation failed"
+ *         description: "Invalid request, or none of the requested changes could be saved (message explains why)"
+ *       207:
+ *         description: "Some sections were saved and others failed; see data.errors"
  *       401:
  *         description: "Authentication required"
  *       409:

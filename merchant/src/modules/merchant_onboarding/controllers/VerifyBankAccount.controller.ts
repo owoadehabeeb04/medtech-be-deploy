@@ -70,7 +70,7 @@ export const verifyBankAccount = async (req: Request, res: Response, next: NextF
  * /api/v1/merchant/onboarding/verify-bank:
  *   post:
  *     summary: "Verify bank account"
- *     description: "Verify bank account for the merchant API."
+ *     description: "Verifies the account with Paystack. Onboarding only completes once the store address is verified too (POST /onboarding/store-address); until then the response has onboardingCompleted: false."
  *     operationId: "merchant_post_api_v1_merchant_onboarding_verify_bank"
  *     tags: ["Onboarding"]
  *     security: [{ bearerAuth: [] }]
