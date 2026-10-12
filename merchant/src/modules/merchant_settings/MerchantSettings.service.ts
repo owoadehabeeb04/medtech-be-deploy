@@ -1,4 +1,6 @@
 import { Merchant } from "../merchant/Merchant.model";
+import { isPhoneNumberTaken, PHONE_TAKEN_MESSAGE } from "../merchant/phone.util";
+import { GeocodingService, GeocodingError } from "../../service/Geocoding/Geocoding.service";
 import { StoreDetails } from "../store_details/StoreDetails.model";
 import { PaymentDetails } from "../payment_details/PaymentDetails.model";
 import { MerchantSettings } from "./MerchantSettings.model";
@@ -71,6 +73,9 @@ export class MerchantSettingsService {
               city: merchant.storeDetails.city,
               state: merchant.storeDetails.state,
               landmark: merchant.storeDetails.landmark,
+              latitude: merchant.storeDetails.latitude,
+              longitude: merchant.storeDetails.longitude,
+              formattedAddress: merchant.storeDetails.formattedAddress,
               openHour: merchant.storeDetails.openHour,
               closeHour: merchant.storeDetails.closeHour,
               vacation: merchant.storeDetails.vacation,
@@ -111,6 +116,19 @@ export class MerchantSettingsService {
         code: 404,
         message: "Merchant not found",
       };
+    }
+
+    if (data.phoneNumber !== undefined || data.phoneCountryCode !== undefined) {
+      const nextNumber = data.phoneNumber !== undefined ? data.phoneNumber : merchant.phoneNumber;
+      const nextCountryCode = data.phoneCountryCode !== undefined ? data.phoneCountryCode : merchant.phoneCountryCode;
+
+      if (await isPhoneNumberTaken(nextCountryCode, nextNumber, merchant.id)) {
+        return {
+          status: false,
+          code: 400,
+          message: PHONE_TAKEN_MESSAGE,
+        };
+      }
     }
 
     // Update only provided fields
@@ -251,6 +269,31 @@ export class MerchantSettingsService {
 
     const storeDetails = merchant.storeDetails;
 
+    // The address only counts once Google can find it: re-verify whenever a field that feeds
+    // the lookup changes, and reject the whole update if it can't be resolved.
+    const addressChanged =
+      data.businessAddress !== undefined || data.city !== undefined || data.state !== undefined;
+    const nextAddress = data.businessAddress !== undefined ? data.businessAddress : storeDetails.businessAddress;
+
+    if (addressChanged && nextAddress) {
+      try {
+        const geocoded = await GeocodingService.geocodeAddress({
+          address: nextAddress,
+          city: data.city !== undefined ? data.city : storeDetails.city,
+          state: data.state !== undefined ? data.state : storeDetails.state,
+        });
+        storeDetails.latitude = geocoded.latitude;
+        storeDetails.longitude = geocoded.longitude;
+        storeDetails.formattedAddress = geocoded.formattedAddress;
+        storeDetails.placeId = geocoded.placeId;
+      } catch (error: any) {
+        if (error instanceof GeocodingError) {
+          return { status: false, code: error.statusCode, message: error.message };
+        }
+        throw error;
+      }
+    }
+
     // Update only provided fields
     if (data.businessName !== undefined) storeDetails.businessName = data.businessName;
     if (data.businessUrl !== undefined) storeDetails.businessUrl = data.businessUrl;
@@ -284,6 +327,9 @@ export class MerchantSettingsService {
         city: storeDetails.city,
         state: storeDetails.state,
         landmark: storeDetails.landmark,
+        latitude: storeDetails.latitude,
+        longitude: storeDetails.longitude,
+        formattedAddress: storeDetails.formattedAddress,
         openHour: storeDetails.openHour,
         closeHour: storeDetails.closeHour,
         vacation: storeDetails.vacation,
@@ -554,12 +600,21 @@ export class MerchantSettingsService {
       }
     }
 
+    // Nothing could be applied: report the real reason as a 400 instead of a vague partial success
+    if (errors.length > 0 && Object.values(results).every((value) => value === null || value === undefined)) {
+      return {
+        status: false,
+        code: 400,
+        message: errors.map((entry) => entry.replace(/^[A-Za-z]+: /, "")).join("; "),
+      };
+    }
+
     // If there are errors, return partial success
     if (errors.length > 0) {
       return {
         status: true,
         code: 207, // Multi-Status (partial success)
-        message: "Settings updated with some errors",
+        message: `Settings updated with some errors: ${errors.join("; ")}`,
         data: {
           results,
           errors,

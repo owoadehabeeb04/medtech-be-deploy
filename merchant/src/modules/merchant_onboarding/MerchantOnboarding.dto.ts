@@ -4,6 +4,13 @@ export interface VerifyBankDTO {
   accountName: string;
 }
 
+export interface StoreAddressDTO {
+  businessAddress: string;
+  city: string;
+  state: string;
+  landmark?: string;
+}
+
 export interface OnboardingStatusDTO {
   completed: boolean;
   currentStep: number;
@@ -11,6 +18,7 @@ export interface OnboardingStatusDTO {
     validId: StepStatus;
     profile: StepStatus;
     bank: StepStatus;
+    address: StepStatus;
   };
 }
 

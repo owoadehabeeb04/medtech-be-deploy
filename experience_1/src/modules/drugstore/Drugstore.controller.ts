@@ -11,6 +11,7 @@ import {
 	itemIdParamSchema,
 	listOrdersQuerySchema,
 	merchantIdParamSchema,
+	createPharmacyReviewSchema,
 	nearbyPharmaciesQuerySchema,
 	orderIdParamSchema,
 	prescriptionIdParamSchema,
@@ -234,7 +235,7 @@ export const getTopSellingProducts: RequestHandler = async (req, res, next) => {
  * /api/v1/main/drugstore/pharmacies/nearby:
  *   get:
  *     summary: List nearby pharmacies
- *     description: Resolves latitude/longitude from the given addressId, or explicit latitude/longitude, or falls back to the caller's default address. Each pharmacy is enriched with the caller's active-cart summary for that merchant.
+ *     description: "Resolves the search location from explicit latitude/longitude, else the given addressId, else the caller's default address. A coordinate pair of 0,0 (what an address saved without a location looks like) counts as no location. With a location, only pharmacies whose verified store address is within their delivery radius (their own setting, or 10 km by default) are returned, nearest first, each with distanceKm. Without a location, all eligible pharmacies are listed with distanceKm null. Each pharmacy is also enriched with the caller's active-cart summary for that merchant and its real rating."
  *     tags: [Drugstore]
  *     security: [{ bearerAuth: [] }]
  *     parameters:
@@ -370,6 +371,61 @@ export const getPharmacyReviews: RequestHandler = async (req, res, next) => {
 		DrugstorePharmacyService.getPharmacyReviews(params.merchantId, Number(req.query.page || 1), Number(req.query.limit || 20))
 	);
 	if (error) return handleServiceError(req, next, error, "D128");
+	return handleResult(req, res, next, result);
+};
+
+/**
+ * @swagger
+ * /api/v1/main/drugstore/pharmacies/{merchantId}/reviews:
+ *   post:
+ *     summary: Review a pharmacy
+ *     description: Submit a 1-5 star review for a pharmacy, tied to one of the caller's delivered orders at that pharmacy. One review per order.
+ *     tags: [Drugstore]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - name: merchantId
+ *         in: path
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [orderId, rating]
+ *             properties:
+ *               orderId: { type: string, format: uuid }
+ *               rating: { type: integer, minimum: 1, maximum: 5 }
+ *               comment: { type: string, maxLength: 1000 }
+ *     responses:
+ *       201: { description: Review submitted }
+ *       400: { description: Invalid request, or the order has not been delivered yet }
+ *       404: { description: Order not found for this pharmacy }
+ *       409: { description: This order has already been reviewed }
+ */
+export const createPharmacyReview: RequestHandler = async (req, res, next) => {
+	const userId = getUserId(req);
+	if (!userId) {
+		return next(
+			req.context.manageApplicationErrors({
+				message: "Authentication required",
+				statusCode: UNAUTHORIZED,
+				errorCode: req.context.errorCode(ERR_USER, "D100"),
+			})
+		);
+	}
+
+	const params = req.context.validateSchema(merchantIdParamSchema, req.params, next);
+	if (!params) return;
+
+	const payload = req.context.validateSchema(createPharmacyReviewSchema, req.body, next);
+	if (!payload) return;
+
+	const [error, result] = await req.context.manageAsyncOps(
+		DrugstorePharmacyService.createPharmacyReview(userId, params.merchantId, payload)
+	);
+	if (error) return handleServiceError(req, next, error, "D197");
 	return handleResult(req, res, next, result);
 };
 

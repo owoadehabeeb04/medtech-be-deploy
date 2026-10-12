@@ -16,3 +16,6 @@ coverage/
 *.log
 logs/
 
+
+# Local end-to-end test harness (not pushed)
+e2e-local/

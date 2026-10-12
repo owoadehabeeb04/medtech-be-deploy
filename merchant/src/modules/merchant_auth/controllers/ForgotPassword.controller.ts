@@ -46,7 +46,7 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
  * /api/v1/merchant/auth/forgot-password:
  *   post:
  *     summary: "Forgot password"
- *     description: "Forgot password for the merchant API."
+ *     description: "Emails a reset code that expires after OTP_EXPIRATION minutes (default 10); the email states the expiry. Use POST /auth/resend-otp with purpose reset-password to request another."
  *     operationId: "merchant_post_api_v1_merchant_auth_forgot_password"
  *     tags: ["Authentication"]
  *     security: []

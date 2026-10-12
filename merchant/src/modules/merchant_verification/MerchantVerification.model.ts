@@ -92,6 +92,15 @@ export class MerchantVerification extends Model<MerchantVerification> {
     });
   }
 
+  // Most recent session for the email/path whether or not it is still active — used by resend,
+  // since an expired OTP session gets deactivated.
+  static async getLatestByEmail(email: string, path: string): Promise<MerchantVerification | null> {
+    return this.findOne({
+      where: { email, path },
+      order: [["createdAt", "DESC"]],
+    });
+  }
+
   static async delSession(sessionId: string): Promise<number> {
     const [affectedCount] = await this.update(
       { isActive: false },

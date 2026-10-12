@@ -9,6 +9,8 @@ import { MerchantSettings } from "../merchant_settings/MerchantSettings.model";
 import { DrugstoreOrder } from "../drugstore_orders/DrugstoreOrder.model";
 import { DrugstoreOrderItem } from "../drugstore_orders/DrugstoreOrderItem.model";
 import { Merchant } from "../merchant/Merchant.model";
+import { applicationConfig } from "../../config";
+import { PharmacyReviewService } from "../pharmacy_reviews/PharmacyReview.service";
 import { StoreDetails } from "../store_details/StoreDetails.model";
 import { FirebaseMessagingService } from "../../service/Firebase/FirebaseMessaging.service";
 
@@ -143,6 +145,16 @@ const resolveLegacyOrderStatus = (
   return "new";
 };
 
+const EARTH_RADIUS_KM = 6371;
+
+const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(a));
+};
+
 export class DrugstoreInternalService {
   static async listProducts(input: ListProductsInput) {
     const page = Math.max(1, Number(input.page || 1));
@@ -257,6 +269,8 @@ export class DrugstoreInternalService {
   }
 
   static async listNearbyPharmacies(input: {
+    latitude?: number;
+    longitude?: number;
     search?: string;
     page?: number;
     limit?: number;
@@ -275,26 +289,36 @@ export class DrugstoreInternalService {
       ];
     }
 
-    const { rows, count } = await Merchant.findAndCountAll({
+    // Distance filtering and sorting happen in memory, so pagination is applied after it.
+    const rows = await Merchant.findAll({
       where,
       include: [
         { model: StoreDetails, required: false },
         { model: MerchantSettings, as: "settings", required: false },
       ],
       order: [["createdAt", "DESC"]],
-      limit,
-      offset,
-      distinct: true,
     });
 
+    const hasOrigin = input.latitude !== undefined && input.longitude !== undefined;
+    const { defaultRadiusKm } = applicationConfig.nearbyPharmacies;
+
+    const ratingByMerchantId = await PharmacyReviewService.getRatingSummaries(rows.map((merchant) => merchant.id));
     const activeCartByMerchantId = new Map((input.activeCarts || []).map((entry) => [entry.merchantId, entry]));
 
-    const items = rows
+    const allItems = rows
       .filter((merchant) => merchant.settings?.storePreferences?.enableInHouseDelivery !== false)
       .map((merchant) => {
         const store = merchant.storeDetails;
         const settings = merchant.settings?.storePreferences;
         const activeCart = activeCartByMerchantId.get(merchant.id);
+
+        const deliveryRadiusKm = toNumber(settings?.deliveryRadius) > 0 ? toNumber(settings?.deliveryRadius) : defaultRadiusKm;
+        const hasCoordinates = store?.latitude != null && store?.longitude != null;
+        const distanceKm =
+          hasOrigin && hasCoordinates
+            ? Math.round(haversineKm(input.latitude!, input.longitude!, store!.latitude!, store!.longitude!) * 10) / 10
+            : null;
+
         return {
           id: merchant.id,
           businessName: store?.businessName || merchant.fullName,
@@ -304,16 +328,17 @@ export class DrugstoreInternalService {
           city: store?.city || null,
           state: store?.state || null,
           landmark: store?.landmark || null,
+          latitude: store?.latitude ?? null,
+          longitude: store?.longitude ?? null,
+          distanceKm,
+          deliveryRadiusKm,
           openHour: store?.openHour || null,
           closeHour: store?.closeHour || null,
           isOpen: !store?.vacation,
           deliveryFeePreview: toNumber(settings?.deliveryFlatFee || 0),
           supportsDelivery: Boolean(settings?.enableInHouseDelivery),
           supportsPickup: Boolean(settings?.enablePharmacyPickup),
-          ratingSummary: {
-            averageRating: 0,
-            reviewCount: 0,
-          },
+          ratingSummary: ratingByMerchantId.get(merchant.id) || { averageRating: 0, reviewCount: 0 },
           cartCompatibility: activeCart
             ? {
                 supported: true,
@@ -324,13 +349,23 @@ export class DrugstoreInternalService {
         };
       });
 
+    // With a location, keep only pharmacies whose delivery radius reaches the caller (those
+    // without stored coordinates can't be placed, so they drop out) and list the nearest first.
+    const matched = hasOrigin
+      ? allItems
+          .filter((item) => item.distanceKm !== null && item.distanceKm <= item.deliveryRadiusKm)
+          .sort((a, b) => (a.distanceKm as number) - (b.distanceKm as number))
+      : allItems;
+
+    const items = matched.slice(offset, offset + limit);
+
     return {
       items,
       pagination: {
-        total: items.length,
+        total: matched.length,
         page,
         limit,
-        totalPages: Math.ceil(items.length / limit),
+        totalPages: Math.ceil(matched.length / limit),
       },
     };
   }
@@ -362,6 +397,9 @@ export class DrugstoreInternalService {
         city: store?.city || null,
         state: store?.state || null,
         landmark: store?.landmark || null,
+        latitude: store?.latitude ?? null,
+        longitude: store?.longitude ?? null,
+        formattedAddress: store?.formattedAddress || null,
       },
       operations: {
         openHour: store?.openHour || null,
@@ -377,28 +415,21 @@ export class DrugstoreInternalService {
         deliveryFlatFee: toNumber(settings?.deliveryFlatFee),
         deliveryPricePerKm: toNumber(settings?.deliveryPricePerKm),
       },
-      ratingSummary: {
-        averageRating: 0,
-        reviewCount: 0,
-      },
+      ratingSummary: await PharmacyReviewService.getRatingSummary(merchant.id),
     };
   }
 
   static async getPharmacyReviews(merchantId: string, page?: number, limit?: number) {
     await this.getPharmacyProfile(merchantId);
-    return {
-      items: [] as Array<Record<string, never>>,
-      pagination: {
-        total: 0,
-        page: Math.max(1, Number(page || 1)),
-        limit: Math.max(1, Math.min(100, Number(limit || 20))),
-        totalPages: 0,
-      },
-      summary: {
-        averageRating: 0,
-        reviewCount: 0,
-      },
-    };
+    const { items, pagination, ratingSummary } = await PharmacyReviewService.listForPharmacy(merchantId, page, limit);
+    return { items, pagination, summary: ratingSummary };
+  }
+
+  static async createPharmacyReview(
+    merchantId: string,
+    input: { orderId: string; consumerId: string; consumerName: string; rating: number; comment?: string | null }
+  ) {
+    return PharmacyReviewService.createReview(merchantId, input);
   }
 
   static async listCategories(options: { parentId?: string; search?: string; includeChildren?: boolean } = {}) {

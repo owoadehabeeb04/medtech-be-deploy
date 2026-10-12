@@ -252,10 +252,17 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
  * /api/v1/merchant/internal/drugstore/nearby-pharmacies:
  *   get:
  *     summary: "List nearby pharmacies"
- *     description: "Signed service-to-service merchant endpoint."
+ *     description: "Signed service-to-service merchant endpoint. With latitude and longitude, only pharmacies whose store address was verified (has coordinates) and whose delivery radius reaches the caller are returned, nearest first, each with distanceKm. A pharmacy's radius is its own deliveryRadius setting (km), or NEARBY_DEFAULT_RADIUS_KM (default 10) when unset. Without coordinates every eligible pharmacy is returned and distanceKm is null. Eligible means active, onboarding completed, and in-house delivery not switched off. Pagination totals count the filtered results."
  *     operationId: "merchant_get_api_v1_merchant_internal_drugstore_nearby_pharmacies"
  *     tags: ["Internal Drugstore"]
  *     security: [{ internalAuth: [] }]
+ *     parameters:
+ *       - { in: query, name: latitude, schema: { type: number, minimum: -90, maximum: 90 }, description: "Caller latitude. Send together with longitude." }
+ *       - { in: query, name: longitude, schema: { type: number, minimum: -180, maximum: 180 }, description: "Caller longitude." }
+ *       - { in: query, name: search, schema: { type: string }, description: "Matches business name, city or state." }
+ *       - { in: query, name: page, schema: { type: integer, default: 1 } }
+ *       - { in: query, name: limit, schema: { type: integer, default: 20, maximum: 100 } }
+ *       - { in: query, name: activeCarts, schema: { type: string }, description: "JSON array of the caller's active carts, used for cartCompatibility." }
  *     responses:
  *       200:
  *         description: "Request completed successfully"
@@ -301,9 +308,41 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
 /**
  * @swagger
  * /api/v1/merchant/internal/drugstore/pharmacies/{merchantId}/reviews:
+ *   post:
+ *     summary: "Create a pharmacy review"
+ *     description: "Signed service-to-service endpoint called by experience_1 after it has checked that the order belongs to the consumer and was delivered. One review per orderId."
+ *     operationId: "merchant_post_api_v1_merchant_internal_drugstore_pharmacies_merchantId_reviews"
+ *     tags: ["Internal Drugstore"]
+ *     security: [{ internalAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: merchantId
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: "#/components/schemas/CreatePharmacyReviewInternalRequest"
+ *     responses:
+ *       201:
+ *         description: "Review created"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/PharmacyReview"
+ *       400:
+ *         description: "Missing fields, rating not 1-5, or comment over 1000 characters"
+ *       401:
+ *         description: "Missing or invalid internal authentication signature"
+ *       404:
+ *         description: "Pharmacy not found"
+ *       409:
+ *         description: "This order has already been reviewed"
  *   get:
  *     summary: "Get pharmacy reviews"
- *     description: "Signed service-to-service merchant endpoint."
+ *     description: "Signed service-to-service merchant endpoint. Reviews newest first; summary holds the real average rating and review count."
  *     operationId: "merchant_get_api_v1_merchant_internal_drugstore_pharmacies_merchantId_reviews"
  *     tags: ["Internal Drugstore"]
  *     security: [{ internalAuth: [] }]
@@ -489,7 +528,12 @@ const parseActiveCarts = (value: unknown): Array<{ merchantId: string; itemCount
 
 export const listNearbyPharmacies = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const latitude = req.query.latitude !== undefined ? Number(req.query.latitude) : undefined;
+    const longitude = req.query.longitude !== undefined ? Number(req.query.longitude) : undefined;
+
     const data = await DrugstoreInternalService.listNearbyPharmacies({
+      latitude: Number.isFinite(latitude) ? latitude : undefined,
+      longitude: Number.isFinite(longitude) ? longitude : undefined,
       search: req.query.search ? String(req.query.search) : undefined,
       page: Number(req.query.page || 1),
       limit: Number(req.query.limit || 20),
@@ -559,6 +603,49 @@ export const getPharmacyReviews = async (req: Request, res: Response, next: Next
     res.response = {
       statusCode: 200,
       message: "Pharmacy reviews retrieved successfully",
+      data,
+    };
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const createPharmacyReview = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const merchantId = String(req.params.merchantId || "").trim();
+    if (!UUID_PATTERN.test(merchantId)) {
+      throw new HttpException(404, "Pharmacy not found");
+    }
+
+    const orderId = String(req.body?.orderId || "").trim();
+    const consumerId = String(req.body?.consumerId || "").trim();
+    const consumerName = String(req.body?.consumerName || "").trim();
+    const rating = Number(req.body?.rating);
+    const comment = req.body?.comment === undefined || req.body?.comment === null ? null : String(req.body.comment);
+
+    if (!orderId || !consumerId || !consumerName) {
+      throw new HttpException(400, "orderId, consumerId and consumerName are required");
+    }
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      throw new HttpException(400, "rating must be a whole number from 1 to 5");
+    }
+    if (comment && comment.length > 1000) {
+      throw new HttpException(400, "comment must be 1000 characters or fewer");
+    }
+
+    const data = await DrugstoreInternalService.createPharmacyReview(merchantId, {
+      orderId,
+      consumerId,
+      consumerName,
+      rating,
+      comment,
+    });
+
+    res.status(201);
+    res.response = {
+      statusCode: 201,
+      message: "Review submitted successfully",
       data,
     };
     return next();

@@ -56,7 +56,7 @@ export const getOnboardingStatus = async (req: Request, res: Response, next: Nex
  * /api/v1/merchant/onboarding/status:
  *   get:
  *     summary: "Get onboarding status"
- *     description: "Get onboarding status for the merchant API."
+ *     description: "Progress for each onboarding step: validId, profile, bank and address. Onboarding is completed once the bank account and the store address (POST /onboarding/store-address) are both verified."
  *     operationId: "merchant_get_api_v1_merchant_onboarding_status"
  *     tags: ["Onboarding"]
  *     security: [{ bearerAuth: [] }]

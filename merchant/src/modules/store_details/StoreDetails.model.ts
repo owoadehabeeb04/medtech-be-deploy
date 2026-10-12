@@ -51,6 +51,23 @@ export class StoreDetails extends Model<StoreDetails> {
   @Column(DataType.STRING)
   declare landmark: string;
 
+  // Set only from a successfully geocoded businessAddress (see GeocodingService)
+  @AllowNull(true)
+  @Column(DataType.DOUBLE)
+  declare latitude: number | null;
+
+  @AllowNull(true)
+  @Column(DataType.DOUBLE)
+  declare longitude: number | null;
+
+  @AllowNull(true)
+  @Column(DataType.STRING(500))
+  declare formattedAddress: string | null;
+
+  @AllowNull(true)
+  @Column(DataType.STRING)
+  declare placeId: string | null;
+
   @AllowNull(true)
   @Column(DataType.STRING)
   declare storeBannerUrl: string;

@@ -1,7 +1,9 @@
 import { ApiResponse } from "../../utils/common.dto";
 import { DrugstoreMerchantClient } from "./DrugstoreMerchantClient";
 import { DrugstoreAddressService } from "./DrugstoreAddress.service";
-import { NearbyPharmaciesQueryDTO } from "./Drugstore.dto";
+import { NearbyPharmaciesQueryDTO, CreatePharmacyReviewDTO } from "./Drugstore.dto";
+import { DrugstoreOrder } from "./DrugstoreOrder.model";
+import { User } from "../users/User.model";
 import { DrugstoreCart } from "./DrugstoreCart.model";
 import { DrugstoreCartItem } from "./DrugstoreCartItem.model";
 
@@ -34,27 +36,36 @@ export class DrugstorePharmacyService {
 	}
 
 	static async listNearbyPharmacies(userId: number, query: NearbyPharmaciesQueryDTO): Promise<ApiResponse> {
-		let latitude = query.latitude;
-		let longitude = query.longitude;
+		let latitude: number | undefined;
+		let longitude: number | undefined;
 		let addressId = query.addressId;
 
-		if ((!latitude || !longitude) && addressId) {
+		// A coordinate pair only counts if it's real: 0,0 (and null/NaN) is what an address saved
+		// without a location looks like, and would otherwise search the Gulf of Guinea.
+		const useCoordinates = (lat: unknown, lng: unknown) => {
+			if (lat === null || lat === undefined || lng === null || lng === undefined) return false;
+			const parsedLat = Number(lat);
+			const parsedLng = Number(lng);
+			if (!Number.isFinite(parsedLat) || !Number.isFinite(parsedLng)) return false;
+			if (parsedLat === 0 && parsedLng === 0) return false;
+			latitude = parsedLat;
+			longitude = parsedLng;
+			return true;
+		};
+
+		if (!useCoordinates(query.latitude, query.longitude) && addressId) {
 			const addresses = await DrugstoreAddressService.list(userId);
 			const selected = Array.isArray(addresses.data)
 				? (addresses.data as any[]).find((entry) => entry.id === addressId)
 				: null;
-			if (selected) {
-				latitude = selected.latitude || undefined;
-				longitude = selected.longitude || undefined;
-			}
+			if (selected) useCoordinates(selected.latitude, selected.longitude);
 		}
 
-		if ((!latitude || !longitude) && !addressId) {
+		if (latitude === undefined && !addressId) {
 			const defaultAddress = await DrugstoreAddressService.getDefault(userId);
 			if (defaultAddress) {
 				addressId = defaultAddress.id;
-				latitude = Number(defaultAddress.latitude || 0) || undefined;
-				longitude = Number(defaultAddress.longitude || 0) || undefined;
+				useCoordinates(defaultAddress.latitude, defaultAddress.longitude);
 			}
 		}
 
@@ -82,5 +93,29 @@ export class DrugstorePharmacyService {
 	static async getPharmacyReviews(merchantId: string, page?: number, limit?: number): Promise<ApiResponse> {
 		const data = await DrugstoreMerchantClient.get(`${pharmacyProfilePath}/${merchantId}/reviews`, { page, limit });
 		return response(data);
+	}
+
+	// Consumers review a pharmacy once per order, and only after that order was delivered.
+	static async createPharmacyReview(userId: number, merchantId: string, payload: CreatePharmacyReviewDTO): Promise<ApiResponse> {
+		const order = await DrugstoreOrder.findOne({ where: { id: payload.orderId, userId, merchantId } });
+		if (!order) {
+			return { status: false, code: 404, message: "Order not found for this pharmacy" };
+		}
+		if (order.deliveryStatus !== "delivered") {
+			return { status: false, code: 400, message: "You can review a pharmacy once your order has been delivered" };
+		}
+
+		const user = await User.findByPk(userId);
+		const consumerName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() || "Customer";
+
+		const data = await DrugstoreMerchantClient.post(`${pharmacyProfilePath}/${merchantId}/reviews`, {
+			orderId: order.id,
+			consumerId: String(userId),
+			consumerName,
+			rating: payload.rating,
+			comment: payload.comment || null,
+		});
+
+		return response(data, "Review submitted successfully", 201);
 	}
 }

@@ -36,3 +36,20 @@ export const VerifyBankSchema = Joi.object({
     "any.required": "Account name is required",
   }),
 });
+
+export const StoreAddressSchema = Joi.object({
+  businessAddress: Joi.string().trim().min(5).max(255).required().messages({
+    "string.empty": "Store address is required",
+    "string.min": "Store address is too short",
+    "any.required": "Store address is required",
+  }),
+  city: Joi.string().trim().max(100).required().messages({
+    "string.empty": "City is required",
+    "any.required": "City is required",
+  }),
+  state: Joi.string().trim().max(100).required().messages({
+    "string.empty": "State is required",
+    "any.required": "State is required",
+  }),
+  landmark: Joi.string().trim().max(255).allow("").optional(),
+});
