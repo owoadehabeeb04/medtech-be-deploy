@@ -1,3 +1,4 @@
+import { PharmacyReview } from "../modules/pharmacy_reviews/PharmacyReview.model";
 import { Dialect } from "sequelize";
 import { Sequelize } from "sequelize-typescript";
 import { applicationConfig } from "../config";
@@ -48,7 +49,7 @@ const connection = async (): Promise<Sequelize> => {
 		define: {
 			underscored: true,
 		},
-		models: [Merchant, MerchantVerification, StoreDetails, PaymentDetails, MerchantSettings, MerchantDeviceToken, Product, Discount, ProductCategory, RefreshToken, Plan, Subscription, ScheduledPlanChange, Wallet, Transaction, DrugstoreOrder, DrugstoreOrderItem],
+		models: [Merchant, MerchantVerification, StoreDetails, PaymentDetails, MerchantSettings, MerchantDeviceToken, Product, Discount, ProductCategory, RefreshToken, Plan, Subscription, ScheduledPlanChange, Wallet, Transaction, DrugstoreOrder, DrugstoreOrderItem, PharmacyReview],
 	});
 
 	try {

@@ -19,6 +19,7 @@ import {
 	getOrderById,
 	getPharmacyProfile,
 	getPharmacyReviews,
+	createPharmacyReview,
 	getProductOrderLimits,
 	getPrescriptionById,
 	getTopSellingProducts,
@@ -51,6 +52,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get("/pharmacies/nearby", verifyToken, allowConsumerAndDoctor, listNearbyPharmacies);
 router.get("/pharmacies/:merchantId", verifyToken, allowConsumerAndDoctor, getPharmacyProfile);
 router.get("/pharmacies/:merchantId/reviews", verifyToken, allowConsumerAndDoctor, getPharmacyReviews);
+router.post("/pharmacies/:merchantId/reviews", verifyToken, allowConsumerAndDoctor, createPharmacyReview);
 
 router.get("/categories", verifyToken, allowConsumerAndDoctor, listCategoryGroups);
 router.get("/categories/:slug", verifyToken, allowConsumerAndDoctor, getCategoryGroup);

@@ -1,7 +1,9 @@
 import { Merchant } from "../merchant/Merchant.model";
 import { PaymentDetails } from "../payment_details/PaymentDetails.model";
-import { VerifyBankDTO, OnboardingStatusDTO } from "./MerchantOnboarding.dto";
+import { VerifyBankDTO, OnboardingStatusDTO, StoreAddressDTO } from "./MerchantOnboarding.dto";
 import { PaystackService } from "../../service/Paystack/Paystack.service";
+import { StoreDetails } from "../store_details/StoreDetails.model";
+import { MerchantSettingsService } from "../merchant_settings/MerchantSettings.service";
 import { UploadService } from "../upload/Upload.service";
 import { ApiResponse } from "../merchant_auth/MerchantAuth.service";
 
@@ -14,6 +16,7 @@ export class MerchantOnboardingService {
       const merchant = await Merchant.findByPk(merchantId, {
         include: [
           { model: PaymentDetails, as: "paymentDetails" },
+          { model: StoreDetails, as: "storeDetails" },
         ],
       });
 
@@ -43,6 +46,10 @@ export class MerchantOnboardingService {
             completed: merchant.paymentDetails?.bankVerified || false,
             required: true,
             verified: merchant.paymentDetails?.bankVerified || false,
+          },
+          address: {
+            completed: this.hasVerifiedAddress(merchant.storeDetails),
+            required: true,
           },
         },
       };
@@ -167,6 +174,82 @@ export class MerchantOnboardingService {
     }
   }
 
+  private static hasVerifiedAddress(store?: StoreDetails | null): boolean {
+    return !!store && store.latitude != null && store.longitude != null;
+  }
+
+  /**
+   * Onboarding is done once the bank account and the store address are both verified.
+   */
+  private static async completeOnboardingIfReady(merchant: Merchant): Promise<boolean> {
+    if (merchant.onboardingCompleted) return true;
+
+    const [payment, store] = await Promise.all([
+      PaymentDetails.findOne({ where: { merchantId: merchant.id } }),
+      StoreDetails.findOne({ where: { merchantId: merchant.id } }),
+    ]);
+
+    if (!payment?.bankVerified || !this.hasVerifiedAddress(store)) return false;
+
+    await merchant.update({
+      onboardingCompleted: true,
+      onboardingCompletedAt: new Date(),
+    });
+    return true;
+  }
+
+  /**
+   * Store address: verified with Google, saved with its coordinates.
+   */
+  static async submitStoreAddress(merchantId: string, data: StoreAddressDTO): Promise<ApiResponse> {
+    try {
+      const merchant = await Merchant.findByPk(merchantId);
+
+      if (!merchant) {
+        return {
+          status: false,
+          code: 404,
+          message: "Merchant not found",
+        };
+      }
+
+      const result = await MerchantSettingsService.updateStore(merchantId, {
+        businessAddress: data.businessAddress,
+        city: data.city,
+        state: data.state,
+        landmark: data.landmark,
+      });
+
+      if (!result.status) return result;
+
+      const onboardingCompleted = await this.completeOnboardingIfReady(merchant);
+
+      return {
+        status: true,
+        code: 200,
+        message: onboardingCompleted
+          ? "Store address verified successfully. Onboarding completed!"
+          : "Store address verified successfully",
+        data: {
+          businessAddress: result.data.businessAddress,
+          city: result.data.city,
+          state: result.data.state,
+          landmark: result.data.landmark,
+          latitude: result.data.latitude,
+          longitude: result.data.longitude,
+          formattedAddress: result.data.formattedAddress,
+          onboardingCompleted,
+        },
+      };
+    } catch (error: any) {
+      return {
+        status: false,
+        code: 500,
+        message: error.message || "Failed to save store address",
+      };
+    }
+  }
+
   /**
    * Step 3: Verify bank account
    */
@@ -261,21 +344,20 @@ export class MerchantOnboardingService {
         });
       }
 
-      // Mark onboarding as complete
-      await merchant.update({
-        onboardingCompleted: true,
-        onboardingCompletedAt: new Date(),
-      });
+      // Onboarding completes only once the store address is verified as well
+      const onboardingCompleted = await this.completeOnboardingIfReady(merchant);
 
       return {
         status: true,
         code: 200,
-        message: "Bank account verified successfully. Onboarding completed!",
+        message: onboardingCompleted
+          ? "Bank account verified successfully. Onboarding completed!"
+          : "Bank account verified successfully. Add your store address to finish onboarding.",
         data: {
           verified: true,
           accountName: verificationResult.accountName,
           bankName: bank?.name || data.bankCode,
-          onboardingCompleted: true,
+          onboardingCompleted,
         },
       };
     } catch (error: any) {

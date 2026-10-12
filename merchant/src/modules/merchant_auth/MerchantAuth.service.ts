@@ -17,6 +17,8 @@ import {
   LoginDTO,
   ForgotPasswordDTO,
   ResetPasswordDTO,
+  ResendOtpDTO,
+  CheckPhoneDTO,
 } from "./MerchantAuth.dto";
 import {
   generateOTP,
@@ -27,8 +29,12 @@ import {
   generateToken,
 } from "@medtech/utils";
 import { applicationConfig } from "../../config";
+import { isPhoneNumberTaken, PHONE_TAKEN_MESSAGE } from "../merchant/phone.util";
 
-const { isProduction } = applicationConfig;
+const { isProduction, otpExpiration } = applicationConfig;
+
+// Minimum gap between two OTP emails for the same address
+const OTP_RESEND_COOLDOWN_SECONDS = 30;
 
 export interface ApiResponse {
   status: boolean;
@@ -71,6 +77,7 @@ export class MerchantAuthService {
       deviceOS: req.headers["user-agent"] || "Unknown",
       requestDate: new Date().toLocaleDateString(),
       ipAddress: req.ip || req.socket.remoteAddress,
+      expiresInMinutes: otpExpiration,
     };
 
     try {
@@ -85,6 +92,87 @@ export class MerchantAuthService {
       status: true,
       code: 200,
       message: "OTP sent to your email. Please check your inbox.",
+      data: isProduction ? null : { otp }, // Show OTP in development only
+    };
+  }
+
+  static async checkPhone(data: CheckPhoneDTO): Promise<ApiResponse> {
+    const taken = await isPhoneNumberTaken(data.phoneCountryCode, data.phoneNumber);
+    return {
+      status: !taken,
+      code: taken ? 400 : 200,
+      message: taken ? PHONE_TAKEN_MESSAGE : "Phone number is available",
+      data: { available: !taken },
+    };
+  }
+
+  static async resendOtp(data: ResendOtpDTO, req: Request): Promise<ApiResponse> {
+    const { email, purpose } = data;
+    const latest = await MerchantVerificationService.getLatestSessionByEmail(email, purpose);
+
+    if (purpose === "signup") {
+      const existingMerchant = await Merchant.findOne({ where: { email } });
+      if (existingMerchant) {
+        return { status: false, code: 400, message: "Email already registered. Please login instead." };
+      }
+      if (!latest) {
+        return { status: false, code: 400, message: "No OTP request found for this email. Please sign up first." };
+      }
+      if (latest.validated) {
+        return { status: false, code: 400, message: "Email already verified. Please complete your registration." };
+      }
+    } else {
+      // Same non-disclosure rule as forgotPassword: never reveal whether the email exists
+      const merchant = await Merchant.findOne({ where: { email, isActive: true } });
+      if (!merchant || !latest) {
+        return { status: true, code: 200, message: "If the email exists, a new reset code has been sent" };
+      }
+    }
+
+    const secondsSinceLast = (Date.now() - latest.createdAt.getTime()) / 1000;
+    if (secondsSinceLast < OTP_RESEND_COOLDOWN_SECONDS) {
+      const retryAfter = Math.ceil(OTP_RESEND_COOLDOWN_SECONDS - secondsSinceLast);
+      return {
+        status: false,
+        code: 429,
+        message: `Please wait ${retryAfter} second${retryAfter === 1 ? "" : "s"} before requesting a new code.`,
+      };
+    }
+
+    const otp = generateOTP(4);
+    await MerchantVerificationService.setSession({
+      otp,
+      sessionId: generateUUID(),
+      email,
+      path: purpose,
+      name: latest.name || undefined,
+    });
+
+    const emailData = {
+      otpDigits: splitOTPDigits(otp),
+      browserName: req.headers["user-agent"]?.split(" ")[0] || "Unknown",
+      deviceOS: req.headers["user-agent"] || "Unknown",
+      requestDate: new Date().toLocaleDateString(),
+      ipAddress: req.ip || req.socket.remoteAddress,
+      expiresInMinutes: otpExpiration,
+    };
+
+    try {
+      if (purpose === "signup") {
+        await EmailService.sendSignupOtpEmail(email, emailData);
+      } else {
+        await EmailService.sendResetPasswordOtpEmail(email, emailData);
+      }
+    } catch (error: any) {
+      if (isProduction) {
+        throw error;
+      }
+    }
+
+    return {
+      status: true,
+      code: 200,
+      message: purpose === "signup" ? "A new OTP has been sent to your email." : "If the email exists, a new reset code has been sent",
       data: isProduction ? null : { otp }, // Show OTP in development only
     };
   }
@@ -122,7 +210,7 @@ export class MerchantAuthService {
   }
 
   static async completeSignup(data: CompleteSignupDTO): Promise<ApiResponse> {
-    const { email, businessName, phoneNumber, password, licenseUrl } = data;
+    const { email, businessName, phoneNumber, phoneCountryCode, password, licenseUrl } = data;
 
     // Check if merchant already exists FIRST
     const existingMerchant = await Merchant.findOne({ where: { email } });
@@ -131,6 +219,14 @@ export class MerchantAuthService {
         status: false,
         code: 400,
         message: "Email already registered. Please login instead.",
+      };
+    }
+
+    if (await isPhoneNumberTaken(phoneCountryCode, phoneNumber)) {
+      return {
+        status: false,
+        code: 400,
+        message: PHONE_TAKEN_MESSAGE,
       };
     }
 
@@ -154,6 +250,7 @@ export class MerchantAuthService {
       firstName: "",
       lastName: "",
       phoneNumber,
+      ...(phoneCountryCode ? { phoneCountryCode } : {}),
       password: hashedPassword,
       isVerified: true,
       isActive: true,
@@ -298,6 +395,7 @@ export class MerchantAuthService {
             validId: !!merchant.validIdUrl,
             profile: !!merchant.profilePictureUrl,
             bank: merchant.paymentDetails?.bankVerified || false,
+            address: merchant.storeDetails?.latitude != null && merchant.storeDetails?.longitude != null,
           },
         },
       },
@@ -337,6 +435,7 @@ export class MerchantAuthService {
       deviceOS: req.headers["user-agent"] || "Unknown",
       requestDate: new Date().toLocaleDateString(),
       ipAddress: req.ip || req.socket.remoteAddress,
+      expiresInMinutes: otpExpiration,
     };
 
     try {

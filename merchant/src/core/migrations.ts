@@ -14,6 +14,8 @@ export async function runMigrations(sequelize: Sequelize): Promise<void> {
   await addMerchantDeviceTokensTable(queryInterface);
   await addMerchantPushPreferenceDefaults(queryInterface);
   await shiftOnboardingSteps(sequelize);
+  await addStoreDetailsLocationColumns(queryInterface);
+  await addPharmacyReviewsTable(queryInterface);
 }
 
 async function ensureProductCategoriesTable(queryInterface: any): Promise<void> {
@@ -411,6 +413,71 @@ async function shiftOnboardingSteps(sequelize: Sequelize): Promise<void> {
   } catch (error: any) {
     if (/does not exist|relation .* does not exist/i.test(error?.message || "")) return;
     console.error("[Migration] Error shifting onboarding steps:", error.message);
+    throw error;
+  }
+}
+
+async function addStoreDetailsLocationColumns(queryInterface: any): Promise<void> {
+  const tableName = "store_details";
+
+  try {
+    const tableDescription = await queryInterface.describeTable(tableName);
+    const columns: Record<string, any> = {
+      latitude: { type: DataTypes.DOUBLE, allowNull: true },
+      longitude: { type: DataTypes.DOUBLE, allowNull: true },
+      formatted_address: { type: DataTypes.STRING(500), allowNull: true },
+      place_id: { type: DataTypes.STRING, allowNull: true },
+    };
+
+    for (const [name, definition] of Object.entries(columns)) {
+      if (!tableDescription[name]) {
+        await queryInterface.addColumn(tableName, name, definition);
+        console.log(`[Migration] Added ${name} column to ${tableName}`);
+      }
+    }
+  } catch (error: any) {
+    if (/does not exist|No description found/i.test(error?.message || "")) return;
+    console.error("[Migration] Error adding store location columns:", error.message);
+    throw error;
+  }
+}
+
+async function addPharmacyReviewsTable(queryInterface: any): Promise<void> {
+  const tableName = "pharmacy_reviews";
+
+  try {
+    try {
+      await queryInterface.describeTable(tableName);
+      return;
+    } catch (error: any) {
+      if (!/does not exist|No description found/i.test(error?.message || "")) throw error;
+    }
+
+    await queryInterface.createTable(tableName, {
+      id: { type: DataTypes.UUID, allowNull: false, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      merchant_id: {
+        type: DataTypes.UUID,
+        allowNull: false,
+        references: { model: "merchants", key: "id" },
+        onUpdate: "CASCADE",
+        onDelete: "CASCADE",
+      },
+      order_id: { type: DataTypes.STRING(64), allowNull: false },
+      consumer_id: { type: DataTypes.STRING(64), allowNull: false },
+      consumer_name: { type: DataTypes.STRING(120), allowNull: false },
+      rating: { type: DataTypes.INTEGER, allowNull: false },
+      comment: { type: DataTypes.TEXT, allowNull: true },
+      reply: { type: DataTypes.TEXT, allowNull: true },
+      replied_at: { type: DataTypes.DATE, allowNull: true },
+      created_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+      updated_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+    });
+    await queryInterface.addIndex(tableName, ["order_id"], { unique: true, name: "pharmacy_reviews_order_id_unique" });
+    await queryInterface.addIndex(tableName, ["merchant_id", "created_at"], { name: "pharmacy_reviews_merchant_created" });
+    console.log(`[Migration] Created ${tableName} table`);
+  } catch (error: any) {
+    if (/relation "merchants" does not exist|No description found/i.test(error?.message || "")) return;
+    console.error("[Migration] Error creating pharmacy_reviews table:", error.message);
     throw error;
   }
 }

@@ -104,6 +104,7 @@ const options: swaggerJsdoc.Options = {
               maxLength: 15,
               example: "+2348012345678",
             },
+            phoneCountryCode: { type: "string", example: "+234", description: "Defaults to +234. The same number written as 0803…, 803… or +234803… counts as one number and can only be registered once." },
             password: {
               type: "string",
               minLength: 6,
@@ -527,6 +528,105 @@ const options: swaggerJsdoc.Options = {
           required: ["validIdUrl"],
           properties: { validIdUrl: { type: "string", format: "uri", example: "https://cdn.example.com/id.pdf" } },
         },
+        UploadConfigResponse: {
+          allOf: [
+            { $ref: "#/components/schemas/SuccessResponse" },
+            {
+              type: "object",
+              properties: {
+                data: {
+                  type: "object",
+                  properties: {
+                    maxFileSizeBytes: { type: "number", example: 10485760 },
+                    maxFileSizeMb: { type: "number", example: 10 },
+                    maxFiles: { type: "number", example: 10 },
+                    allowedExtensions: { type: "array", items: { type: "string" }, example: ["jpeg", "jpg", "png", "pdf", "svg"] },
+                  },
+                },
+              },
+            },
+          ],
+        },
+        CheckPhoneRequest: {
+          type: "object",
+          required: ["phoneNumber"],
+          properties: {
+            phoneNumber: { type: "string", minLength: 10, maxLength: 15, example: "08031234567" },
+            phoneCountryCode: { type: "string", example: "+234" },
+          },
+        },
+        PharmacyReview: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+            consumerName: { type: "string", example: "Ada Okafor", description: "The reviewer's full name." },
+            rating: { type: "integer", minimum: 1, maximum: 5 },
+            comment: { type: "string" },
+            reply: {
+              type: "object",
+              nullable: true,
+              description: "The merchant's reply; null until they answer.",
+              properties: {
+                message: { type: "string" },
+                repliedAt: { type: "string", format: "date-time" },
+              },
+            },
+            createdAt: { type: "string", format: "date-time" },
+            orderId: { type: "string", description: "Only returned on the merchant's own Reviews page." },
+          },
+        },
+        CreatePharmacyReviewInternalRequest: {
+          type: "object",
+          required: ["orderId", "consumerId", "consumerName", "rating"],
+          properties: {
+            orderId: { type: "string", description: "experience_1 order id. One review per order." },
+            consumerId: { type: "string" },
+            consumerName: { type: "string", example: "Ada Okafor" },
+            rating: { type: "integer", minimum: 1, maximum: 5 },
+            comment: { type: "string", nullable: true, maxLength: 1000 },
+          },
+        },
+        ResendOtpRequest: {
+          type: "object",
+          required: ["email"],
+          properties: {
+            email: { type: "string", format: "email" },
+            purpose: { type: "string", enum: ["signup", "reset-password"], default: "signup" },
+          },
+        },
+        StoreAddressRequest: {
+          type: "object",
+          required: ["businessAddress", "city", "state"],
+          properties: {
+            businessAddress: { type: "string", minLength: 5, maxLength: 255, example: "12 Allen Avenue" },
+            city: { type: "string", example: "Ikeja" },
+            state: { type: "string", example: "Lagos" },
+            landmark: { type: "string", example: "Opposite the roundabout" },
+          },
+        },
+        StoreAddressResponse: {
+          allOf: [
+            { $ref: "#/components/schemas/SuccessResponse" },
+            {
+              type: "object",
+              properties: {
+                data: {
+                  type: "object",
+                  properties: {
+                    businessAddress: { type: "string" },
+                    city: { type: "string" },
+                    state: { type: "string" },
+                    landmark: { type: "string", nullable: true },
+                    latitude: { type: "number", example: 6.6018 },
+                    longitude: { type: "number", example: 3.3515 },
+                    formattedAddress: { type: "string", example: "12 Allen Ave, Ikeja, Lagos, Nigeria" },
+                    onboardingCompleted: { type: "boolean" },
+                  },
+                },
+              },
+            },
+          ],
+        },
         VerifyBankAccountRequest: {
           type: "object",
           required: ["bankCode", "accountNumber", "accountName"],
@@ -718,6 +818,7 @@ const options: swaggerJsdoc.Options = {
                             validId: { type: "boolean" },
                             profile: { type: "boolean" },
                             bank: { type: "boolean" },
+                            address: { type: "boolean" },
                           },
                         },
                       },
@@ -808,6 +909,10 @@ const options: swaggerJsdoc.Options = {
                           city: { type: "string", nullable: true },
                           state: { type: "string", nullable: true },
                           landmark: { type: "string", nullable: true },
+                          latitude: { type: "number", nullable: true },
+                          longitude: { type: "number", nullable: true },
+                          distanceKm: { type: "number", nullable: true, description: "Straight-line distance from the searched location, in km. null when no location was supplied." },
+                          deliveryRadiusKm: { type: "number", description: "How far this pharmacy serves: its own deliveryRadius setting, or the NEARBY_DEFAULT_RADIUS_KM default (10) when it has none." },
                           openHour: { type: "string", nullable: true },
                           closeHour: { type: "string", nullable: true },
                           isOpen: { type: "boolean", description: "true unless the store is on vacation." },
@@ -865,6 +970,9 @@ const options: swaggerJsdoc.Options = {
                         city: { type: "string", nullable: true },
                         state: { type: "string", nullable: true },
                         landmark: { type: "string", nullable: true },
+                        latitude: { type: "number", nullable: true, description: "Set from the geocoded businessAddress." },
+                        longitude: { type: "number", nullable: true },
+                        formattedAddress: { type: "string", nullable: true, description: "Address as normalised by Google Geocoding." },
                       },
                     },
                     operations: {
@@ -899,19 +1007,19 @@ const options: swaggerJsdoc.Options = {
             { $ref: "#/components/schemas/SuccessResponse" },
             {
               type: "object",
-              description: "Stub implementation — items is currently always empty and pagination.total/totalPages are always 0.",
+              description: "Reviews newest first, with the pharmacy's real average rating in summary.",
               properties: {
                 data: {
                   type: "object",
                   properties: {
-                    items: { type: "array", items: { type: "object" } },
+                    items: { type: "array", items: { $ref: "#/components/schemas/PharmacyReview" } },
                     pagination: {
                       type: "object",
                       properties: {
-                        total: { type: "number", example: 0 },
+                        total: { type: "number" },
                         page: { type: "number" },
                         limit: { type: "number" },
-                        totalPages: { type: "number", example: 0 },
+                        totalPages: { type: "number" },
                       },
                     },
                     summary: { $ref: "#/components/schemas/PharmacyRatingSummary" },
@@ -1041,6 +1149,9 @@ const options: swaggerJsdoc.Options = {
             city: { type: "string", nullable: true },
             state: { type: "string", nullable: true },
             landmark: { type: "string", nullable: true },
+            latitude: { type: "number", nullable: true, description: "Set from the geocoded businessAddress." },
+            longitude: { type: "number", nullable: true },
+            formattedAddress: { type: "string", nullable: true, description: "Address as normalised by Google Geocoding." },
             deliveryNote: { type: "string", nullable: true },
             deliveryDate: { type: "string", format: "date", nullable: true },
             deliveryTimeSlot: { type: "string", nullable: true },
@@ -2142,6 +2253,9 @@ const options: swaggerJsdoc.Options = {
             city: { type: "string", nullable: true },
             state: { type: "string", nullable: true },
             landmark: { type: "string", nullable: true },
+            latitude: { type: "number", nullable: true, description: "Set from the geocoded businessAddress." },
+            longitude: { type: "number", nullable: true },
+            formattedAddress: { type: "string", nullable: true, description: "Address as normalised by Google Geocoding." },
             openHour: { type: "string", nullable: true },
             closeHour: { type: "string", nullable: true },
             vacation: { type: "boolean" },
@@ -2282,6 +2396,9 @@ const options: swaggerJsdoc.Options = {
                     city: { type: "string", nullable: true },
                     state: { type: "string", nullable: true },
                     landmark: { type: "string", nullable: true },
+                    latitude: { type: "number", nullable: true, description: "Set from the geocoded businessAddress." },
+                    longitude: { type: "number", nullable: true },
+                    formattedAddress: { type: "string", nullable: true, description: "Address as normalised by Google Geocoding." },
                     openHour: { type: "string", nullable: true },
                     closeHour: { type: "string", nullable: true },
                     vacation: { type: "boolean" },
@@ -2480,6 +2597,7 @@ const options: swaggerJsdoc.Options = {
                         validId: { $ref: "#/components/schemas/OnboardingStepStatus" },
                         profile: { $ref: "#/components/schemas/OnboardingStepStatus" },
                         bank: { $ref: "#/components/schemas/OnboardingStepStatus" },
+                        address: { $ref: "#/components/schemas/OnboardingStepStatus" },
                       },
                     },
                   },
@@ -2643,6 +2761,10 @@ const options: swaggerJsdoc.Options = {
       {
         name: "Onboarding",
         description: "Post-login onboarding process",
+      },
+      {
+        name: "Reviews",
+        description: "Customer reviews of the merchant's pharmacy, and the merchant's replies",
       },
       {
         name: "Upload",

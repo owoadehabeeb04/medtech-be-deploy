@@ -1,7 +1,10 @@
 import express, { Router } from "express";
 import multer from "multer";
 import * as path from "path";
-import { uploadSingle, uploadBulk } from "./Upload.controller";
+import { uploadSingle, uploadBulk, getUploadConfig } from "./Upload.controller";
+import { applicationConfig } from "../../config";
+
+const { upload: uploadConfig } = applicationConfig;
 
 const router: Router = express.Router();
 
@@ -11,8 +14,8 @@ const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
   limits: { 
-    fileSize: 10 * 1024 * 1024, // 10MB per file
-    files: 10, // Max 10 files for bulk upload
+    fileSize: uploadConfig.maxFileSizeBytes, // per file
+    files: uploadConfig.maxFiles, // Max files for bulk upload
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|pdf|svg/;
@@ -22,15 +25,20 @@ const upload = multer({
     if (mimetype && extname) {
       return cb(null, true);
     } else {
-      cb(new Error("Invalid file type. Only JPEG, JPG, PNG, PDF, SVG are allowed."));
+      const error: any = new Error("Invalid file type. Only JPEG, JPG, PNG, PDF, SVG are allowed.");
+      error.statusCode = 400;
+      cb(error);
     }
   },
 });
+
+// Limits the clients should show to the user (e.g. next to the license upload field)
+router.get("/config", getUploadConfig);
 
 // Single file upload
 router.post("/single", upload.single("file"), uploadSingle);
 
 // Multiple files upload
-router.post("/bulk", upload.array("files", 10), uploadBulk);
+router.post("/bulk", upload.array("files", uploadConfig.maxFiles), uploadBulk);
 
 export default router;

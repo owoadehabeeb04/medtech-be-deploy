@@ -99,3 +99,9 @@ export interface ReviewPrescriptionDTO {
 	reviewerName?: string;
 	reviewerId?: string;
 }
+
+export interface CreatePharmacyReviewDTO {
+	orderId: string;
+	rating: number;
+	comment?: string;
+}

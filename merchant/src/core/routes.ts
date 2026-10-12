@@ -16,6 +16,7 @@ import discountRouter from "../modules/discounts/Discount.route";
 import categoryRouter from "../modules/categories/Category.route";
 import supportRouter from "../modules/support/Support.route";
 import subscriptionRouter from "../modules/subscriptions/Subscription.route";
+import reviewRouter from "../modules/pharmacy_reviews/PharmacyReview.route";
 import walletRouter from "../modules/wallet/Wallet.route";
 import { authMiddleware } from "../middlewares/Auth.Middleware";
 import drugstoreInternalRouter from "../modules/drugstore_internal/DrugstoreInternal.route";
@@ -69,6 +70,7 @@ export default function (app: Application) {
 	apiRouter.use("/support", authMiddleware, supportRouter);
 	apiRouter.use("/subscriptions", subscriptionRouter);
 	apiRouter.use("/wallet", authMiddleware, walletRouter);
+	apiRouter.use("/reviews", authMiddleware, reviewRouter);
 	apiRouter.use("/dashboard", authMiddleware, drugstoreDashboardRouter);
 	apiRouter.use("/analytics", authMiddleware, drugstoreAnalyticsRouter);
 	apiRouter.use("/drugstore-orders", authMiddleware, drugstoreOrderRouter);

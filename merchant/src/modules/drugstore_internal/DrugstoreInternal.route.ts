@@ -3,6 +3,7 @@ import {
   getDistinctBrands,
   getPharmacyProfile,
   getPharmacyReviews,
+  createPharmacyReview,
   getProduct,
   getTopSellingProducts,
   listCategories,
@@ -29,6 +30,7 @@ router.get("/categories", listCategories);
 router.get("/nearby-pharmacies", listNearbyPharmacies);
 router.get("/pharmacies/:merchantId", getPharmacyProfile);
 router.get("/pharmacies/:merchantId/reviews", getPharmacyReviews);
+router.post("/pharmacies/:merchantId/reviews", createPharmacyReview);
 router.post("/discounts/validate", validateDiscount);
 router.post("/orders/reflect", reflectOrder);
 
