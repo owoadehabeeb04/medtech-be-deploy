@@ -1,3 +1,8 @@
+import { StaffAccount } from "../modules/team/StaffAccount.model";
+import { MerchantRole } from "../modules/team/MerchantRole.model";
+import { MerchantMember } from "../modules/team/MerchantMember.model";
+import { MerchantInvitation } from "../modules/team/MerchantInvitation.model";
+import { MerchantAuditLog } from "../modules/team/MerchantAuditLog.model";
 import { PharmacyReview } from "../modules/pharmacy_reviews/PharmacyReview.model";
 import { Dialect } from "sequelize";
 import { Sequelize } from "sequelize-typescript";
@@ -49,7 +54,7 @@ const connection = async (): Promise<Sequelize> => {
 		define: {
 			underscored: true,
 		},
-		models: [Merchant, MerchantVerification, StoreDetails, PaymentDetails, MerchantSettings, MerchantDeviceToken, Product, Discount, ProductCategory, RefreshToken, Plan, Subscription, ScheduledPlanChange, Wallet, Transaction, DrugstoreOrder, DrugstoreOrderItem, PharmacyReview],
+		models: [Merchant, MerchantVerification, StoreDetails, PaymentDetails, MerchantSettings, MerchantDeviceToken, Product, Discount, ProductCategory, RefreshToken, Plan, Subscription, ScheduledPlanChange, Wallet, Transaction, DrugstoreOrder, DrugstoreOrderItem, PharmacyReview, StaffAccount, MerchantRole, MerchantMember, MerchantInvitation, MerchantAuditLog],
 	});
 
 	try {

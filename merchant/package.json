@@ -7,6 +7,7 @@
 		"build": "tsc --build && copyfiles \"src/view/emails/**/*\" dist/",
 		"build:watch": "tsc --watch",
 		"seed": "ts-node --project tsconfig.json src/scripts/seed.ts",
+		"check:route-guards": "ts-node --files --project tsconfig.json src/scripts/check-route-guards.ts",
 		"backfill:store-coordinates": "ts-node --project tsconfig.json src/scripts/backfillStoreCoordinates.ts"
 	},
 	"dependencies": {

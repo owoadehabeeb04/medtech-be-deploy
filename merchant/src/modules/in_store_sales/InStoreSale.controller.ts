@@ -16,6 +16,14 @@ const getMerchantId = (req: Request): string => {
   return merchantId;
 };
 
+// A member who only holds sales.view_own sees just the sales they recorded.
+// Owners and anyone with sales.view see everything.
+const ownSalesOnly = (req: Request): string | null => {
+  const user = req.context.user;
+  if (!user || user.actor !== "member") return null;
+  return (user.permissions || []).includes("sales.view") ? null : String(user.memberId);
+};
+
 const sendData = (res: Response, message: string, data: unknown, statusCode = 200) => {
   res.status(statusCode);
   res.response = { statusCode, message, data };
@@ -406,6 +414,7 @@ export const createInStoreSale = async (req: Request, res: Response, next: NextF
 
     const data = await InStoreSaleService.createSale(getMerchantId(req), {
       ...value,
+      createdByMemberId: req.context.user?.memberId || null,
       idempotencyKey: value.idempotencyKey || req.get("Idempotency-Key") || undefined,
     });
 
@@ -420,6 +429,7 @@ export const listInStoreSales = async (req: Request, res: Response, next: NextFu
   try {
     const data = await InStoreSaleService.listSales({
       merchantId: getMerchantId(req),
+      onlyCreatedByMemberId: ownSalesOnly(req),
       page: Number(req.query.page || 1),
       limit: Number(req.query.limit || 20),
       search: req.query.search ? String(req.query.search) : undefined,
@@ -439,7 +449,7 @@ export const listInStoreSales = async (req: Request, res: Response, next: NextFu
 export const getInStoreSaleById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orderId = getOrderId(req);
-    const data = await InStoreSaleService.getSaleById(getMerchantId(req), orderId);
+    const data = await InStoreSaleService.getSaleById(getMerchantId(req), orderId, ownSalesOnly(req));
     if (!data) {
       throw new HttpException(
         404,

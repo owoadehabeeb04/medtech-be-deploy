@@ -17,8 +17,11 @@ import categoryRouter from "../modules/categories/Category.route";
 import supportRouter from "../modules/support/Support.route";
 import subscriptionRouter from "../modules/subscriptions/Subscription.route";
 import reviewRouter from "../modules/pharmacy_reviews/PharmacyReview.route";
+import teamRouter from "../modules/team/Team.route";
+import meRouter from "../modules/team/Me.route";
 import walletRouter from "../modules/wallet/Wallet.route";
 import { authMiddleware } from "../middlewares/Auth.Middleware";
+import { ownerOnly } from "../middlewares/permission.middleware";
 import drugstoreInternalRouter from "../modules/drugstore_internal/DrugstoreInternal.route";
 import { internalAuthMiddleware } from "../middlewares/internal-auth.middleware";
 import { internalRateLimiter } from "../middlewares/rate-limit.middleware";
@@ -62,7 +65,7 @@ export default function (app: Application) {
 	apiRouter.use("/auth", merchantAuthRouter);
 
 	apiRouter.use("/upload", uploadRouter);
-	apiRouter.use("/onboarding", authMiddleware, onboardingRouter);
+	apiRouter.use("/onboarding", authMiddleware, ownerOnly(), onboardingRouter);
 	apiRouter.use("/settings", settingsRouter);
 	apiRouter.use("/products", authMiddleware, productRouter);
 	apiRouter.use("/discounts", authMiddleware, discountRouter);
@@ -71,6 +74,8 @@ export default function (app: Application) {
 	apiRouter.use("/subscriptions", subscriptionRouter);
 	apiRouter.use("/wallet", authMiddleware, walletRouter);
 	apiRouter.use("/reviews", authMiddleware, reviewRouter);
+	apiRouter.use("/team", authMiddleware, teamRouter);
+	apiRouter.use("/me", authMiddleware, meRouter);
 	apiRouter.use("/dashboard", authMiddleware, drugstoreDashboardRouter);
 	apiRouter.use("/analytics", authMiddleware, drugstoreAnalyticsRouter);
 	apiRouter.use("/drugstore-orders", authMiddleware, drugstoreOrderRouter);

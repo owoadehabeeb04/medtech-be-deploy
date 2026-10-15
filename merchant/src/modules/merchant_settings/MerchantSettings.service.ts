@@ -27,6 +27,13 @@ export class MerchantSettingsService {
   /**
    * Get all settings for a merchant
    */
+  /** The store block only — for team members who may see the store but not the owner's profile or bank details. */
+  static async getStoreSettings(merchantId: string): Promise<ApiResponse> {
+    const all = await this.getAllSettings(merchantId);
+    if (!all.status) return all;
+    return { status: true, code: 200, message: "Store settings retrieved successfully", data: all.data.store };
+  }
+
   static async getAllSettings(merchantId: string): Promise<ApiResponse> {
     const merchant = await Merchant.findByPk(merchantId, {
       include: [

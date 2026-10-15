@@ -102,6 +102,12 @@ export const applicationConfig = {
     allowedExtensions: ["jpeg", "jpg", "png", "pdf", "svg"],
   },
 
+  team: {
+    // Where invitation links point (the merchant web app), e.g. https://merchant.example.com
+    merchantAppUrl: (process.env.MERCHANT_APP_URL || "http://localhost:5173").replace(/\/+$/, ""),
+    invitationExpiryDays: Number(process.env.INVITATION_EXPIRY_DAYS) || 7,
+  },
+
   geocoding: {
     googleApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
     // Overridable so tests can point the geocoder at a local stub

@@ -50,6 +50,19 @@ export class EmailService {
     }
   }
 
+  static async sendStaffInvitationEmail(email: string, payload: any) {
+    try {
+      const template = "staff-invitation";
+      const subject = `You've been invited to join ${payload.pharmacyName} on QuickMedic`;
+      payload.supportEmail = supportEmail;
+      payload.currentYear = new Date().getFullYear().toString();
+
+      await send_mail.send(email, subject, template, payload);
+    } catch (error: any) {
+      throw error;
+    }
+  }
+
   static async sendSupportRequestEmail(toEmail: string, payload: any) {
     try {
       const template = "support-request";

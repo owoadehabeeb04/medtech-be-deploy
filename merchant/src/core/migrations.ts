@@ -16,6 +16,10 @@ export async function runMigrations(sequelize: Sequelize): Promise<void> {
   await shiftOnboardingSteps(sequelize);
   await addStoreDetailsLocationColumns(queryInterface);
   await addPharmacyReviewsTable(queryInterface);
+  await addTeamAccessTables(queryInterface);
+  await addMemberTrackingColumns(queryInterface);
+  await addPharmacyCodeColumn(queryInterface);
+  await addMemberSoftDeleteColumns(queryInterface);
 }
 
 async function ensureProductCategoriesTable(queryInterface: any): Promise<void> {
@@ -478,6 +482,209 @@ async function addPharmacyReviewsTable(queryInterface: any): Promise<void> {
   } catch (error: any) {
     if (/relation "merchants" does not exist|No description found/i.test(error?.message || "")) return;
     console.error("[Migration] Error creating pharmacy_reviews table:", error.message);
+    throw error;
+  }
+}
+
+const isMissingTable = (error: any) => /does not exist|No description found/i.test(error?.message || "");
+
+async function tableExists(queryInterface: any, tableName: string): Promise<boolean> {
+  try {
+    await queryInterface.describeTable(tableName);
+    return true;
+  } catch (error: any) {
+    if (!isMissingTable(error)) throw error;
+    return false;
+  }
+}
+
+const idColumn = { type: DataTypes.UUID, allowNull: false, primaryKey: true, defaultValue: DataTypes.UUIDV4 };
+const timestamps = {
+  created_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+  updated_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+};
+const merchantRef = (allowNull: boolean) => ({
+  type: DataTypes.UUID,
+  allowNull,
+  references: { model: "merchants", key: "id" },
+  onUpdate: "CASCADE",
+  onDelete: "CASCADE",
+});
+
+// Team access: staff logins, per-pharmacy roles, memberships, invitations and the activity log.
+async function addTeamAccessTables(queryInterface: any): Promise<void> {
+  try {
+    if (!(await tableExists(queryInterface, "merchants"))) return;
+
+    if (!(await tableExists(queryInterface, "staff_accounts"))) {
+      await queryInterface.createTable("staff_accounts", {
+        id: idColumn,
+        email: { type: DataTypes.STRING, allowNull: false },
+        password: { type: DataTypes.STRING, allowNull: false },
+        first_name: { type: DataTypes.STRING, allowNull: false },
+        last_name: { type: DataTypes.STRING, allowNull: false },
+        phone_number: { type: DataTypes.STRING, allowNull: true },
+        is_active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+        ...timestamps,
+      });
+      console.log("[Migration] Created staff_accounts table");
+    }
+
+    if (!(await tableExists(queryInterface, "merchant_roles"))) {
+      await queryInterface.createTable("merchant_roles", {
+        id: idColumn,
+        merchant_id: merchantRef(false),
+        name: { type: DataTypes.STRING(80), allowNull: false },
+        description: { type: DataTypes.STRING(255), allowNull: true },
+        permissions: { type: DataTypes.JSONB, allowNull: false, defaultValue: [] },
+        ...timestamps,
+      });
+      console.log("[Migration] Created merchant_roles table");
+    }
+
+    if (!(await tableExists(queryInterface, "merchant_members"))) {
+      await queryInterface.createTable("merchant_members", {
+        id: idColumn,
+        merchant_id: merchantRef(false),
+        staff_account_id: {
+          type: DataTypes.UUID,
+          allowNull: true,
+          references: { model: "staff_accounts", key: "id" },
+          onUpdate: "CASCADE",
+          onDelete: "CASCADE",
+        },
+        owner_merchant_id: merchantRef(true),
+        role_id: {
+          type: DataTypes.UUID,
+          allowNull: true,
+          references: { model: "merchant_roles", key: "id" },
+          onUpdate: "CASCADE",
+          onDelete: "RESTRICT",
+        },
+        status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: "active" },
+        invited_by: { type: DataTypes.STRING, allowNull: true },
+        joined_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+        removed_at: { type: DataTypes.DATE, allowNull: true },
+        ...timestamps,
+      });
+      console.log("[Migration] Created merchant_members table");
+    }
+
+    if (!(await tableExists(queryInterface, "merchant_invitations"))) {
+      await queryInterface.createTable("merchant_invitations", {
+        id: idColumn,
+        merchant_id: merchantRef(false),
+        email: { type: DataTypes.STRING, allowNull: false },
+        role_id: {
+          type: DataTypes.UUID,
+          allowNull: false,
+          references: { model: "merchant_roles", key: "id" },
+          onUpdate: "CASCADE",
+          onDelete: "CASCADE",
+        },
+        token_hash: { type: DataTypes.STRING(64), allowNull: false },
+        expires_at: { type: DataTypes.DATE, allowNull: false },
+        accepted_at: { type: DataTypes.DATE, allowNull: true },
+        revoked_at: { type: DataTypes.DATE, allowNull: true },
+        invited_by: { type: DataTypes.STRING, allowNull: true },
+        ...timestamps,
+      });
+      console.log("[Migration] Created merchant_invitations table");
+    }
+
+    if (!(await tableExists(queryInterface, "merchant_audit_logs"))) {
+      await queryInterface.createTable("merchant_audit_logs", {
+        id: idColumn,
+        merchant_id: { type: DataTypes.UUID, allowNull: false },
+        actor_type: { type: DataTypes.STRING(20), allowNull: false },
+        actor_id: { type: DataTypes.STRING(64), allowNull: false },
+        actor_name: { type: DataTypes.STRING, allowNull: true },
+        action: { type: DataTypes.STRING(120), allowNull: false },
+        entity_id: { type: DataTypes.STRING(64), allowNull: true },
+        metadata: { type: DataTypes.JSONB, allowNull: true },
+        created_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+      });
+      console.log("[Migration] Created merchant_audit_logs table");
+    }
+
+    const sql = queryInterface.sequelize;
+    await sql.query(`CREATE UNIQUE INDEX IF NOT EXISTS staff_accounts_email_unique ON staff_accounts (lower(email))`);
+    await sql.query(`CREATE UNIQUE INDEX IF NOT EXISTS merchant_roles_name_unique ON merchant_roles (merchant_id, lower(name))`);
+    await sql.query(`CREATE UNIQUE INDEX IF NOT EXISTS merchant_members_staff_unique ON merchant_members (merchant_id, staff_account_id) WHERE staff_account_id IS NOT NULL`);
+    await sql.query(`CREATE UNIQUE INDEX IF NOT EXISTS merchant_members_owner_unique ON merchant_members (merchant_id, owner_merchant_id) WHERE owner_merchant_id IS NOT NULL`);
+    await sql.query(`CREATE INDEX IF NOT EXISTS merchant_members_staff_lookup ON merchant_members (staff_account_id)`);
+    await sql.query(`CREATE INDEX IF NOT EXISTS merchant_members_owner_lookup ON merchant_members (owner_merchant_id)`);
+    await sql.query(`CREATE INDEX IF NOT EXISTS merchant_invitations_lookup ON merchant_invitations (token_hash)`);
+    await sql.query(`CREATE INDEX IF NOT EXISTS merchant_invitations_merchant ON merchant_invitations (merchant_id, email)`);
+    await sql.query(`CREATE INDEX IF NOT EXISTS merchant_audit_logs_merchant_created ON merchant_audit_logs (merchant_id, created_at DESC)`);
+    await sql.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'merchant_members_one_identity') THEN
+          ALTER TABLE merchant_members ADD CONSTRAINT merchant_members_one_identity
+            CHECK ((staff_account_id IS NOT NULL) <> (owner_merchant_id IS NOT NULL));
+        END IF;
+      END $$;
+    `);
+  } catch (error: any) {
+    console.error("[Migration] Error creating team access tables:", error.message);
+    throw error;
+  }
+}
+
+// Which team member did what: push-notification routing, session revocation and "own sales" scope.
+async function addMemberTrackingColumns(queryInterface: any): Promise<void> {
+  const columns: Array<[string, string]> = [
+    ["merchant_device_tokens", "member_id"],
+    ["refresh_tokens", "member_id"],
+    ["merchant_drugstore_orders", "created_by_member_id"],
+  ];
+
+  for (const [tableName, column] of columns) {
+    try {
+      const description = await queryInterface.describeTable(tableName);
+      if (!description[column]) {
+        await queryInterface.addColumn(tableName, column, { type: DataTypes.UUID, allowNull: true });
+        console.log(`[Migration] Added ${column} column to ${tableName}`);
+      }
+    } catch (error: any) {
+      if (isMissingTable(error)) continue;
+      console.error(`[Migration] Error adding ${column} to ${tableName}:`, error.message);
+      throw error;
+    }
+  }
+}
+
+// Staff pick their pharmacy at login with a short code the owner controls.
+async function addPharmacyCodeColumn(queryInterface: any): Promise<void> {
+  try {
+    const description = await queryInterface.describeTable("merchants");
+    if (!description.pharmacy_code) {
+      await queryInterface.addColumn("merchants", "pharmacy_code", { type: DataTypes.STRING(20), allowNull: true });
+      console.log("[Migration] Added pharmacy_code column to merchants");
+    }
+    await queryInterface.sequelize.query(
+      `CREATE UNIQUE INDEX IF NOT EXISTS merchants_pharmacy_code_unique ON merchants (upper(pharmacy_code)) WHERE pharmacy_code IS NOT NULL`
+    );
+  } catch (error: any) {
+    if (isMissingTable(error)) return;
+    console.error("[Migration] Error adding pharmacy_code:", error.message);
+    throw error;
+  }
+}
+
+// Removing a team member is a soft delete: the row stays (history, own-sales scope) with status "removed".
+async function addMemberSoftDeleteColumns(queryInterface: any): Promise<void> {
+  try {
+    const description = await queryInterface.describeTable("merchant_members");
+    if (!description.removed_at) {
+      await queryInterface.addColumn("merchant_members", "removed_at", { type: DataTypes.DATE, allowNull: true });
+      console.log("[Migration] Added removed_at column to merchant_members");
+    }
+    // A removed member whose role is deleted later keeps their row with no role
+    await queryInterface.sequelize.query(`ALTER TABLE merchant_members ALTER COLUMN role_id DROP NOT NULL`);
+  } catch (error: any) {
+    if (isMissingTable(error)) return;
+    console.error("[Migration] Error preparing merchant_members for soft delete:", error.message);
     throw error;
   }
 }

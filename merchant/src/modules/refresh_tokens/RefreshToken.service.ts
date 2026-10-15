@@ -2,6 +2,7 @@ import { RefreshToken } from "./RefreshToken.model";
 import { Merchant } from "../merchant/Merchant.model";
 import { StoreDetails } from "../store_details/StoreDetails.model";
 import { PaymentDetails } from "../payment_details/PaymentDetails.model";
+import { MerchantMember } from "../team/MerchantMember.model";
 import { MerchantSettings } from "../merchant_settings/MerchantSettings.model";
 import { hashPassword } from "@medtech/utils";
 import { generateRefreshToken, verifyRefreshToken, generateToken, type RefreshTokenPayload } from "@medtech/utils";
@@ -13,7 +14,8 @@ export class RefreshTokenService {
   static async createRefreshToken(
     merchantId: string,
     deviceInfo?: string,
-    ipAddress?: string
+    ipAddress?: string,
+    memberId?: string | null
   ): Promise<{ refreshToken: string; tokenId: string }> {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
@@ -29,6 +31,7 @@ export class RefreshTokenService {
       isActive: true,
       deviceInfo: deviceInfo || null,
       ipAddress: ipAddress || null,
+      memberId: memberId || null,
     });
 
     const merchant = await Merchant.findByPk(merchantId, { attributes: ["email"] });
@@ -98,12 +101,27 @@ export class RefreshTokenService {
       throw new Error("Merchant not found or inactive");
     }
 
+    // A session opened as a team member must stay a member session, and only while the
+    // membership is still active (removal/suspension kills the session).
+    let memberId: string | null = null;
+    if (refreshTokenRecord.memberId) {
+      const member = await MerchantMember.findOne({
+        where: { id: refreshTokenRecord.memberId, merchantId: merchant.id, status: "active" },
+      });
+      if (!member) {
+        await refreshTokenRecord.update({ isActive: false });
+        throw new Error("Your access to this pharmacy has been removed or suspended");
+      }
+      memberId = member.id;
+    }
+
     const accessToken = generateToken(
       {
         id: merchant.id,
         email: merchant.email,
         type: "merchant",
-      },
+        ...(memberId ? { memberId } : {}),
+      } as any,
       {
         secret: applicationConfig.jwt.secret,
         expiresIn: applicationConfig.jwt.expiresIn,
@@ -137,6 +155,11 @@ export class RefreshTokenService {
         },
       }
     );
+  }
+
+  /** Kill every session a team member has opened, e.g. when they are suspended or removed. */
+  static async revokeMemberSessions(memberId: string): Promise<void> {
+    await RefreshToken.update({ isActive: false }, { where: { memberId, isActive: true } });
   }
 
   static async revokeAllRefreshTokens(merchantId: string): Promise<void> {

@@ -12,6 +12,9 @@ import {
 } from "firebase-admin/messaging";
 import { Op } from "sequelize";
 import { applicationConfig } from "../../config";
+import { MerchantMember } from "../../modules/team/MerchantMember.model";
+import { MerchantRole } from "../../modules/team/MerchantRole.model";
+import { PUSH_EVENT_PERMISSION, expandPermissions } from "../../constants/permissions";
 import { MerchantDeviceToken } from "../../modules/merchant_settings/MerchantDeviceToken.model";
 import { MerchantSettings } from "../../modules/merchant_settings/MerchantSettings.model";
 
@@ -170,6 +173,25 @@ export class FirebaseMessagingService {
     });
   }
 
+  private static async filterDevicesByPermission(devices: MerchantDeviceToken[], event: string) {
+    const memberIds = [...new Set(devices.map((device) => device.memberId).filter((id): id is string => !!id))];
+    if (memberIds.length === 0) return devices;
+
+    // Tests go to every device; events with no permission mapping are for the owner only.
+    const required = event === "test" ? null : PUSH_EVENT_PERMISSION[event] || undefined;
+    const members = await MerchantMember.findAll({
+      where: { id: memberIds, status: "active" },
+      include: [{ model: MerchantRole, as: "role" }],
+    });
+    const allowed = new Set(
+      members
+        .filter((member) => required === null || (required !== undefined && expandPermissions(member.role?.permissions).includes(required)))
+        .map((member) => member.id)
+    );
+
+    return devices.filter((device) => !device.memberId || allowed.has(device.memberId));
+  }
+
   private static async sendToMerchant(
     input: SendPushInput
   ): Promise<PushSendResult> {
@@ -197,10 +219,13 @@ export class FirebaseMessagingService {
       }
     }
 
-    const devices = await MerchantDeviceToken.findAll({
+    const allDevices = await MerchantDeviceToken.findAll({
       where: { merchantId: input.merchantId, isActive: true },
       order: [["lastSeenAt", "DESC"]],
     });
+
+    // The owner's devices always receive it; a team member's device only if their role may see it.
+    const devices = await this.filterDevicesByPermission(allDevices, input.event);
 
     if (devices.length === 0) {
       return { ...baseResult, skipped: "no_active_devices" };

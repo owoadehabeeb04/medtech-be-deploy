@@ -27,7 +27,7 @@ export const removeDeviceToken = async (
       return next();
     }
 
-    const data = await MerchantDeviceTokenService.deactivate(merchantId, deviceId);
+    const data = await MerchantDeviceTokenService.deactivate(merchantId, deviceId, req.context.user?.memberId);
 
     res.status(200);
     res.response = {

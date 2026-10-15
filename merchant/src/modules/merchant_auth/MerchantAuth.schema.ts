@@ -33,6 +33,7 @@ export const CompleteSignupSchema = Joi.object({
 export const LoginSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().required(),
+  pharmacyCode: Joi.string().trim().max(20).allow("").optional(),
 });
 
 export const ForgotPasswordSchema = Joi.object({

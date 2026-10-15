@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { ownerOnly } from "../../middlewares/permission.middleware";
 import GetPlansController from "./controllers/GetPlans.controller";
 import GetSubscriptionController from "./controllers/GetSubscription.controller";
 import SubscribeController from "./controllers/Subscribe.controller";
@@ -18,13 +19,13 @@ subscriptionRouter.get("/plans", GetPlansController);
 subscriptionRouter.post("/webhook", WebhookController);
 
 // Authenticated routes
-subscriptionRouter.get("/", authMiddleware, GetSubscriptionController);
-subscriptionRouter.post("/subscribe", authMiddleware, SubscribeController);
-subscriptionRouter.post("/confirm-payment", authMiddleware, ConfirmPaymentController);
-subscriptionRouter.post("/upgrade", authMiddleware, UpgradePlanController);
-subscriptionRouter.post("/downgrade", authMiddleware, DowngradePlanController);
-subscriptionRouter.post("/cancel-downgrade", authMiddleware, CancelDowngradeController);
-subscriptionRouter.post("/cancel", authMiddleware, CancelSubscriptionController);
-subscriptionRouter.patch("/auto-renew", authMiddleware, ToggleAutoRenewController);
+subscriptionRouter.get("/", authMiddleware, ownerOnly(), GetSubscriptionController);
+subscriptionRouter.post("/subscribe", authMiddleware, ownerOnly(), SubscribeController);
+subscriptionRouter.post("/confirm-payment", authMiddleware, ownerOnly(), ConfirmPaymentController);
+subscriptionRouter.post("/upgrade", authMiddleware, ownerOnly(), UpgradePlanController);
+subscriptionRouter.post("/downgrade", authMiddleware, ownerOnly(), DowngradePlanController);
+subscriptionRouter.post("/cancel-downgrade", authMiddleware, ownerOnly(), CancelDowngradeController);
+subscriptionRouter.post("/cancel", authMiddleware, ownerOnly(), CancelSubscriptionController);
+subscriptionRouter.patch("/auto-renew", authMiddleware, ownerOnly(), ToggleAutoRenewController);
 
 export default subscriptionRouter;
