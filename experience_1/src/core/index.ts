@@ -78,7 +78,7 @@ export const startServer = async (): Promise<void> => {
 		listenersBootstrapped = true;
 	}
 
-	const server = app.listen(serverPort, process.env.HOST || "0.0.0.0");
+	const server = app.listen(Number(serverPort), process.env.HOST || "0.0.0.0");
 	await new Promise<void>((resolve, reject) => {
 		server.once("listening", resolve);
 		server.once("error", reject);

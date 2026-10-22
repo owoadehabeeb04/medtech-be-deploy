@@ -1,3 +1,11 @@
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+const root = fileURLToPath(new URL('../', import.meta.url));
+// The compiled entry sits at dist/app.js or dist/src/app.js depending on the package's tsconfig rootDir; use whichever was built.
+const entryFor = (name, candidates) => candidates.find(candidate => existsSync(path.join(root, name, candidate))) || candidates[0];
+
 export function portNumber(value, name) {
   const port = Number(value);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error(`${name} must be a valid port`);
@@ -11,8 +19,8 @@ export function combinedConfig(env) {
   if (new Set([port, merchantPort, experiencePort]).size !== 3) throw new Error('The three listening ports must differ');
 
   const services = [
-    { name: 'merchant', prefix: 'MERCHANT_ENV_', port: merchantPort, entry: 'dist/src/app.js', health: '/api/v1/merchant/health' },
-    { name: 'experience_1', prefix: 'EXPERIENCE1_ENV_', port: experiencePort, entry: 'dist/app.js', health: '/api/v1/main/health' },
+    { name: 'merchant', prefix: 'MERCHANT_ENV_', port: merchantPort, entry: entryFor('merchant', ['dist/src/app.js', 'dist/app.js']), health: '/api/v1/merchant/health' },
+    { name: 'experience_1', prefix: 'EXPERIENCE1_ENV_', port: experiencePort, entry: entryFor('experience_1', ['dist/app.js', 'dist/src/app.js']), health: '/api/v1/main/health' },
   ].map(service => {
     const childEnv = Object.fromEntries(Object.entries(env).filter(([key]) => !/^(MERCHANT_ENV_|EXPERIENCE1_ENV_)/.test(key)));
     for (const [key, value] of Object.entries(env)) {
