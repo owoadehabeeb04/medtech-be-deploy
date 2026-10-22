@@ -55,6 +55,11 @@ export class RefreshToken extends Model<RefreshToken> {
   @Column(DataType.STRING)
   declare deviceInfo: string; // Optional: device/browser info
 
+  // set when the session is for a team member acting at this pharmacy
+  @AllowNull(true)
+  @Column(DataType.UUID)
+  declare memberId: string | null;
+
   @AllowNull(true)
   @Column(DataType.STRING)
   declare ipAddress: string; // Optional: IP address

@@ -1,6 +1,6 @@
 import { OK, SERVICE_UNAVAILABLE } from "http-status";
 import { RESPONSE_MESSAGES } from "../../constants/response";
-import connection from "../../core/db";
+import { Sequelize } from "sequelize-typescript";
 
 type HealthCheckResponse = {
   status: boolean;
@@ -22,9 +22,8 @@ class HealthService {
     return { status: "up" };
   }
 
-  static async checkDb(): Promise<ServiceStatus> {
+  static async checkDb(sequelize: Sequelize): Promise<ServiceStatus> {
     try {
-      const sequelize = await connection();
       await sequelize.authenticate();
       return { status: "up" };
     } catch (err) {
@@ -33,8 +32,8 @@ class HealthService {
     }
   }
 
-  static async checkAll(): Promise<HealthCheckResponse> {
-    const [app, db] = await Promise.all([this.checkApp(), this.checkDb()]);
+  static async checkAll(sequelize: Sequelize): Promise<HealthCheckResponse> {
+    const [app, db] = await Promise.all([this.checkApp(), this.checkDb(sequelize)]);
 
     const isHealthy = app.status === "up" && db.status === "up";
 

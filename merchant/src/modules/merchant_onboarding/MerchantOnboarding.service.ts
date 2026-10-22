@@ -1,7 +1,7 @@
 import { Merchant } from "../merchant/Merchant.model";
 import { PaymentDetails } from "../payment_details/PaymentDetails.model";
 import { VerifyBankDTO, OnboardingStatusDTO, StoreAddressDTO } from "./MerchantOnboarding.dto";
-import { PaystackService } from "../../service/Paystack/Paystack.service";
+import { BankVerificationService, BankVerificationError } from "../../service/Payments/BankVerification.service";
 import { StoreDetails } from "../store_details/StoreDetails.model";
 import { MerchantSettingsService } from "../merchant_settings/MerchantSettings.service";
 import { UploadService } from "../upload/Upload.service";
@@ -285,60 +285,53 @@ export class MerchantOnboardingService {
         };
       }
 
-      // Verify with Paystack
-      const verificationResult = await PaystackService.verifyBankAccount(
-        data.accountNumber,
-        data.bankCode
-      );
-
-      if (!verificationResult.verified) {
-        return {
-          status: false,
-          code: 400,
-          message: "Unable to verify bank account",
-        };
+      // Check the account with the payment provider (Paga) and compare the holder's name
+      let verified;
+      try {
+        verified = await BankVerificationService.verifyAccount({
+          merchantId,
+          bankCode: data.bankCode,
+          accountNumber: data.accountNumber,
+          accountName: data.accountName,
+        });
+      } catch (error) {
+        if (error instanceof BankVerificationError) {
+          if (error.reason === "name_mismatch") {
+            return {
+              status: false,
+              code: 400,
+              message: `Account name mismatch. Expected: "${error.actualName}"`,
+              data: {
+                providedName: data.accountName,
+                actualName: error.actualName,
+                hint: "Use the actualName value exactly as shown",
+              },
+            };
+          }
+          return { status: false, code: error.statusCode, message: error.message };
+        }
+        throw error;
       }
-
-      // Compare names
-      const namesMatch = PaystackService.compareNames(
-        data.accountName,
-        verificationResult.accountName
-      );
-
-      if (!namesMatch) {
-        return {
-          status: false,
-          code: 400,
-          message: `Account name mismatch. Expected: "${verificationResult.accountName}"`,
-          data: {
-            providedName: data.accountName,
-            actualName: verificationResult.accountName,
-            hint: "Use the actualName value exactly as shown",
-          },
-        };
-      }
-
-      // Get bank name from bank code
-      const banks = await PaystackService.getBankList();
-      const bank = banks.find((b) => b.code === data.bankCode);
 
       // Update or create payment details
       if (merchant.paymentDetails) {
         await merchant.paymentDetails.update({
-          bankName: bank?.name || data.bankCode,
+          bankName: verified.bankName,
           bankCode: data.bankCode,
+          bankCodeProvider: verified.provider,
           bankAccountNumber: data.accountNumber,
-          bankAccountName: verificationResult.accountName,
+          bankAccountName: verified.accountName,
           bankVerified: true,
           verifiedAt: new Date(),
         });
       } else {
         await PaymentDetails.create({
           merchantId: merchant.id,
-          bankName: bank?.name || data.bankCode,
+          bankName: verified.bankName,
           bankCode: data.bankCode,
+          bankCodeProvider: verified.provider,
           bankAccountNumber: data.accountNumber,
-          bankAccountName: verificationResult.accountName,
+          bankAccountName: verified.accountName,
           bankVerified: true,
           verifiedAt: new Date(),
         });
@@ -355,8 +348,8 @@ export class MerchantOnboardingService {
           : "Bank account verified successfully. Add your store address to finish onboarding.",
         data: {
           verified: true,
-          accountName: verificationResult.accountName,
-          bankName: bank?.name || data.bankCode,
+          accountName: verified.accountName,
+          bankName: verified.bankName,
           onboardingCompleted,
         },
       };

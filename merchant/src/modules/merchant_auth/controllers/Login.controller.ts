@@ -54,7 +54,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
  * /api/v1/merchant/auth/login:
  *   post:
  *     summary: "Login"
- *     description: "Login for the merchant API."
+ *     description: "Signs in a pharmacy owner or a team member. Team members send the `pharmacyCode` their owner shared; a team member at several pharmacies who sends no code receives `requiresPharmacySelection` and chooses via POST /auth/select-pharmacy. An owner can also send another pharmacy's code to sign in there as a team member. Responses include `actor`, `permissions` and `pharmacies`."
  *     operationId: "merchant_post_api_v1_merchant_auth_login"
  *     tags: ["Authentication"]
  *     security: []
@@ -74,7 +74,9 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
  *       400:
  *         description: "Invalid request or validation failed"
  *       401:
- *         description: "Authentication or signature rejected"
+ *         description: "Authentication or signature rejected (wrong password)"
+ *       403:
+ *         description: "Account deactivated, access removed or suspended, or the pharmacy code is not one of the person's pharmacies"
  *       409:
  *         description: "Business rule conflict"
  */

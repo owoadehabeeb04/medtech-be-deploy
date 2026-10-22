@@ -1,4 +1,6 @@
 import { Router } from "express";
+import { requirePermission, requireAnyPermission } from "../../middlewares/permission.middleware";
+import { audit } from "../team/Audit.service";
 import {
   createInStoreSale,
   cancelInStoreSale,
@@ -14,20 +16,20 @@ const router = Router();
 
 // Static paths must be registered before /:orderId.
 
-router.get("/products", listInStoreSaleProducts);
+router.get("/products", requirePermission("sales.create"), listInStoreSaleProducts);
 
-router.get("/export.csv", exportInStoreSalesCsv);
+router.get("/export.csv", requirePermission("sales.view", "data.export"), exportInStoreSalesCsv);
 
-router.get("/", listInStoreSales);
+router.get("/", requireAnyPermission("sales.view", "sales.view_own"), listInStoreSales);
 
-router.post("/", createInStoreSale);
+router.post("/", requirePermission("sales.create"), audit("sale.created"), createInStoreSale);
 
-router.post("/:orderId/cancel", cancelInStoreSale);
+router.post("/:orderId/cancel", requirePermission("sales.cancel"), audit("sale.cancelled"), cancelInStoreSale);
 
-router.post("/:orderId/return", returnInStoreSale);
+router.post("/:orderId/return", requirePermission("sales.refund"), audit("sale.returned"), returnInStoreSale);
 
-router.post("/:orderId/refund", refundInStoreSale);
+router.post("/:orderId/refund", requirePermission("sales.refund"), audit("sale.refunded"), refundInStoreSale);
 
-router.get("/:orderId", getInStoreSaleById);
+router.get("/:orderId", requireAnyPermission("sales.view", "sales.view_own"), getInStoreSaleById);
 
 export default router;

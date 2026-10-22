@@ -11,11 +11,13 @@
 		"nohoist": []
 	},
 	"scripts": {
-		"build": "npm run build:utils && npm run build:experience_1 && npm run build:merchant",
+		"build": "npm run build:utils && npm run build:merchant && npm run build:experience_1",
 		"build:utils": "npm run build --workspace=utils",
-		"build:experience_1": "npm run build --workspace=experience_1",
 		"build:merchant": "npm run build --workspace=merchant",
+		"build:experience_1": "npm run build --workspace=experience_1",
 		"start": "npm run start --workspace=merchant",
+		"start:combined": "node scripts/start-combined.mjs",
+		"test:combined": "node --test scripts/tests/combined-deployment.test.mjs",
 		"postinstall": "node -e \"if (process.env.RENDER === 'true') { require('child_process').execSync('npm run build', { stdio: 'inherit' }) }\""
 	},
 	"overrides": {

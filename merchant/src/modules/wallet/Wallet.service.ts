@@ -11,6 +11,15 @@ import {
 } from "../../constants/enums";
 import { HttpException } from "@medtech/utils";
 import { FirebaseMessagingService } from "../../service/Firebase/FirebaseMessaging.service";
+import { applicationConfig } from "../../config";
+import { WalletFundingPaga, PAGA_PROVIDER } from "./WalletFundingPaga.service";
+import { WalletWithdrawalPaga } from "./WalletWithdrawalPaga.service";
+import { Op } from "sequelize";
+
+// A funding row is found by its provider-neutral reference; Paystack rows also carry the legacy column.
+const fundingReferenceWhere = (reference: string) => ({
+  [Op.or]: [{ providerReference: reference }, { paystackReference: reference }],
+});
 
 export class WalletService {
   /**
@@ -34,7 +43,7 @@ export class WalletService {
    * Initialize wallet funding via Paystack
    * @param amount in Naira — will be converted to kobo
    */
-  static async fundWallet(merchantId: string, amountInNaira: number) {
+  static async fundWallet(merchantId: string, amountInNaira: number, requestedReturnUrl?: string) {
     const merchant = await Merchant.findByPk(merchantId);
     if (!merchant) {
       throw new HttpException(404, "Merchant account not found.");
@@ -46,6 +55,12 @@ export class WalletService {
     }
 
     const amountInKobo = amountInNaira * 100;
+
+    // New fundings go through Paga unless the emergency switch points back to Paystack
+    if (applicationConfig.payments.walletFundingProvider !== "paystack") {
+      return WalletFundingPaga.initiate(merchant, wallet, amountInKobo, amountInNaira, requestedReturnUrl);
+    }
+
     const reference = `wf_${uuidv4().replace(/-/g, "").substring(0, 20)}`;
 
     // Create pending transaction
@@ -57,6 +72,7 @@ export class WalletService {
       status: TransactionStatus.PENDING,
       paymentMethod: PaymentMethod.CARD,
       paystackReference: reference,
+      providerReference: reference,
       description: `Wallet funding — ₦${amountInNaira.toLocaleString()}`,
       metadata: { type: "wallet_funding" },
     });
@@ -89,8 +105,14 @@ export class WalletService {
   static async withdrawWallet(
     merchantId: string,
     amountInNaira: number,
-    reason?: string
+    reason?: string,
+    acceptedTotalNaira?: number
   ) {
+    // Paga is the default; the switch lets us fall back to Paystack in an emergency
+    if (applicationConfig.withdrawals.provider !== "paystack") {
+      return WalletWithdrawalPaga.withdraw(merchantId, amountInNaira, reason, acceptedTotalNaira);
+    }
+
     const merchant = await Merchant.findByPk(merchantId);
     if (!merchant) {
       throw new HttpException(404, "Merchant account not found.");
@@ -101,6 +123,15 @@ export class WalletService {
       throw new HttpException(
         400,
         "Please add and verify your payout bank account in merchant settings before withdrawing."
+      );
+    }
+
+    // Withdrawals still run on Paystack. A Paga bank id means nothing to Paystack, so stop here with a clear
+    // message instead of sending it a code it cannot use. Lifted when withdrawals move to Paga.
+    if (paymentDetails.bankCodeProvider === "paga") {
+      throw new HttpException(
+        503,
+        "Withdrawals are temporarily unavailable while we move to our new payment provider. Please try again soon."
       );
     }
 
@@ -285,7 +316,7 @@ export class WalletService {
   static async confirmFunding(merchantId: string, reference: string) {
     const transaction = await Transaction.findOne({
       where: {
-        paystackReference: reference,
+        ...fundingReferenceWhere(reference),
         merchantId,
         type: TransactionType.WALLET_FUNDING,
       },
@@ -307,6 +338,11 @@ export class WalletService {
           balanceInNaira: wallet.balance / 100,
         },
       };
+    }
+
+    // A funding started on Paga is verified with Paga, whatever the current switch says
+    if (transaction.paymentProvider === PAGA_PROVIDER) {
+      return this.confirmPagaFunding(merchantId, transaction);
     }
 
     // Verify with Paystack
@@ -351,7 +387,40 @@ export class WalletService {
     };
   }
 
-  private static queueWalletFundingNotification(
+  /**
+   * Confirm a Paga funding. "Not paid yet" is a normal answer, not a failure: the customer may still be on
+   * Paga's page, or the bank may be slow. Nothing is marked failed here; the sweeper expires abandoned ones.
+   */
+  private static async confirmPagaFunding(merchantId: string, transaction: Transaction) {
+    const reference = transaction.providerReference as string;
+    const outcome = await WalletFundingPaga.check(transaction);
+
+    if (outcome.state === "waiting") {
+      const wallet = await Wallet.findOne({ where: { merchantId } });
+      return {
+        pending: true,
+        message: "We haven't received confirmation of this payment yet. If you have paid, it will be credited to your wallet automatically within a few minutes.",
+        wallet: { balance: wallet?.balance ?? 0, balanceInNaira: (wallet?.balance ?? 0) / 100 },
+      };
+    }
+
+    const result = await this.settleFundingTransaction(reference, {
+      merchantId,
+      source: "confirm_funding",
+      expectedAmount: outcome.paidKobo,
+    });
+    this.queueWalletFundingNotification(reference, result);
+
+    return {
+      pending: false,
+      message: result.wasAlreadySettled
+        ? "This funding has already been confirmed and credited to your wallet."
+        : `₦${(result.amount / 100).toLocaleString()} has been added to your wallet.`,
+      wallet: { balance: result.wallet.balance, balanceInNaira: result.wallet.balance / 100 },
+    };
+  }
+
+  static queueWalletFundingNotification(
     reference: string,
     result: {
       amount: number;
@@ -378,7 +447,7 @@ export class WalletService {
     });
   }
 
-  private static async settleFundingTransaction(
+  static async settleFundingTransaction(
     reference: string,
     options: {
       merchantId?: string;
@@ -394,7 +463,7 @@ export class WalletService {
 
     return sequelize.transaction(async (dbTransaction) => {
       const where: any = {
-        paystackReference: reference,
+        ...fundingReferenceWhere(reference),
         type: TransactionType.WALLET_FUNDING,
       };
       if (options.merchantId) where.merchantId = options.merchantId;
@@ -428,6 +497,8 @@ export class WalletService {
       }
 
       const wasAlreadySettled = transaction.status === TransactionStatus.SUCCESS;
+      // A payment we had given up on (failed/expired) that turns out to be paid is still credited
+      const wasLate = transaction.status === TransactionStatus.FAILED;
       if (!wasAlreadySettled) {
         await wallet.increment("balance", {
           by: amount,
@@ -441,6 +512,7 @@ export class WalletService {
               ...(options.metadata || {}),
               settlementSource: options.source,
               settledAt: new Date().toISOString(),
+              ...(wasLate ? { lateSuccess: true } : {}),
             },
           },
           { transaction: dbTransaction }
@@ -470,7 +542,7 @@ export class WalletService {
     await sequelize.transaction(async (dbTransaction) => {
       const transaction = await Transaction.findOne({
         where: {
-          paystackReference: reference,
+          ...fundingReferenceWhere(reference),
           merchantId,
           type: TransactionType.WALLET_FUNDING,
         },

@@ -4,6 +4,8 @@ import { verifyToken } from "@medtech/utils";
 import { applicationConfig } from "../config";
 import { ERROR_CODES as errorCode } from "../constants/error-codes";
 import { Merchant } from "../modules/merchant/Merchant.model";
+import { AccessService } from "../modules/team/Access.service";
+import { ALL_PERMISSIONS, expandPermissions } from "../constants/permissions";
 
 export const authMiddleware = async (
   req: Request,
@@ -42,7 +44,7 @@ export const authMiddleware = async (
       );
     }
 
-    // Check if merchant exists and is active
+    // The token's id is the PHARMACY being acted on. For the owner that is their own merchant.
     const merchant = await Merchant.findOne({
       where: { id: decoded.id, isActive: true },
     });
@@ -56,14 +58,44 @@ export const authMiddleware = async (
       );
     }
 
-    // Attach merchant info to request context
-    req.context.user = {
-      id: merchant.id,
-      email: merchant.email,
-      name: merchant.fullName,
-    };
+    const memberId = (decoded as any).memberId as string | undefined;
 
-    // Also attach to req.merchant for backward compatibility
+    if (!memberId) {
+      // Owner acting on their own pharmacy: full access, behaviour unchanged.
+      req.context.user = {
+        id: merchant.id,
+        email: merchant.email,
+        name: merchant.fullName,
+        actor: "owner",
+        permissions: [...ALL_PERMISSIONS],
+      };
+    } else {
+      // A team member acting at this pharmacy: resolve their role on every request so that
+      // role edits, suspension and removal take effect immediately.
+      const member = await AccessService.loadActiveMember(memberId, merchant.id);
+      if (!member) {
+        return next(
+          manageApplicationErrors({
+            message: "Your access to this pharmacy has been removed or suspended",
+            statusCode: UNAUTHORIZED,
+          })
+        );
+      }
+
+      req.context.user = {
+        id: merchant.id,
+        email: member.person.email,
+        name: member.person.name,
+        actor: "member",
+        memberId: member.id,
+        roleId: member.role.id,
+        roleName: member.role.name,
+        permissions: expandPermissions(member.role.permissions),
+        principal: { kind: member.person.kind, id: member.person.id },
+      };
+    }
+
+    // Also attach to req.merchant for backward compatibility (this is the PHARMACY's merchant row)
     (req as any).merchant = merchant;
 
     next();

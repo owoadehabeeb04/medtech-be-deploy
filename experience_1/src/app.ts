@@ -1,3 +1,6 @@
 import { startServer } from "./core";
 
-startServer()
+startServer().catch((error) => {
+	console.error("Experience 1 startup failed:", error.message);
+	process.exit(1);
+});

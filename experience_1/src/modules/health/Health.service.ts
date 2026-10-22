@@ -1,6 +1,6 @@
 import { OK, SERVICE_UNAVAILABLE } from "http-status";
 import { RESPONSE_MESSAGES } from "../../constants/response";
-import connection from "../../core/db";
+import { Sequelize } from "sequelize-typescript";
 import redisInit from "../../utils/redisInit";
 
 type HealthCheckResponse = {
@@ -32,9 +32,8 @@ class HealthService {
 		return { status: "up" };
 	}
 
-	static async checkDb(): Promise<ServiceStatus> {
+	static async checkDb(sequelize: Sequelize): Promise<ServiceStatus> {
 		try {
-			const sequelize = await connection();
 			await sequelize.authenticate();
 			return { status: "up" };
 		} catch (err) {
@@ -55,8 +54,8 @@ class HealthService {
 	}
 
 	// 🔹 Aggregate health check
-	static async checkAll(): Promise<HealthCheckResponse> {
-		const [app, db, redis] = await Promise.all([this.checkApp(), this.checkDb(), this.checkRedis()]);
+	static async checkAll(sequelize: Sequelize): Promise<HealthCheckResponse> {
+		const [app, db, redis] = await Promise.all([this.checkApp(), this.checkDb(sequelize), this.checkRedis()]);
 
 		const isHealthy = app.status === "up" && db.status === "up" && redis.status === "up";
 

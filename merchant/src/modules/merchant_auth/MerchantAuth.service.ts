@@ -29,6 +29,11 @@ import {
   generateToken,
 } from "@medtech/utils";
 import { applicationConfig } from "../../config";
+import { TeamAuthService } from "../team/TeamAuth.service";
+import { AccessService } from "../team/Access.service";
+import { StaffAccount } from "../team/StaffAccount.model";
+import { ALL_PERMISSIONS } from "../../constants/permissions";
+import { Op, col, fn, where as sqlWhere } from "sequelize";
 import { isPhoneNumberTaken, PHONE_TAKEN_MESSAGE } from "../merchant/phone.util";
 
 const { isProduction, otpExpiration } = applicationConfig;
@@ -123,7 +128,11 @@ export class MerchantAuthService {
       }
     } else {
       // Same non-disclosure rule as forgotPassword: never reveal whether the email exists
-      const merchant = await Merchant.findOne({ where: { email, isActive: true } });
+      const merchant =
+        (await Merchant.findOne({ where: { email, isActive: true } })) ||
+        (await StaffAccount.findOne({
+          where: { [Op.and]: [sqlWhere(fn("lower", col("email")), email.toLowerCase()), { isActive: true }] },
+        }));
       if (!merchant || !latest) {
         return { status: true, code: 200, message: "If the email exists, a new reset code has been sent" };
       }
@@ -256,6 +265,9 @@ export class MerchantAuthService {
       isActive: true,
     });
 
+    // A team member who now opens their own pharmacy keeps one login
+    await TeamAuthService.absorbStaffAccountIntoOwner(email, merchant.id);
+
     // Create store details
     await StoreDetails.create({
       merchantId: merchant.id,
@@ -320,8 +332,23 @@ export class MerchantAuthService {
       ],
     });
 
-    // Check if email exists
+    // Not a pharmacy owner: it may be a team member's login
     if (!merchant) {
+      try {
+        const staffResult = await TeamAuthService.staffLogin(email, password, data.pharmacyCode, req);
+        if (staffResult) {
+          return {
+            status: true,
+            code: 200,
+            message: (staffResult as any).requiresPharmacySelection ? "Select a pharmacy to continue" : "Login successful",
+            data: staffResult,
+          };
+        }
+      } catch (error: any) {
+        if (error?.statusCode) return { status: false, code: error.statusCode, message: error.message };
+        throw error;
+      }
+
       return {
         status: false,
         code: 404,
@@ -346,6 +373,23 @@ export class MerchantAuthService {
         code: 401,
         message: "Invalid password. Please check your password and try again.",
       };
+    }
+
+    // An owner who was invited to another pharmacy can sign in there with that pharmacy's code
+    if (data.pharmacyCode && data.pharmacyCode.trim()) {
+      try {
+        const memberSession = await TeamAuthService.loginWithPharmacyCode(
+          { kind: "owner", id: merchant.id },
+          data.pharmacyCode,
+          req
+        );
+        if (memberSession) {
+          return { status: true, code: 200, message: "Login successful", data: memberSession };
+        }
+      } catch (error: any) {
+        if (error?.statusCode) return { status: false, code: error.statusCode, message: error.message };
+        throw error;
+      }
     }
 
     // Generate access token
@@ -378,6 +422,10 @@ export class MerchantAuthService {
       data: {
         token,
         refreshToken,
+        actor: "owner",
+        permissions: [...ALL_PERMISSIONS],
+        // This pharmacy plus any other pharmacy that invited the owner to work there
+        pharmacies: await AccessService.listPharmacies({ kind: "owner", id: merchant.id }),
         merchant: {
           id: merchant.id,
           email: merchant.email,
@@ -405,8 +453,12 @@ export class MerchantAuthService {
   static async forgotPassword(data: ForgotPasswordDTO, req: Request): Promise<ApiResponse> {
     const { email } = data;
 
-    // Check if merchant exists
-    const merchant = await Merchant.findOne({ where: { email, isActive: true } });
+    // Check if an owner or a team member has this email
+    const merchant =
+      (await Merchant.findOne({ where: { email, isActive: true } })) ||
+      (await StaffAccount.findOne({
+        where: { [Op.and]: [sqlWhere(fn("lower", col("email")), email.toLowerCase()), { isActive: true }] },
+      }));
     if (!merchant) {
       // Don't reveal if email exists or not for security
       return {
@@ -500,9 +552,14 @@ export class MerchantAuthService {
       };
     }
 
-    // Find merchant
+    // Find the owner, or the team member's own login
     const merchant = await Merchant.findOne({ where: { email, isActive: true } });
-    if (!merchant) {
+    const staff = merchant
+      ? null
+      : await StaffAccount.findOne({
+          where: { [Op.and]: [sqlWhere(fn("lower", col("email")), email.toLowerCase()), { isActive: true }] },
+        });
+    if (!merchant && !staff) {
       return {
         status: false,
         code: 404,
@@ -514,8 +571,13 @@ export class MerchantAuthService {
     const hashedPassword = await hashPassword(newPassword);
 
     // Update password
-    merchant.password = hashedPassword;
-    await merchant.save();
+    if (merchant) {
+      merchant.password = hashedPassword;
+      await merchant.save();
+    } else {
+      staff!.password = hashedPassword;
+      await staff!.save();
+    }
 
     // Delete session after successful reset
     await MerchantVerificationService.delSession(session.sessionId);

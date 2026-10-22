@@ -1,4 +1,6 @@
 import { Router } from "express";
+import { requirePermission } from "../../middlewares/permission.middleware";
+import { audit } from "../team/Audit.service";
 
 import GetProductsController from "./controllers/GetProducts.controller";
 import GetProductController from "./controllers/GetProduct.controller";
@@ -24,26 +26,26 @@ const UUID =
  * STATIC ROUTES (MUST COME FIRST)
  * ─────────────────────────────────────────────
  */
-productRouter.get("/stats", GetProductStatsController);
-productRouter.get("/low-stock", GetLowStockProductsController);
-productRouter.get("/", GetProductsController);
+productRouter.get("/stats", requirePermission("products.view"), GetProductStatsController);
+productRouter.get("/low-stock", requirePermission("products.view"), GetLowStockProductsController);
+productRouter.get("/", requirePermission("products.view"), GetProductsController);
 
 /**
  * ─────────────────────────────────────────────
  * UUID-ONLY ROUTES
  * ─────────────────────────────────────────────
  */
-productRouter.get(`/${UUID}`, GetProductController);
-productRouter.patch(`/${UUID}`, UpdateProductController);
-productRouter.patch(`/${UUID}/stock`, UpdateProductStockController);
-productRouter.delete(`/${UUID}`, DeleteProductController);
-productRouter.post(`/${UUID}/restore`, RestoreProductController);
+productRouter.get(`/${UUID}`, requirePermission("products.view"), GetProductController);
+productRouter.patch(`/${UUID}`, requirePermission("products.manage"), audit("product.updated"), UpdateProductController);
+productRouter.patch(`/${UUID}/stock`, requirePermission("products.update_stock"), audit("product.stock_updated"), UpdateProductStockController);
+productRouter.delete(`/${UUID}`, requirePermission("products.manage"), audit("product.deleted"), DeleteProductController);
+productRouter.post(`/${UUID}/restore`, requirePermission("products.manage"), audit("product.restored"), RestoreProductController);
 
 /**
  * ─────────────────────────────────────────────
  * CREATE
  * ─────────────────────────────────────────────
  */
-productRouter.post("/", CreateProductController);
+productRouter.post("/", requirePermission("products.manage"), audit("product.created"), CreateProductController);
 
 export default productRouter;

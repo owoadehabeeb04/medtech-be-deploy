@@ -81,6 +81,12 @@ export class Merchant extends Model<Merchant> {
   @Column(DataType.BOOLEAN)
   declare onboardingCompleted: boolean;
 
+  // Short code staff type at login to say which pharmacy they mean (e.g. QM-7K3PXA).
+  // Unique case-insensitively (index in migrations); created on demand.
+  @AllowNull(true)
+  @Column(DataType.STRING(20))
+  declare pharmacyCode: string | null;
+
   @AllowNull(false)
   @Default(1)
   @Column(DataType.INTEGER)

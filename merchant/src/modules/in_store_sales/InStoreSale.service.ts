@@ -32,10 +32,14 @@ export type CreateInStoreSaleInput = {
   deliveryStatus?: DeliveryStatus | "completed";
   note?: string | null;
   idempotencyKey?: string | null;
+  // team member recording the sale (null/undefined = the owner)
+  createdByMemberId?: string | null;
 };
 
 export type ListInStoreSalesInput = {
   merchantId: string;
+  // set when the caller may only see their own sales
+  onlyCreatedByMemberId?: string | null;
   page?: number | string;
   limit?: number | string;
   search?: string;
@@ -513,6 +517,7 @@ const buildListWhere = (input: ListInStoreSalesInput): any => {
     merchantId: input.merchantId,
     isInstoreSales: true,
   };
+  if (input.onlyCreatedByMemberId) where.createdByMemberId = input.onlyCreatedByMemberId;
   const andClauses: any[] = [];
 
   if (input.paymentStatus) {
@@ -830,6 +835,7 @@ export class InStoreSaleService {
           sourceUserId: 0,
           sourceUserRole: "consumer",
           isInstoreSales: true,
+          createdByMemberId: input.createdByMemberId || null,
           paymentVerifiedAt: placedAt,
           paymentStatus,
           deliveryStatus,
@@ -1466,11 +1472,14 @@ export class InStoreSaleService {
     };
   }
 
-  static async getSaleById(merchantId: string, orderId: string) {
+  static async getSaleById(merchantId: string, orderId: string, onlyCreatedByMemberId?: string | null) {
     const order = await DrugstoreOrder.findOne({
       // The list returns both the database UUID and the human-facing IS-... ID;
       // accept either when the detail modal opens.
-      where: this.buildSaleLookup(merchantId, orderId),
+      where: {
+        ...this.buildSaleLookup(merchantId, orderId),
+        ...(onlyCreatedByMemberId ? { createdByMemberId: onlyCreatedByMemberId } : {}),
+      },
       include: [{ model: DrugstoreOrderItem, as: "items" }],
     });
 

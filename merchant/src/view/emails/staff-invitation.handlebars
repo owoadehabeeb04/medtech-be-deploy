@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>You've been invited</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f7fa;font-family:Arial,sans-serif;color:#1f2937;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f5f7fa;padding:32px 16px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;">
+                    <tr>
+                        <td style="padding:32px 32px 16px;">
+                            <h1 style="margin:0;font-size:22px;line-height:30px;color:#111827;">Join {{pharmacyName}}</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:0 32px 16px;font-size:15px;line-height:24px;color:#4b5563;">
+                            {{invitedBy}} has invited you to work at <strong>{{pharmacyName}}</strong> on QuickMedic as <strong>{{roleName}}</strong>.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="padding:8px 32px 24px;">
+                            <a href="{{inviteLink}}" style="display:inline-block;padding:14px 28px;background:#0f766e;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;border-radius:8px;">Accept invitation</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="padding:0 32px 20px;">
+                            <div style="display:inline-block;padding:12px 18px;background:#f9fafb;border:1px dashed #d1d5db;border-radius:8px;font-size:14px;color:#4b5563;">
+                                Your pharmacy code (you'll enter it when you sign in)<br>
+                                <span style="font-size:22px;font-weight:700;letter-spacing:2px;color:#111827;">{{pharmacyCode}}</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:0 32px 20px;font-size:14px;line-height:22px;color:#6b7280;">
+                            This invitation expires in {{expiresInDays}} days. If the button doesn't work, copy this link into your browser:<br>
+                            <span style="word-break:break-all;color:#0f766e;">{{inviteLink}}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:0 32px 20px;font-size:14px;line-height:22px;color:#6b7280;">
+                            If you weren't expecting this invitation, you can ignore this email.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:20px 32px 32px;border-top:1px solid #e5e7eb;font-size:12px;line-height:20px;color:#6b7280;">
+                            Support: <a href="mailto:{{supportEmail}}" style="color:#0f766e;text-decoration:none;">{{supportEmail}}</a><br>
+                            This is an automated email. Please do not reply.<br>
+                            &copy; {{currentYear}} QuickMedic
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

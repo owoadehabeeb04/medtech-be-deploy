@@ -493,3 +493,5 @@ export {
 
 export { default as AwsUtil_s3, type AWSConfig, type IAWS } from "./aws.s3";
 export { default as SendEmail, type BrevoConfig } from "./SendEmail";
+
+export * from "./paga";

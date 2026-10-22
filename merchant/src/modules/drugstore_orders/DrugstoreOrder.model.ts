@@ -83,6 +83,11 @@ export class DrugstoreOrder extends Model<DrugstoreOrder> {
   @Column(DataType.BOOLEAN)
   declare isInstoreSales: boolean;
 
+  // team member who recorded an in-store sale (null = the owner)
+  @AllowNull(true)
+  @Column(DataType.UUID)
+  declare createdByMemberId: string | null;
+
   @AllowNull(false)
   @Default(DataType.NOW)
   @Column(DataType.DATE)
