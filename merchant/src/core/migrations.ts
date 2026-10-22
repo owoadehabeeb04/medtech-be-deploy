@@ -1,6 +1,9 @@
 import { Sequelize } from "sequelize-typescript";
 import { DataTypes } from "sequelize";
 
+// Sequelize says "No description found" for a missing table, Postgres says "does not exist": either means "not there yet"
+const isMissingTable = (error: any) => /does not exist|No description found/i.test(error?.message || "");
+
 export async function runMigrations(sequelize: Sequelize): Promise<void> {
   const queryInterface = sequelize.getQueryInterface();
 
@@ -20,6 +23,10 @@ export async function runMigrations(sequelize: Sequelize): Promise<void> {
   await addMemberTrackingColumns(queryInterface);
   await addPharmacyCodeColumn(queryInterface);
   await addMemberSoftDeleteColumns(queryInterface);
+  await addPaymentFoundationTables(queryInterface);
+  await addProviderColumnsToTransactions(queryInterface);
+  await addBankCodeProviderColumn(queryInterface);
+  await addDataMigrationsTable(queryInterface);
 }
 
 async function ensureProductCategoriesTable(queryInterface: any): Promise<void> {
@@ -30,7 +37,7 @@ async function ensureProductCategoriesTable(queryInterface: any): Promise<void> 
     try {
       await queryInterface.describeTable(tableName);
     } catch (error: any) {
-      if (!/does not exist|relation .* does not exist/i.test(error?.message || "")) throw error;
+      if (!isMissingTable(error)) throw error;
       tableExists = false;
     }
 
@@ -99,7 +106,7 @@ async function ensureProductCategoriesTable(queryInterface: any): Promise<void> 
       `CREATE INDEX IF NOT EXISTS product_categories_active_idx ON ${tableName} (is_active)`
     );
   } catch (error: any) {
-    if (error.message?.includes("does not exist")) return;
+    if (isMissingTable(error)) return;
     console.error(`[Migration] Error creating ${tableName} table:`, error.message);
     throw error;
   }
@@ -125,7 +132,7 @@ async function addProductCategoryIdColumn(queryInterface: any): Promise<void> {
       `CREATE INDEX IF NOT EXISTS products_category_id_idx ON ${tableName} (category_id)`
     );
   } catch (error: any) {
-    if (error.message?.includes("does not exist")) return;
+    if (isMissingTable(error)) return;
     console.error(`[Migration] Error adding category_id to ${tableName}:`, error.message);
     throw error;
   }
@@ -149,7 +156,7 @@ async function addProductCategoryReviewColumn(queryInterface: any): Promise<void
       `CREATE INDEX IF NOT EXISTS products_category_review_required_idx ON ${tableName} (category_review_required)`
     );
   } catch (error: any) {
-    if (error.message?.includes("does not exist")) return;
+    if (isMissingTable(error)) return;
     console.error(`[Migration] Error adding category_review_required to ${tableName}:`, error.message);
     throw error;
   }
@@ -168,7 +175,7 @@ async function addDiscountCategoryIdsColumn(queryInterface: any): Promise<void> 
       console.log(`[Migration] Added applicable_category_ids column to ${tableName}`);
     }
   } catch (error: any) {
-    if (error.message?.includes("does not exist")) return;
+    if (isMissingTable(error)) return;
     console.error(`[Migration] Error adding applicable_category_ids to ${tableName}:`, error.message);
     throw error;
   }
@@ -183,7 +190,7 @@ async function removeTermsAcceptedColumn(queryInterface: any): Promise<void> {
       console.log("[Migration] Dropped terms_accepted column from merchants table");
     }
   } catch (error: any) {
-    if (error.message?.includes("does not exist")) return;
+    if (isMissingTable(error)) return;
     console.error("[Migration] Error removing terms_accepted column:", error.message);
     throw error;
   }
@@ -231,7 +238,7 @@ async function addDrugstoreOrderFlowColumns(queryInterface: any): Promise<void> 
       `CREATE INDEX IF NOT EXISTS idx_merchant_drugstore_orders_placed_at ON merchant_drugstore_orders (placed_at)`
     );
   } catch (error: any) {
-    if (error.message?.includes("does not exist")) return;
+    if (isMissingTable(error)) return;
     console.error("[Migration] Error adding merchant drugstore order flow columns:", error.message);
     throw error;
   }
@@ -263,7 +270,7 @@ async function addInStoreSalesFlag(queryInterface: any): Promise<void> {
        ON ${tableName} (is_instore_sales)`
     );
   } catch (error: any) {
-    if (error.message?.includes("does not exist")) return;
+    if (isMissingTable(error)) return;
     console.error("[Migration] Error adding is_instore_sales column:", error.message);
     throw error;
   }
@@ -277,7 +284,7 @@ async function addMerchantDeviceTokensTable(queryInterface: any): Promise<void> 
     try {
       await queryInterface.describeTable(tableName);
     } catch (error: any) {
-      if (!/does not exist|relation .* does not exist/i.test(error?.message || "")) {
+      if (!isMissingTable(error)) {
         throw error;
       }
       tableExists = false;
@@ -364,7 +371,7 @@ async function addMerchantDeviceTokensTable(queryInterface: any): Promise<void> 
        ON ${tableName} (token)`
     );
   } catch (error: any) {
-    if (error.message?.includes("does not exist")) return;
+    if (isMissingTable(error)) return;
     console.error(`[Migration] Error creating ${tableName} table:`, error.message);
     throw error;
   }
@@ -390,7 +397,7 @@ async function addMerchantPushPreferenceDefaults(queryInterface: any): Promise<v
          OR NOT (notification_preferences ? 'offlineSaleRecorded')
     `);
   } catch (error: any) {
-    if (error.message?.includes("does not exist")) return;
+    if (isMissingTable(error)) return;
     console.error("[Migration] Error adding merchant push preference defaults:", error.message);
     throw error;
   }
@@ -415,7 +422,7 @@ async function shiftOnboardingSteps(sequelize: Sequelize): Promise<void> {
       console.log(`[Migration] Shifted onboarding_step for ${results.length} merchant(s)`);
     }
   } catch (error: any) {
-    if (/does not exist|relation .* does not exist/i.test(error?.message || "")) return;
+    if (isMissingTable(error)) return;
     console.error("[Migration] Error shifting onboarding steps:", error.message);
     throw error;
   }
@@ -486,7 +493,6 @@ async function addPharmacyReviewsTable(queryInterface: any): Promise<void> {
   }
 }
 
-const isMissingTable = (error: any) => /does not exist|No description found/i.test(error?.message || "");
 
 async function tableExists(queryInterface: any, tableName: string): Promise<boolean> {
   try {
@@ -685,6 +691,155 @@ async function addMemberSoftDeleteColumns(queryInterface: any): Promise<void> {
   } catch (error: any) {
     if (isMissingTable(error)) return;
     console.error("[Migration] Error preparing merchant_members for soft delete:", error.message);
+    throw error;
+  }
+}
+
+// Payment foundations: webhook event log, idempotency keys, unmatched payments.
+async function addPaymentFoundationTables(queryInterface: any): Promise<void> {
+  try {
+    if (!(await tableExists(queryInterface, "merchants"))) return;
+
+    if (!(await tableExists(queryInterface, "payment_webhook_events"))) {
+      await queryInterface.createTable("payment_webhook_events", {
+        id: idColumn,
+        provider: { type: DataTypes.STRING(20), allowNull: false },
+        event_type: { type: DataTypes.STRING(60), allowNull: false },
+        dedupe_key: { type: DataTypes.STRING(255), allowNull: false },
+        reference: { type: DataTypes.STRING(100), allowNull: true },
+        payload: { type: DataTypes.JSONB, allowNull: false },
+        signature_valid: { type: DataTypes.BOOLEAN, allowNull: false },
+        status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: "received" },
+        attempts: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+        error: { type: DataTypes.TEXT, allowNull: true },
+        processed_at: { type: DataTypes.DATE, allowNull: true },
+        ...timestamps,
+      });
+      console.log("[Migration] Created payment_webhook_events table");
+    }
+
+    if (!(await tableExists(queryInterface, "idempotency_keys"))) {
+      await queryInterface.createTable("idempotency_keys", {
+        id: idColumn,
+        scope: { type: DataTypes.STRING(120), allowNull: false },
+        key: { type: DataTypes.STRING(255), allowNull: false },
+        request_hash: { type: DataTypes.STRING(64), allowNull: false },
+        status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: "in_progress" },
+        response_status: { type: DataTypes.INTEGER, allowNull: true },
+        response_body: { type: DataTypes.JSONB, allowNull: true },
+        expires_at: { type: DataTypes.DATE, allowNull: false },
+        ...timestamps,
+      });
+      console.log("[Migration] Created idempotency_keys table");
+    }
+
+    if (!(await tableExists(queryInterface, "unmatched_payments"))) {
+      await queryInterface.createTable("unmatched_payments", {
+        id: idColumn,
+        provider: { type: DataTypes.STRING(20), allowNull: false },
+        reference: { type: DataTypes.STRING(100), allowNull: true },
+        amount_kobo: { type: DataTypes.INTEGER, allowNull: true },
+        reason: { type: DataTypes.STRING(60), allowNull: false },
+        payload: { type: DataTypes.JSONB, allowNull: true },
+        resolved_at: { type: DataTypes.DATE, allowNull: true },
+        resolution: { type: DataTypes.TEXT, allowNull: true },
+        ...timestamps,
+      });
+      console.log("[Migration] Created unmatched_payments table");
+    }
+
+    const sql = queryInterface.sequelize;
+    await sql.query(`CREATE UNIQUE INDEX IF NOT EXISTS payment_webhook_events_dedupe ON payment_webhook_events (provider, dedupe_key)`);
+    await sql.query(`CREATE INDEX IF NOT EXISTS payment_webhook_events_reference ON payment_webhook_events (reference)`);
+    await sql.query(`CREATE INDEX IF NOT EXISTS payment_webhook_events_status ON payment_webhook_events (status, created_at)`);
+    await sql.query(`CREATE UNIQUE INDEX IF NOT EXISTS idempotency_keys_scope_key ON idempotency_keys (scope, key)`);
+    await sql.query(`CREATE INDEX IF NOT EXISTS idempotency_keys_expiry ON idempotency_keys (expires_at)`);
+    await sql.query(`CREATE INDEX IF NOT EXISTS unmatched_payments_open ON unmatched_payments (created_at) WHERE resolved_at IS NULL`);
+  } catch (error: any) {
+    console.error("[Migration] Error creating payment foundation tables:", error.message);
+    throw error;
+  }
+}
+
+// transactions gets a provider and a provider-neutral reference; existing rows are Paystack rows.
+async function addProviderColumnsToTransactions(queryInterface: any): Promise<void> {
+  try {
+    const description = await queryInterface.describeTable("transactions");
+    if (!description.payment_provider) {
+      await queryInterface.addColumn("transactions", "payment_provider", {
+        type: DataTypes.STRING(20),
+        allowNull: false,
+        defaultValue: "paystack",
+      });
+      console.log("[Migration] Added payment_provider column to transactions");
+    }
+    if (!description.provider_reference) {
+      await queryInterface.addColumn("transactions", "provider_reference", { type: DataTypes.STRING, allowNull: true });
+      console.log("[Migration] Added provider_reference column to transactions");
+    }
+
+    const sql = queryInterface.sequelize;
+    await sql.query(
+      `UPDATE transactions SET provider_reference = paystack_reference WHERE provider_reference IS NULL AND paystack_reference IS NOT NULL`
+    );
+
+    // One reference per provider. If old data somehow contains duplicates, fall back to a plain index
+    // (and say so) rather than crash the app at startup.
+    const [duplicates] = await sql.query(
+      `SELECT payment_provider, provider_reference FROM transactions WHERE provider_reference IS NOT NULL
+       GROUP BY payment_provider, provider_reference HAVING COUNT(*) > 1 LIMIT 1`
+    );
+    if (Array.isArray(duplicates) && duplicates.length > 0) {
+      console.warn("[Migration] Duplicate provider references exist in transactions; created a non-unique index instead");
+      await sql.query(`CREATE INDEX IF NOT EXISTS transactions_provider_reference_lookup ON transactions (payment_provider, provider_reference)`);
+    } else {
+      await sql.query(
+        `CREATE UNIQUE INDEX IF NOT EXISTS transactions_provider_reference_unique ON transactions (payment_provider, provider_reference) WHERE provider_reference IS NOT NULL`
+      );
+    }
+  } catch (error: any) {
+    if (isMissingTable(error)) return;
+    console.error("[Migration] Error adding provider columns to transactions:", error.message);
+    throw error;
+  }
+}
+
+// A saved bank code only means something to the provider that issued it. Existing rows are Paystack codes.
+async function addBankCodeProviderColumn(queryInterface: any): Promise<void> {
+  try {
+    const description = await queryInterface.describeTable("payment_details");
+    if (!description.bank_code_provider) {
+      await queryInterface.addColumn("payment_details", "bank_code_provider", {
+        type: DataTypes.STRING(20),
+        allowNull: false,
+        defaultValue: "paystack",
+      });
+      console.log("[Migration] Added bank_code_provider column to payment_details");
+    }
+    // The code a merchant had before conversion to Paga, kept so the change can be undone
+    if (!description.previous_bank_code) {
+      await queryInterface.addColumn("payment_details", "previous_bank_code", { type: DataTypes.STRING, allowNull: true });
+      console.log("[Migration] Added previous_bank_code column to payment_details");
+    }
+  } catch (error: any) {
+    if (isMissingTable(error)) return;
+    console.error("[Migration] Error adding bank_code_provider:", error.message);
+    throw error;
+  }
+}
+
+// Records one-time data conversions that have already completed, so they never run twice.
+async function addDataMigrationsTable(queryInterface: any): Promise<void> {
+  try {
+    await queryInterface.sequelize.query(
+      `CREATE TABLE IF NOT EXISTS data_migrations (
+         name TEXT PRIMARY KEY,
+         ran_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+         result JSONB
+       )`
+    );
+  } catch (error: any) {
+    console.error("[Migration] Error creating data_migrations table:", error.message);
     throw error;
   }
 }

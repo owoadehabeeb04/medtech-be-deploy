@@ -50,6 +50,11 @@ export class EmailService {
     }
   }
 
+  static async sendOpsAlertEmail(email: string, payload: { title: string; details: string }) {
+    const data = { ...payload, supportEmail, currentYear: new Date().getFullYear().toString() };
+    await send_mail.send(email, `[QuickMedic alert] ${payload.title}`, "ops-alert", data);
+  }
+
   static async sendStaffInvitationEmail(email: string, payload: any) {
     try {
       const template = "staff-invitation";

@@ -57,7 +57,7 @@ export const updatePayment = async (
  * /api/v1/merchant/settings/payment:
  *   patch:
  *     summary: "Update payment"
- *     description: "Update payment for the merchant API."
+ *     description: "Saves the payout bank account after checking it with Paga: `bankCode` must be the `code` from GET /onboarding/banks (the bank's Paga UUID) and `accountName` must match the name the bank holds. Owner only. Same errors as POST /onboarding/verify-bank: 400 (not found, unknown bank, name mismatch), 429 (too many attempts), 503 (temporarily unavailable)."
  *     operationId: "merchant_patch_api_v1_merchant_settings_payment"
  *     tags: ["Merchant Settings"]
  *     security: [{ bearerAuth: [] }]
@@ -75,7 +75,11 @@ export const updatePayment = async (
  *             schema:
  *               $ref: "#/components/schemas/UpdatePaymentResponse"
  *       400:
- *         description: "Invalid request or validation failed"
+ *         description: "Invalid request, account not found, unknown bank, or account name mismatch"
+ *       429:
+ *         description: "Too many verification attempts for this merchant"
+ *       503:
+ *         description: "Bank verification is temporarily unavailable"
  *       401:
  *         description: "Authentication required"
  *       409:

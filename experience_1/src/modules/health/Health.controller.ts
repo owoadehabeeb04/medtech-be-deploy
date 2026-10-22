@@ -25,7 +25,7 @@ import { INTERNAL_SERVER_ERROR, OK } from "http-status";
 export const healthCheck = async (req: Request, res: Response, next: NextFunction) => {
 	const { manageApplicationErrors, manageAsyncOps, errorCode } = req.context;
 
-	const [error, data] = await manageAsyncOps(HealthService.checkAll());
+	const [error, data] = await manageAsyncOps(HealthService.checkAll(req.context.sequelize));
 
 	if (error) {
 		console.log(error);

@@ -4,7 +4,7 @@ import { GeocodingService, GeocodingError } from "../../service/Geocoding/Geocod
 import { StoreDetails } from "../store_details/StoreDetails.model";
 import { PaymentDetails } from "../payment_details/PaymentDetails.model";
 import { MerchantSettings } from "./MerchantSettings.model";
-import { PaystackService } from "../../service/Paystack/Paystack.service";
+import { BankVerificationService, BankVerificationError } from "../../service/Payments/BankVerification.service";
 import {
   UpdateProfileDTO,
   UpdatePaymentDTO,
@@ -179,60 +179,53 @@ export class MerchantSettingsService {
       };
     }
 
-    // Verify account with Paystack
-    const verification = await PaystackService.verifyBankAccount(
-      data.accountNumber,
-      data.bankCode
-    );
-
-    if (!verification.verified) {
-      return {
-        status: false,
-        code: 400,
-        message: "Bank account verification failed",
-      };
+    // Check the account with the payment provider (Paga) and compare the holder's name
+    let verified;
+    try {
+      verified = await BankVerificationService.verifyAccount({
+        merchantId,
+        bankCode: data.bankCode,
+        accountNumber: data.accountNumber,
+        accountName: data.accountName,
+      });
+    } catch (error) {
+      if (error instanceof BankVerificationError) {
+        if (error.reason === "name_mismatch") {
+          return {
+            status: false,
+            code: 400,
+            message: "Account name verification failed",
+            data: {
+              providedName: data.accountName,
+              actualName: error.actualName,
+              message: "The account name provided does not match the bank records",
+            },
+          };
+        }
+        return { status: false, code: error.statusCode, message: error.message };
+      }
+      throw error;
     }
-
-    // Compare names (fuzzy match)
-    const nameMatch = PaystackService.compareNames(
-      data.accountName,
-      verification.accountName
-    );
-
-    if (!nameMatch) {
-      return {
-        status: false,
-        code: 400,
-        message: "Account name verification failed",
-        data: {
-          providedName: data.accountName,
-          actualName: verification.accountName,
-          message: "The account name provided does not match the bank records",
-        },
-      };
-    }
-
-    // Get bank name from Paystack
-    const banks = await PaystackService.getBankList();
-    const bank = banks.find((b: any) => b.code === data.bankCode);
 
     // Update or create payment details
     if (merchant.paymentDetails) {
       await merchant.paymentDetails.update({
-        bankName: bank?.name || "Unknown Bank",
+        bankName: verified.bankName,
         bankCode: data.bankCode,
+        bankCodeProvider: verified.provider,
         bankAccountNumber: data.accountNumber,
-        bankAccountName: verification.accountName,
+        bankAccountName: verified.accountName,
         bankVerified: true,
         verifiedAt: new Date(),
       });
     } else {
       await PaymentDetails.create({
         merchantId: merchant.id,
-        bankName: bank?.name || "Unknown Bank",
+        bankName: verified.bankName,
         bankCode: data.bankCode,
+        bankCodeProvider: verified.provider,
         bankAccountNumber: data.accountNumber,
-        bankAccountName: verification.accountName,
+        bankAccountName: verified.accountName,
         bankVerified: true,
         verifiedAt: new Date(),
       });

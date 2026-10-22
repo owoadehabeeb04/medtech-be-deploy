@@ -3,6 +3,7 @@ import { DrugstoreService } from "./Drugstore.service";
 
 let timer: NodeJS.Timeout | null = null;
 let running = false;
+let pendingCycle: Promise<void> | null = null;
 
 const runCycle = async () => {
 	if (running) return;
@@ -24,15 +25,15 @@ export const startDrugstoreSyncWorker = () => {
 
 	const interval = applicationConfig.merchantIntegration?.syncWorker?.pollIntervalMs || 15000;
 	timer = setInterval(() => {
-		void runCycle();
+		if (!running) pendingCycle = runCycle();
 	}, interval);
 
-	void runCycle();
+	pendingCycle = runCycle();
 	console.log(`[DrugstoreSyncWorker] started with interval ${interval}ms`);
 };
 
-export const stopDrugstoreSyncWorker = () => {
-	if (!timer) return;
-	clearInterval(timer);
+export const stopDrugstoreSyncWorker = async () => {
+	if (timer) clearInterval(timer);
 	timer = null;
+	await pendingCycle;
 };

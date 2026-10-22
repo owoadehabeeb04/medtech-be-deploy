@@ -3,7 +3,7 @@ import { OK, SERVICE_UNAVAILABLE } from "http-status";
 import { HealthService } from "./Health.service";
 
 export const healthCheck = async (req: Request, res: Response, next: NextFunction) => {
-  const result = await HealthService.checkAll();
+  const result = await HealthService.checkAll(req.context.sequelize);
 
   res.status(result.code);
   res.response = {

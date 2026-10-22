@@ -70,7 +70,7 @@ export const verifyBankAccount = async (req: Request, res: Response, next: NextF
  * /api/v1/merchant/onboarding/verify-bank:
  *   post:
  *     summary: "Verify bank account"
- *     description: "Verifies the account with Paystack. Onboarding only completes once the store address is verified too (POST /onboarding/store-address); until then the response has onboardingCompleted: false."
+ *     description: "Checks the account with Paga and compares the account holder's name with `accountName` (case, spacing and punctuation are ignored; a close match is accepted). `bankCode` must be exactly the `code` returned by GET /onboarding/banks (with Paga it is the bank's UUID). 400: the account was not found, the bank is unknown, or the name does not match (the response then shows the name the bank holds). 429: too many attempts, wait as the message says. 503: bank verification is temporarily unavailable; retrying is safe. Onboarding only completes once the store address is verified too (POST /onboarding/store-address); until then the response has onboardingCompleted: false."
  *     operationId: "merchant_post_api_v1_merchant_onboarding_verify_bank"
  *     tags: ["Onboarding"]
  *     security: [{ bearerAuth: [] }]
@@ -88,7 +88,13 @@ export const verifyBankAccount = async (req: Request, res: Response, next: NextF
  *             schema:
  *               $ref: "#/components/schemas/VerifyBankResponse"
  *       400:
- *         description: "Invalid request or validation failed"
+ *         description: "Invalid request, account not found, unknown bank, or account name mismatch"
+ *       429:
+ *         description: "Too many verification attempts for this merchant"
+ *       502:
+ *         description: "The payment provider returned an unexpected answer"
+ *       503:
+ *         description: "Bank verification is temporarily unavailable"
  *       401:
  *         description: "Authentication required"
  *       409:

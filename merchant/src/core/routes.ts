@@ -20,6 +20,8 @@ import reviewRouter from "../modules/pharmacy_reviews/PharmacyReview.route";
 import teamRouter from "../modules/team/Team.route";
 import meRouter from "../modules/team/Me.route";
 import walletRouter from "../modules/wallet/Wallet.route";
+import PagaWebhookController from "../modules/payments/PagaWebhook.controller";
+import PagaPayoutWebhookController from "../modules/payments/PagaPayoutWebhook.controller";
 import { authMiddleware } from "../middlewares/Auth.Middleware";
 import { ownerOnly } from "../middlewares/permission.middleware";
 import drugstoreInternalRouter from "../modules/drugstore_internal/DrugstoreInternal.route";
@@ -72,6 +74,9 @@ export default function (app: Application) {
 	apiRouter.use("/categories", authMiddleware, categoryRouter);
 	apiRouter.use("/support", authMiddleware, supportRouter);
 	apiRouter.use("/subscriptions", subscriptionRouter);
+	// Public: Paga calls this after a Checkout payment (authenticated by its hash, not a login)
+	apiRouter.post("/payments/paga/webhook", PagaWebhookController);
+	apiRouter.post("/payments/paga/payout-webhook", PagaPayoutWebhookController);
 	apiRouter.use("/wallet", authMiddleware, walletRouter);
 	apiRouter.use("/reviews", authMiddleware, reviewRouter);
 	apiRouter.use("/team", authMiddleware, teamRouter);
