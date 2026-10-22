@@ -1,0 +1,17 @@
+.git
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+.aws
+.codex
+.agents
+e2e-local
+**/coverage
+**/logs
+**/*.log
+**/asset
+**/.DS_Store

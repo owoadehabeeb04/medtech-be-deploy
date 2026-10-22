@@ -31,6 +31,9 @@ export interface CompleteSignupDTO {
 export interface LoginDTO {
   email: string;
   password: string;
+  // Which pharmacy to sign in to. Team members need it when they work at several pharmacies;
+  // an owner can use it to sign in to a pharmacy they were invited to.
+  pharmacyCode?: string;
 }
 
 export interface ForgotPasswordDTO {

@@ -22,7 +22,8 @@ export const publicRateLimiter = rateLimit({
 	},
 	standardHeaders: true,
 	legacyHeaders: false,
-	skip: (request) => isInternalApiRequest(request),
+	skip: (request) => isInternalApiRequest(request) ||
+		(process.env.COMBINED_DEPLOYMENT === "true" && request.path === "/api/v1/merchant/health"),
 });
 
 /**

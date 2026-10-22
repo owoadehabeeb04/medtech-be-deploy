@@ -13,7 +13,13 @@ const options: swaggerJsdoc.Options = {
     info: {
       title: "Merchant Backend API",
       version: "1.0.0",
-      description: "API documentation for Merchant Backend Service",
+      description:
+        "API documentation for Merchant Backend Service.\n\n" +
+        "**Team access.** A pharmacy owner can invite staff and give them roles. Each pharmacy creates its own roles and picks any permissions from a fixed catalog (see `GET /team/permissions`). " +
+        "Owners have every permission. Team members get what their role grants; a route they aren't allowed to use returns **403**, and a removed or suspended member gets **401** on their next request. " +
+        "Some areas are owner-only (owner profile and password, bank details, subscription and billing, onboarding). " +
+        "Staff sign in with their email, password and the **pharmacy code** the owner shares (`POST /auth/login` with `pharmacyCode`). " +
+        "`GET /me` returns the signed-in person's role and effective permissions so the app can hide what they can't use.",
       contact: {
         name: "QuickMedic Support",
         email: applicationConfig.supportEmail,
@@ -134,6 +140,12 @@ const options: swaggerJsdoc.Options = {
             password: {
               type: "string",
               example: "password123",
+            },
+            pharmacyCode: {
+              type: "string",
+              example: "ALPHA-PHARMA",
+              description:
+                "Which pharmacy to sign in to (any letter case). Team members use it to pick their pharmacy; without it, someone who works at several pharmacies gets requiresPharmacySelection. A pharmacy owner can use another pharmacy's code to sign in there as a team member. Optional for owners and for staff with a single pharmacy.",
             },
           },
         },
@@ -333,19 +345,52 @@ const options: swaggerJsdoc.Options = {
         FundWalletRequest: {
           type: "object",
           required: ["amount"],
-          properties: { amount: { type: "integer", minimum: 100, description: "Amount in Naira.", example: 5000 } },
+          properties: {
+            amount: { type: "integer", minimum: 100, description: "Amount in Naira.", example: 5000 },
+            returnUrl: { type: "string", format: "uri", description: "Optional. Where to send the merchant after paying; its origin must be on the allowed list. Defaults to {MERCHANT_APP_URL}/callback. The reference and flow=wallet are added to it." },
+          },
         },
         ConfirmFundingRequest: {
           type: "object",
           required: ["reference"],
           properties: { reference: { type: "string", example: "wf_123456789" } },
         },
+        QuoteWithdrawalRequest: {
+          type: "object",
+          required: ["amount"],
+          properties: { amount: { type: "integer", minimum: 1, description: "Amount in Naira the bank should receive.", example: 20000 } },
+        },
+        QuoteWithdrawalResponse: {
+          allOf: [
+            { $ref: "#/components/schemas/SuccessResponse" },
+            {
+              type: "object",
+              properties: {
+                data: {
+                  type: "object",
+                  properties: {
+                    amount: { type: "number", description: "What the bank receives, in kobo." },
+                    fee: { type: "number", description: "Paga's fee including VAT, in kobo. Paid by the merchant on top." },
+                    total: { type: "number", description: "Taken from the wallet (amount + fee), in kobo." },
+                    amountInNaira: { type: "number", example: 20000 },
+                    feeInNaira: { type: "number", example: 50 },
+                    totalInNaira: { type: "number", example: 20050, description: "Send this as acceptedTotal when withdrawing." },
+                    bankName: { type: "string" },
+                    accountLast4: { type: "string" },
+                    accountName: { type: "string" },
+                  },
+                },
+              },
+            },
+          ],
+        },
         WithdrawWalletRequest: {
           type: "object",
           required: ["amount"],
           properties: {
-            amount: { type: "integer", minimum: 100, description: "Amount in Naira.", example: 5000 },
+            amount: { type: "integer", minimum: 1, description: "Amount in Naira the bank receives. Minimum ₦1,000 (WITHDRAWAL_MIN_NAIRA). The fee is charged on top.", example: 20000 },
             reason: { type: "string", maxLength: 150, example: "Cash withdrawal" },
+            acceptedTotal: { type: "number", description: "Optional. The totalInNaira shown by POST /wallet/withdraw/quote. If the fee has changed since, the request is refused with 409 and the merchant must confirm the new total.", example: 20050 },
           },
         },
         ReviewDrugstorePrescriptionRequest: {
@@ -806,6 +851,27 @@ const options: swaggerJsdoc.Options = {
                   properties: {
                     token: { type: "string", example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
                     refreshToken: { type: "string", example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
+                    actor: { type: "string", enum: ["owner", "member"], description: "owner = signed in to their own pharmacy; member = acting as a team member." },
+                    permissions: { type: "array", items: { type: "string" }, description: "Everything this person can do here (owners get all)." },
+                    role: { type: "object", nullable: true, description: "Team members only.", properties: { id: { type: "string", format: "uuid" }, name: { type: "string" } } },
+                    pharmacy: { type: "object", description: "Team members only: the pharmacy they are signed in to.", properties: { id: { type: "string", format: "uuid" }, businessName: { type: "string" }, pharmacyCode: { type: "string", nullable: true } } },
+                    pharmacies: {
+                      type: "array",
+                      description: "Every pharmacy this login can work at (own pharmacy plus any that invited them). Use POST /me/switch-pharmacy to move between them.",
+                      items: {
+                        type: "object",
+                        properties: {
+                          pharmacyId: { type: "string", format: "uuid" },
+                          pharmacyCode: { type: "string", nullable: true },
+                          businessName: { type: "string" },
+                          access: { type: "string", enum: ["owner", "member"] },
+                          memberId: { type: "string", format: "uuid", nullable: true },
+                          roleName: { type: "string", nullable: true },
+                        },
+                      },
+                    },
+                    requiresPharmacySelection: { type: "boolean", description: "Team members at several pharmacies who gave no pharmacyCode: no token yet. Choose one with POST /auth/select-pharmacy using selectionToken and the chosen pharmacy's memberId." },
+                    selectionToken: { type: "string", description: "Valid 10 minutes. Only present with requiresPharmacySelection." },
                     merchant: { $ref: "#/components/schemas/Merchant" },
                     onboarding: {
                       type: "object",
@@ -1642,16 +1708,17 @@ const options: swaggerJsdoc.Options = {
             { $ref: "#/components/schemas/SuccessResponse" },
             {
               type: "object",
-              description: "Redirect the merchant to authorizationUrl to complete payment. A successful Paystack webhook credits the wallet automatically; POST /wallet/confirm-funding remains available as a redirect/callback fallback.",
+              description: "Redirect the merchant to authorizationUrl to complete payment. The wallet is credited automatically when the payment provider confirms it; POST /wallet/confirm-funding is what the return page calls to show the result immediately.",
               properties: {
                 data: {
                   type: "object",
                   properties: {
                     authorizationUrl: { type: "string", format: "uri" },
-                    accessCode: { type: "string" },
-                    reference: { type: "string" },
+                    accessCode: { type: "string", nullable: true, description: "Paystack only; null for Paga." },
+                    reference: { type: "string", description: "Keep this: the return page sends it to /wallet/confirm-funding. Paga references start with MER-WF-." },
+                    provider: { type: "string", enum: ["paga", "paystack"] },
                     amount: { type: "number", description: "In kobo." },
-                    amountInNaira: { type: "number" },
+                    amountInNaira: { type: "number", description: "Paystack path only." },
                   },
                 },
               },
@@ -1667,13 +1734,9 @@ const options: swaggerJsdoc.Options = {
                 data: {
                   type: "object",
                   properties: {
-                    wallet: {
-                      type: "object",
-                      properties: {
-                        balance: { type: "number", description: "In kobo." },
-                        balanceInNaira: { type: "number" },
-                      },
-                    },
+                    status: { type: "string", enum: ["pending"], description: "Only present on a 202: not paid (yet)." },
+                    balance: { type: "number", description: "In kobo." },
+                    balanceInNaira: { type: "number" },
                   },
                 },
               },
@@ -1685,16 +1748,21 @@ const options: swaggerJsdoc.Options = {
             { $ref: "#/components/schemas/SuccessResponse" },
             {
               type: "object",
-              description: "status may be 'pending' (queued at Paystack) or reflect the final transfer outcome.",
+              description: "status is 'pending' while the bank transfer is processing (the wallet is already debited; it is refunded automatically if the transfer fails) or 'success'. amount is what the bank receives; fee is added on top; total is what left the wallet.",
               properties: {
                 data: {
                   type: "object",
                   properties: {
                     reference: { type: "string" },
-                    transferCode: { type: "string" },
+                    transferCode: { type: "string", nullable: true, description: "Paystack only." },
+                    provider: { type: "string", enum: ["paga", "paystack"] },
                     status: { type: "string" },
-                    amount: { type: "number", description: "In kobo." },
+                    amount: { type: "number", description: "What the bank receives, in kobo." },
                     amountInNaira: { type: "number" },
+                    fee: { type: "number", description: "Paga's fee including VAT, in kobo (Paga only)." },
+                    total: { type: "number", description: "Taken from the wallet, in kobo (Paga only)." },
+                    feeInNaira: { type: "number" },
+                    totalInNaira: { type: "number" },
                     destination: {
                       type: "object",
                       properties: {
@@ -2761,6 +2829,10 @@ const options: swaggerJsdoc.Options = {
       {
         name: "Onboarding",
         description: "Post-login onboarding process",
+      },
+      {
+        name: "Team",
+        description: "Roles, permissions, team members, invitations, the pharmacy code, activity log and the signed-in person's access (/me)",
       },
       {
         name: "Reviews",

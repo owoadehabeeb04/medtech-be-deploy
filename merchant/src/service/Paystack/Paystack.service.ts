@@ -1,6 +1,7 @@
 import axios from "axios";
 import crypto from "crypto";
 import { applicationConfig } from "../../config";
+import { compareNames } from "../Payments/nameMatch";
 
 const { paystack } = applicationConfig;
 
@@ -165,26 +166,7 @@ export class PaystackService {
    * Returns true if names are similar (>= 80% match)
    */
   static compareNames(providedName: string, actualName: string): boolean {
-    // Normalize names: remove extra spaces, convert to uppercase
-    const normalize = (name: string) =>
-      name
-        .trim()
-        .toUpperCase()
-        .replace(/\s+/g, " ")
-        .replace(/[^A-Z\s]/g, "");
-
-    const provided = normalize(providedName);
-    const actual = normalize(actualName);
-
-    // Exact match
-    if (provided === actual) return true;
-
-    // Check if provided name is contained in actual name
-    if (actual.includes(provided)) return true;
-
-    // Calculate similarity score using Levenshtein distance
-    const similarity = this.calculateSimilarity(provided, actual);
-    return similarity >= 0.8; 
+    return compareNames(providedName, actualName);
   }
 
   /**

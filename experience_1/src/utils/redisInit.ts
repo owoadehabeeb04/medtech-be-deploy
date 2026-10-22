@@ -3,7 +3,8 @@ import { applicationConfig } from "../config";
 export type RedisClientType = ReturnType<typeof createClient>;
 
 let redisClient: RedisClientType;
-let isReady: boolean /* , setAsync: any, getAsync: any */;
+export let redisReady = false;
+let connecting: Promise<RedisClientType> | null = null;
 const redisExpTime = applicationConfig.redisExpirationTime;
 
 export interface RdbAuthSession {
@@ -43,9 +44,18 @@ export const rdbDel__authSession = async (sessionId: string) => {
 };
 
 
-export const redisReady = isReady;
 
-export default async function redisInit(): Promise<RedisClientType> {
+
+export default function redisInit(): Promise<RedisClientType> {
+	if (connecting) return connecting;
+	connecting = connectRedis().catch((error) => {
+		connecting = null;
+		throw error;
+	});
+	return connecting;
+}
+
+async function connectRedis(): Promise<RedisClientType> {
 	redisClient = applicationConfig.redis.url
 		? createClient({ url: applicationConfig.redis.url })
 		: createClient({
@@ -65,15 +75,22 @@ export default async function redisInit(): Promise<RedisClientType> {
 	});
 
 	redisClient.on("ready", () => {
-		isReady = true;
+		redisReady = true;
 		console.info("Redis is ready!");
 	});
 
-	setInterval(function () {
-		console.log("Keeping redis alive...", new Date());
-		redisClient.set("ping", "pong");
-	}, 60000 * 5);
+	redisClient.on("end", () => { redisReady = false; });
+	redisClient.on("reconnecting", () => { redisReady = false; });
 
 	await redisClient.connect();
 	return redisClient;
+}
+
+export async function closeRedis(): Promise<void> {
+	if (redisClient?.isOpen) {
+		if (redisClient.isReady) await redisClient.quit();
+		else await redisClient.disconnect();
+	}
+	redisReady = false;
+	connecting = null;
 }

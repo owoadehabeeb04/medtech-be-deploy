@@ -40,6 +40,11 @@ export class PaymentDetails extends Model<PaymentDetails> {
   declare bankAccountName: string;
 
   @AllowNull(false)
+  // Which provider issued bankCode: Paystack bank codes and Paga bank UUIDs are not interchangeable.
+  @Default("paystack")
+  @Column(DataType.STRING(20))
+  declare bankCodeProvider: string;
+
   @Default(false)
   @Column(DataType.BOOLEAN)
   declare bankVerified: boolean;

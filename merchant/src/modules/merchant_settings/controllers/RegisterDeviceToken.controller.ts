@@ -30,7 +30,7 @@ export const registerDeviceToken = async (
       return next();
     }
 
-    const data = await MerchantDeviceTokenService.register(merchantId, value);
+    const data = await MerchantDeviceTokenService.register(merchantId, value, req.context.user?.memberId);
 
     res.status(200);
     res.response = {

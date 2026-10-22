@@ -3,6 +3,7 @@ import rateLimit from "express-rate-limit";
 import { signup } from "./controllers/Signup.controller";
 import { resendOtp } from "./controllers/ResendOtp.controller";
 import { checkPhone } from "./controllers/CheckPhone.controller";
+import { acceptInvitation, previewInvitation, selectPharmacy } from "../team/Team.controller";
 import { verifyOtp } from "./controllers/VerifyOtp.controller";
 import { completeSignup } from "./controllers/CompleteSignup.controller";
 import { login } from "./controllers/Login.controller";
@@ -58,6 +59,10 @@ router.post("/complete-signup", completeSignup);
 
 // Login
 router.post("/login", login);
+// Team members: choose a pharmacy after login, and accept an invitation
+router.post("/select-pharmacy", selectPharmacy);
+router.get("/invitations/:token", checkPhoneRateLimiter, previewInvitation);
+router.post("/invitations/accept", checkPhoneRateLimiter, acceptInvitation);
 
 // Password reset flow
 router.post("/forgot-password", otpRateLimiter, forgotPassword);

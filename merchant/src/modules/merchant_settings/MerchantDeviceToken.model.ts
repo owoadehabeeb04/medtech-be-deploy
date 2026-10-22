@@ -72,6 +72,11 @@ export class MerchantDeviceToken extends Model<MerchantDeviceToken> {
   @Column(DataType.DATE)
   declare lastSeenAt: Date;
 
+  // set when the device belongs to a team member rather than the owner
+  @AllowNull(true)
+  @Column(DataType.UUID)
+  declare memberId: string | null;
+
   @AllowNull(true)
   @Column(DataType.DATE)
   declare lastErrorAt: Date | null;

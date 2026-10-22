@@ -61,6 +61,17 @@ export class Transaction extends Model<Transaction> {
   @Column(DataType.STRING)
   declare paystackReference: string;
 
+  // Which payment provider handled this transaction. providerReference is the reference at that provider
+  // (mirrors paystackReference for Paystack rows). Unique per provider, via the migration.
+  @AllowNull(false)
+  @Default("paystack")
+  @Column(DataType.STRING(20))
+  declare paymentProvider: string;
+
+  @AllowNull(true)
+  @Column(DataType.STRING)
+  declare providerReference: string | null;
+
   @AllowNull(true)
   @Column(DataType.STRING)
   declare description: string;

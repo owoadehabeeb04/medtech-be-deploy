@@ -21,7 +21,8 @@ const serializeToken = (deviceToken: MerchantDeviceToken) => ({
 export class MerchantDeviceTokenService {
   static async register(
     merchantId: string,
-    input: RegisterMerchantDeviceTokenInput
+    input: RegisterMerchantDeviceTokenInput,
+    memberId?: string | null
   ) {
     const now = new Date();
     const values = {
@@ -31,6 +32,8 @@ export class MerchantDeviceTokenService {
       platform: "web" as const,
       browser: input.browser?.trim() || null,
       userAgent: input.userAgent?.trim() || null,
+      // Team members' devices are tagged so notifications can follow their permissions
+      memberId: memberId || null,
       isActive: true,
       lastSeenAt: now,
       lastErrorAt: null as Date | null,
@@ -78,14 +81,15 @@ export class MerchantDeviceTokenService {
     return serializeToken(deviceToken);
   }
 
-  static async deactivate(merchantId: string, deviceId: string) {
+  static async deactivate(merchantId: string, deviceId: string, memberId?: string | null) {
     const [updatedCount] = await MerchantDeviceToken.update(
       {
         isActive: false,
         lastSeenAt: new Date(),
       },
       {
-        where: { merchantId, deviceId: deviceId.trim() },
+        // A team member can only remove their own devices
+        where: { merchantId, deviceId: deviceId.trim(), ...(memberId ? { memberId } : {}) },
       }
     );
 

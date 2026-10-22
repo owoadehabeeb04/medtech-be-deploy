@@ -11,9 +11,12 @@
 		"nohoist": []
 	},
 	"scripts": {
-		"build": "npm run build --workspace=utils && npm run build --workspace=merchant",
+		"build": "npm run build --workspace=utils && npm run build --workspace=merchant && npm run build --workspace=experience_1",
+		"start:combined": "node scripts/start-combined.mjs",
+		"test:combined": "node --test scripts/tests/combined-deployment.test.mjs",
 		"build:utils": "npm run build --workspace=utils",
-		"build:merchant": "npm run build --workspace=merchant"
+		"build:merchant": "npm run build --workspace=merchant",
+		"build:experience_1": "npm run build --workspace=experience_1"
 	},
 	"overrides": {
 		"joi": "18.0.2"
