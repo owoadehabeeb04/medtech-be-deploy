@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import * as http from "http";
 import * as https from "https";
 import handlebars from "handlebars";
 
@@ -105,10 +106,11 @@ export default class SendEmail {
     const url = new URL(endpoint, this.baseUrl);
 
     return new Promise((resolve, reject) => {
-      const request = https.request(
+      // https in production; plain http only when pointed at a local test server
+      const transport: typeof http | typeof https = url.protocol === "http:" ? http : https;
+      const request = transport.request(
         {
           method: "POST",
-          protocol: url.protocol,
           hostname: url.hostname,
           port: url.port || (url.protocol === "https:" ? 443 : 80),
           path: `${url.pathname}${url.search}`,

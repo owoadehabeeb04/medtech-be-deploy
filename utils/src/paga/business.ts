@@ -17,9 +17,19 @@ export const classifyBusinessCode = (code: unknown): BusinessOutcome => {
   return "failed";
 };
 
+/**
+ * In the Business API request hash the amount is the plain JSON number as sent ("100", "100.5"), NOT "100.00".
+ * Confirmed against the real sandbox 2026-10-28 (validateDepositToBank answered 'Invalid request hash' for "100.00"
+ * and "100.0", and accepted "100"). Callback hashes are different: they use the two-decimal text Paga puts in the callback.
+ */
+const hashedAmount = (kobo: number): string => String(koboToNairaNumber(kobo));
+
 export interface PagaBank {
   name: string;
   uuid: string;
+  /** CBN sort code, e.g. "044" for Access Bank. Present in the real sandbox answer (the docs do not list it). */
+  sortCode: string | null;
+  directDebitEnabled: boolean | null;
 }
 
 export class PagaBusinessClient {
@@ -61,7 +71,14 @@ export class PagaBusinessClient {
   /** Bank list. Banks are identified by a Paga UUID, not a bank code. */
   async getBanks(referenceNumber: string): Promise<{ responseCode: number; banks: PagaBank[]; message: string }> {
     const body = await this.call("getBanks", { referenceNumber }, [referenceNumber]);
-    const banks: PagaBank[] = (Array.isArray(body.bank) ? body.bank : []).map((entry: any) => ({ name: entry.name, uuid: entry.uuid }));
+    // The real sandbox answers with `banks`; Paga's docs describe `bank`. Accept either.
+    const list = Array.isArray(body.banks) ? body.banks : Array.isArray(body.bank) ? body.bank : [];
+    const banks: PagaBank[] = list.map((entry: any) => ({
+      name: entry.name,
+      uuid: entry.uuid,
+      sortCode: entry.sortCode ? String(entry.sortCode) : null,
+      directDebitEnabled: typeof entry.directDebitEnabled === "boolean" ? entry.directDebitEnabled : null,
+    }));
     return { responseCode: Number(body.responseCode), banks, message: body.message };
   }
 
@@ -87,7 +104,7 @@ export class PagaBusinessClient {
         recipientEmail: input.recipientEmail,
         recipientPhoneNumber: input.recipientPhoneNumber,
       },
-      [input.referenceNumber, koboToNairaString(input.amountKobo), input.destinationBankUUID, input.destinationBankAccountNumber]
+      [input.referenceNumber, hashedAmount(input.amountKobo), input.destinationBankUUID, input.destinationBankAccountNumber]
     );
 
     return {
@@ -133,7 +150,7 @@ export class PagaBusinessClient {
         remarks: input.remarks,
         statusCallbackUrl: input.statusCallbackUrl,
       },
-      [input.referenceNumber, koboToNairaString(input.amountKobo), input.destinationBankUUID, input.destinationBankAccountNumber]
+      [input.referenceNumber, hashedAmount(input.amountKobo), input.destinationBankUUID, input.destinationBankAccountNumber]
     );
 
     return {
@@ -152,6 +169,10 @@ export class PagaBusinessClient {
   /** The business's own Paga balance, in kobo: payouts are paid from availableBalance. */
   async accountBalance(referenceNumber: string) {
     const body = await this.call("accountBalance", { referenceNumber }, [referenceNumber]);
+    // The sandbox answers an empty (zero) balance with responseCode -1 and a Java error text; that is not a balance.
+    if (Number(body.responseCode) !== 0) {
+      throw new PagaError("Paga could not return the balance: " + (body.message || "responseCode " + body.responseCode), { kind: "api", code: Number(body.responseCode), outcomeUnknown: false });
+    }
     const total = safeNairaToKobo(body.totalBalance);
     const available = safeNairaToKobo(body.availableBalance);
     if (total === null || available === null) {

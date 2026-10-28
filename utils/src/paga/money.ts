@@ -32,6 +32,8 @@ export const nairaToKobo = (value: string | number): number => {
   }
 
   text = String(value).trim();
+  // Paga writes a zero balance as ".00" (no leading digit); read that as 0.00
+  if (/^\.\d{1,2}$/.test(text)) text = "0" + text;
   if (!/^\d+(\.\d{1,2})?$/.test(text)) throw new Error("Invalid naira amount: " + text);
 
   const parts = text.split(".");

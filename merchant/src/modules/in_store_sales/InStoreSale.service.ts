@@ -3,7 +3,7 @@ import { createHash, randomUUID } from "crypto";
 import { Op, Transaction, cast, col, literal, where as sequelizeWhere } from "sequelize";
 import { applicationConfig } from "../../config";
 import { MerchantSettings } from "../merchant_settings/MerchantSettings.model";
-import { FirebaseMessagingService } from "../../service/Firebase/FirebaseMessaging.service";
+import { NotificationService, smsMoney } from "../../service/Notifications/Notification.service";
 import { Product } from "../products/Product.model";
 import { ProductStatus } from "../../constants/enums";
 import { DrugstoreOrder } from "../drugstore_orders/DrugstoreOrder.model";
@@ -911,11 +911,13 @@ export class InStoreSaleService {
 
     const serializedOrder = serializeOrder(completeOrder);
 
-    void FirebaseMessagingService.sendEvent({
+    void NotificationService.notify({
       merchantId,
       event: "offlineSaleRecorded",
       title: "Offline sale recorded",
       body: `Offline sale worth ₦${toNumber(completeOrder.totalAmount).toLocaleString()} was recorded successfully.`,
+      smsText: `QuickMedic: Offline sale worth ${smsMoney(toNumber(completeOrder.totalAmount))} was recorded.`,
+      details: [`Total: ₦${toNumber(completeOrder.totalAmount).toLocaleString()}`, `Sale: ${String(completeOrder.metadata?.displayOrderId || completeOrder.id)}`],
       data: {
         type: "offline_sale_recorded",
         orderId: completeOrder.id,
@@ -923,8 +925,6 @@ export class InStoreSaleService {
         totalAmount: completeOrder.totalAmount,
         currency: completeOrder.currency,
       },
-    }).catch((error: any) => {
-      console.error("[Push] Offline sale notification failed:", error?.message || error);
     });
 
     return serializedOrder;

@@ -347,7 +347,7 @@ const options: swaggerJsdoc.Options = {
           required: ["amount"],
           properties: {
             amount: { type: "integer", minimum: 100, description: "Amount in Naira.", example: 5000 },
-            returnUrl: { type: "string", format: "uri", description: "Optional. Where to send the merchant after paying; its origin must be on the allowed list. Defaults to {MERCHANT_APP_URL}/callback. The reference and flow=wallet are added to it." },
+            returnUrl: { type: "string", format: "uri", description: "Optional. Where to send the merchant after paying; its origin must be on the allowed list. Defaults to {MERCHANT_APP_URL}/callback. Paga adds charge_reference, status_message and status_code to it when it sends the customer back; the page must use charge_reference as the funding reference." },
           },
         },
         ConfirmFundingRequest: {
@@ -535,7 +535,7 @@ const options: swaggerJsdoc.Options = {
               description: "Global master switch for all merchant browser push notifications. It must be true before a test or event notification can be sent.",
               example: true,
             },
-            emailNotificationsEnabled: { type: "boolean", description: "Global master switch for merchant email notifications.", example: true },
+            emailNotificationsEnabled: { type: "boolean", description: "Kept for compatibility. Email alerts are controlled by the per-event email switches in notificationPreferences, not by this flag.", example: true },
             notificationPreferences: {
               type: "object",
               description: "Per-event channel preferences. Each nested object is merged, so send only the event and channels that are changing.",
@@ -544,7 +544,7 @@ const options: swaggerJsdoc.Options = {
                 walletFunded: { allOf: [{ $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }], description: "Wallet funding is settled successfully." },
                 offlineSaleRecorded: { allOf: [{ $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }], description: "A new offline/in-store sale is recorded." },
                 lowStock: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" },
-                payoutAlert: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" },
+                payoutAlert: { allOf: [{ $ref: "#/components/schemas/NotificationChannelPreferenceRequest" }], description: "A withdrawal completed, or failed and was refunded to the wallet." },
                 supportTicket: { $ref: "#/components/schemas/NotificationChannelPreferenceRequest" },
               },
             },
@@ -2575,7 +2575,7 @@ const options: swaggerJsdoc.Options = {
           required: ["provider", "event", "attempted", "sent", "failed", "invalidTokens"],
           properties: {
             provider: { type: "string", enum: ["firebase"], example: "firebase" },
-            event: { type: "string", enum: ["orderPlaced", "walletFunded", "offlineSaleRecorded", "test"], example: "test" },
+            event: { type: "string", enum: ["orderPlaced", "walletFunded", "offlineSaleRecorded", "payoutAlert", "test"], example: "test" },
             attempted: { type: "integer", minimum: 0, example: 1 },
             sent: { type: "integer", minimum: 0, example: 1 },
             failed: { type: "integer", minimum: 0, example: 0 },
