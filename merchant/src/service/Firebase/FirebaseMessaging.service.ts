@@ -21,7 +21,8 @@ import { MerchantSettings } from "../../modules/merchant_settings/MerchantSettin
 export type MerchantPushEvent =
   | "orderPlaced"
   | "walletFunded"
-  | "offlineSaleRecorded";
+  | "offlineSaleRecorded"
+  | "payoutAlert";
 
 type PushData = Record<string, string | number | boolean | null | undefined>;
 

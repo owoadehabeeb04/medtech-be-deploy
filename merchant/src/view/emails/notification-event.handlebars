@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f7fa;font-family:Arial,sans-serif;color:#1f2937;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f5f7fa;padding:32px 16px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;">
+                    <tr>
+                        <td style="padding:32px 32px 16px;">
+                            <h1 style="margin:0;font-size:22px;line-height:30px;color:#111827;">{{title}}</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:0 32px 16px;font-size:15px;line-height:24px;color:#4b5563;">{{message}}</td>
+                    </tr>
+                    {{#if details.length}}
+                    <tr>
+                        <td style="padding:0 32px 20px;">
+                            <div style="padding:16px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;line-height:22px;color:#111827;">
+                                {{#each details}}<div>{{this}}</div>{{/each}}
+                            </div>
+                        </td>
+                    </tr>
+                    {{/if}}
+                    {{#if ctaUrl}}
+                    <tr>
+                        <td style="padding:0 32px 24px;">
+                            <a href="{{ctaUrl}}" style="display:inline-block;padding:12px 20px;background:#0f766e;color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;">{{ctaLabel}}</a>
+                        </td>
+                    </tr>
+                    {{/if}}
+                    <tr>
+                        <td style="padding:20px 32px 32px;border-top:1px solid #e5e7eb;font-size:12px;line-height:20px;color:#6b7280;">
+                            You receive this because this alert is switched on in Settings, Notification Settings.<br>
+                            Support: <a href="mailto:{{supportEmail}}" style="color:#0f766e;text-decoration:none;">{{supportEmail}}</a><br>
+                            &copy; {{currentYear}} QuickMedic
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

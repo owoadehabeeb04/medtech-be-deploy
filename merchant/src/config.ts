@@ -80,6 +80,8 @@ export const applicationConfig = {
     senderEmail: process.env.BREVO_SENDER_EMAIL || "",
     senderName: process.env.BREVO_SENDER_NAME || "",
     baseUrl: process.env.BREVO_BASE_URL || "",
+    // Alphanumeric SMS sender name (11 characters at most). Must be registered with Brevo for Nigeria, or SMS fails.
+    smsSender: process.env.BREVO_SMS_SENDER || "",
   },
   
   aws: {

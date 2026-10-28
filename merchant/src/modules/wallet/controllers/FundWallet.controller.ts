@@ -45,7 +45,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
  * /api/v1/merchant/wallet/fund:
  *   post:
  *     summary: "Fund wallet"
- *     description: "Starts a wallet funding and returns a Paga Checkout link (authorizationUrl). Redirect the merchant to it. After paying, Paga sends the browser to the merchant app's /callback page (or the returnUrl given), which must call POST /wallet/confirm-funding with the reference. The wallet is also credited automatically by Paga's webhook and by a background check, so closing the page does not lose the payment. Send an optional Idempotency-Key header to make retries safe: the same key and body returns the first result, the same key with a different body returns 409."
+ *     description: "Starts a wallet funding and returns a Paga Checkout link (authorizationUrl). Redirect the merchant to it. After paying, Paga sends the browser to the merchant app's /callback page (or the returnUrl given) with the query parameters charge_reference (the same value as `reference` here), status_message and status_code; that page must call POST /wallet/confirm-funding with charge_reference and never trust the redirect values. The wallet is also credited automatically by Paga's webhook and by a background check, so closing the page does not lose the payment. Send an optional Idempotency-Key header to make retries safe: the same key and body returns the first result, the same key with a different body returns 409."
  *     operationId: "merchant_post_api_v1_merchant_wallet_fund"
  *     tags: ["Wallet"]
  *     security: [{ bearerAuth: [] }]

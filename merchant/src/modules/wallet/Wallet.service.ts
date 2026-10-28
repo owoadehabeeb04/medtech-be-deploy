@@ -10,7 +10,7 @@ import {
   PaymentMethod,
 } from "../../constants/enums";
 import { HttpException } from "@medtech/utils";
-import { FirebaseMessagingService } from "../../service/Firebase/FirebaseMessaging.service";
+import { NotificationService, smsMoney } from "../../service/Notifications/Notification.service";
 import { applicationConfig } from "../../config";
 import { WalletFundingPaga, PAGA_PROVIDER } from "./WalletFundingPaga.service";
 import { WalletWithdrawalPaga } from "./WalletWithdrawalPaga.service";
@@ -430,11 +430,13 @@ export class WalletService {
   ) {
     if (result.wasAlreadySettled) return;
 
-    void FirebaseMessagingService.sendEvent({
+    void NotificationService.notify({
       merchantId: result.wallet.merchantId,
       event: "walletFunded",
       title: "Wallet funded successfully",
       body: `₦${(result.amount / 100).toLocaleString()} has been added to your wallet.`,
+      smsText: `QuickMedic: ${smsMoney(result.amount / 100)} has been added to your wallet.`,
+      details: [`Amount: ₦${(result.amount / 100).toLocaleString()}`, `Reference: ${reference}`, `New balance: ₦${(result.wallet.balance / 100).toLocaleString()}`],
       data: {
         type: "wallet_funded",
         reference,
@@ -442,8 +444,6 @@ export class WalletService {
         balanceKobo: result.wallet.balance,
         currency: result.wallet.currency,
       },
-    }).catch((error: any) => {
-      console.error("[Push] Wallet funding notification failed:", error?.message || error);
     });
   }
 

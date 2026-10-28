@@ -40,7 +40,9 @@ const ref = () => "MB-" + crypto.randomUUID().replace(/-/g, "");
 export const loadPagaBanks = async (log: (line: string) => void): Promise<BankRef[]> => {
   const business = await getPagaBusinessClient().getBanks(ref());
   if (business.responseCode !== 0 || business.banks.length === 0) throw new Error("Paga returned no banks");
-  const banks: BankRef[] = business.banks.map((bank): BankRef => ({ name: bank.name, uuid: bank.uuid, sortCode: null }));
+  const banks: BankRef[] = business.banks.map((bank): BankRef => ({ name: bank.name, uuid: bank.uuid, sortCode: bank.sortCode }));
+  log("Business bank list: sort codes present for " + banks.filter((bank) => bank.sortCode).length + " of " + banks.length + " banks");
+  if (banks.every((bank) => bank.sortCode)) return banks;
 
   const { paga } = applicationConfig;
   if (paga.publicKey && paga.secretKey && paga.hashKey) {
@@ -50,7 +52,7 @@ export const loadPagaBanks = async (log: (line: string) => void): Promise<BankRe
       const sortByUuid = new Map<string, string | null>();
       withCodes.banks.forEach((bank: { uuid: string; sortCode: string | null }) => sortByUuid.set(bank.uuid, bank.sortCode));
       banks.forEach((bank) => {
-        bank.sortCode = sortByUuid.get(bank.uuid) || null;
+        bank.sortCode = bank.sortCode || sortByUuid.get(bank.uuid) || null;
       });
       log("Collect bank list loaded: sort codes available for " + banks.filter((bank) => bank.sortCode).length + " banks");
     } catch (error: any) {
