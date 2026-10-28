@@ -12,7 +12,7 @@ import { Merchant } from "../merchant/Merchant.model";
 import { applicationConfig } from "../../config";
 import { PharmacyReviewService } from "../pharmacy_reviews/PharmacyReview.service";
 import { StoreDetails } from "../store_details/StoreDetails.model";
-import { FirebaseMessagingService } from "../../service/Firebase/FirebaseMessaging.service";
+import { NotificationService, smsMoney } from "../../service/Notifications/Notification.service";
 
 type ListProductsInput = {
   merchantId?: string;
@@ -665,11 +665,13 @@ export class DrugstoreInternalService {
       throw error;
     }
 
-    void FirebaseMessagingService.sendEvent({
+    void NotificationService.notify({
       merchantId: payload.merchantId,
       event: "orderPlaced",
       title: "New order received",
       body: `A new order worth ₦${toNumber(createdOrder.totalAmount).toLocaleString()} is waiting for your attention.`,
+      smsText: `QuickMedic: New order worth ${smsMoney(toNumber(createdOrder.totalAmount))} is waiting for you. Open your dashboard.`,
+      details: [`Total: ₦${toNumber(createdOrder.totalAmount).toLocaleString()}`, `Fulfilment: ${createdOrder.fulfillmentMethod}`, `Reference: ${createdOrder.paymentReference || createdOrder.sourceOrderId}`],
       data: {
         type: "new_order",
         orderId: createdOrder.id,
@@ -679,8 +681,6 @@ export class DrugstoreInternalService {
         currency: createdOrder.currency,
         fulfillmentMethod: createdOrder.fulfillmentMethod,
       },
-    }).catch((error: any) => {
-      console.error("[Push] New order notification failed:", error?.message || error);
     });
 
     return {

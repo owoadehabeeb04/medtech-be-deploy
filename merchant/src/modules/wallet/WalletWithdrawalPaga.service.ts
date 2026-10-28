@@ -10,6 +10,7 @@ import { loadPagaBanks } from "../../service/Payments/BankCodeMigration";
 import { matchBank } from "../../service/Payments/bankNames";
 import { compareNames } from "../../service/Payments/nameMatch";
 import { alertOps } from "../../service/Payments/OpsAlert";
+import { NotificationService, smsMoney } from "../../service/Notifications/Notification.service";
 import { Wallet } from "./Wallet.model";
 import { PAGA_PROVIDER, toUnavailable } from "./WalletFundingPaga.service";
 
@@ -305,7 +306,7 @@ export class WalletWithdrawalPaga {
       return "success";
     }
     if (failed) {
-      await this.failAndRefund(reference, `Paga reports the payout as ${text}`);
+      await this.failAndRefund(reference, `Paga reports the payout as ${text}`, true);
       return "failed";
     }
     return "pending";
@@ -321,16 +322,16 @@ export class WalletWithdrawalPaga {
     paid: { transactionId?: string | null; sessionId?: string | null; feeKobo?: number | null; vatKobo?: number | null }
   ) {
     const sequelize = Wallet.sequelize!;
-    await sequelize.transaction(async (dbTransaction) => {
+    const completed = await sequelize.transaction(async (dbTransaction) => {
       const row = await Transaction.findOne({ where: { providerReference: reference, type: TransactionType.WALLET_DEBIT }, transaction: dbTransaction, lock: true });
-      if (!row) return;
+      if (!row) return null;
 
       if (row.status === TransactionStatus.FAILED) {
         // We refunded the merchant but the bank was paid after all: needs a human, never auto-fixed
         void alertOps(`wd-paid-after-refund-${reference}`, "Payout succeeded after the wallet was refunded", `Withdrawal ${reference} was refunded but Paga now reports it paid. The merchant has been paid twice; review it.`);
-        return;
+        return null;
       }
-      if (row.status === TransactionStatus.SUCCESS) return;
+      if (row.status === TransactionStatus.SUCCESS) return null;
 
       const meta = row.metadata || {};
       const paidFee = (paid.feeKobo ?? 0) + (paid.vatKobo ?? 0);
@@ -350,21 +351,39 @@ export class WalletWithdrawalPaga {
         },
         { transaction: dbTransaction }
       );
+      return { merchantId: row.merchantId, payoutKobo: Number(meta.payoutAmountKobo), bank: String(meta.recipientBankName || "your bank"), last4: String(meta.recipientAccountNumber || "") };
     });
+
+    // Only once, when this call is the one that completed it (after the database commit)
+    if (completed) {
+      const amount = completed.payoutKobo / 100;
+      void NotificationService.notify({
+        merchantId: completed.merchantId,
+        event: "payoutAlert",
+        title: "Withdrawal completed",
+        body: `${naira(completed.payoutKobo)} has been sent to your bank account.`,
+        smsText: `QuickMedic: Your ${smsMoney(amount)} withdrawal has been sent to your bank account.`,
+        details: [`Amount sent: ${naira(completed.payoutKobo)}`, `To: ${completed.bank} ending ${completed.last4}`, `Reference: ${reference}`],
+        data: { type: "withdrawal_completed", reference, amountKobo: completed.payoutKobo },
+      });
+    }
   }
 
-  /** Put the money back and mark the withdrawal failed, once. A success is never undone here. */
-  static async failAndRefund(reference: string, failureReason: string) {
+  /**
+   * Put the money back and mark the withdrawal failed, once. A success is never undone here.
+   * `notifyMerchant` is for failures the merchant did not see on screen (found later by the sweeper or a callback).
+   */
+  static async failAndRefund(reference: string, failureReason: string, notifyMerchant = false) {
     const sequelize = Wallet.sequelize;
     if (!sequelize) throw new HttpException(500, "Database not initialized");
 
-    await sequelize.transaction(async (dbTransaction) => {
+    const refunded = await sequelize.transaction(async (dbTransaction) => {
       const row = await Transaction.findOne({
         where: { providerReference: reference, type: TransactionType.WALLET_DEBIT },
         transaction: dbTransaction,
         lock: true,
       });
-      if (!row || row.status !== TransactionStatus.PENDING || row.metadata?.walletRefunded) return;
+      if (!row || row.status !== TransactionStatus.PENDING || row.metadata?.walletRefunded) return null;
 
       const wallet = row.walletId ? await Wallet.findByPk(row.walletId, { transaction: dbTransaction, lock: true }) : null;
       if (wallet) await wallet.update({ balance: wallet.balance + row.amount }, { transaction: dbTransaction });
@@ -373,7 +392,19 @@ export class WalletWithdrawalPaga {
         { status: TransactionStatus.FAILED, metadata: { ...row.metadata, walletRefunded: Boolean(wallet), failureReason } },
         { transaction: dbTransaction }
       );
+      return { merchantId: row.merchantId, payoutKobo: Number(row.metadata?.payoutAmountKobo), totalKobo: Number(row.amount) };
     });
+
+    if (refunded && notifyMerchant) {
+      void NotificationService.notify({
+        merchantId: refunded.merchantId,
+        event: "payoutAlert",
+        title: "Withdrawal failed",
+        body: `Your ${naira(refunded.payoutKobo)} withdrawal could not be completed. ${naira(refunded.totalKobo)} has been returned to your wallet.`,
+        smsText: `QuickMedic: Your ${smsMoney(refunded.payoutKobo / 100)} withdrawal failed. ${smsMoney(refunded.totalKobo / 100)} was returned to your wallet.`,
+        details: [`Withdrawal: ${naira(refunded.payoutKobo)}`, `Returned to wallet: ${naira(refunded.totalKobo)}`, `Reference: ${reference}`],
+        data: { type: "withdrawal_failed", reference, amountKobo: refunded.payoutKobo },
+      });
+    }
   }
 }
-

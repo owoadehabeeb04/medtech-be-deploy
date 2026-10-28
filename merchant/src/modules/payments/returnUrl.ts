@@ -2,12 +2,14 @@ import { HttpException } from "@medtech/utils";
 import { applicationConfig } from "../../config";
 
 /**
- * Where Paga sends the customer after paying (`charge_url`). Never trust the browser's redirect for the outcome:
- * the page this URL points to must call our confirm endpoint with `reference`.
+ * Where Paga sends the customer after paying (`charge_url`). Paga adds its own parameters to this address
+ * (`charge_reference`, `status_message`, `status_code`; the reference is the one we sent as payment_reference),
+ * so we add none of our own: the page reads `charge_reference` and must call our confirm endpoint with it.
+ * Never trust the redirect for the outcome.
  *
  * A caller may suggest a URL, but only on an origin we have allowed; otherwise we use the merchant web app's /callback page.
  */
-export const resolveChargeUrl = (reference: string, flow: string, requestedReturnUrl?: string): string => {
+export const resolveChargeUrl = (requestedReturnUrl?: string): string => {
   const candidate = (requestedReturnUrl || "").trim();
   let url: URL;
 
@@ -25,7 +27,5 @@ export const resolveChargeUrl = (reference: string, flow: string, requestedRetur
     url = new URL("/callback", applicationConfig.team.merchantAppUrl);
   }
 
-  url.searchParams.set("reference", reference);
-  url.searchParams.set("flow", flow);
   return url.toString();
 };

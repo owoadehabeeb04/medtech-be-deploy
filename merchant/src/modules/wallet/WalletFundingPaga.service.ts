@@ -43,7 +43,7 @@ export class WalletFundingPaga {
     }
 
     const reference = this.newReference();
-    const chargeUrl = resolveChargeUrl(reference, "wallet", requestedReturnUrl);
+    const chargeUrl = resolveChargeUrl(requestedReturnUrl);
 
     await Transaction.create({
       merchantId: merchant.id,

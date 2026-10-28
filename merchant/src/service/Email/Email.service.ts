@@ -50,6 +50,11 @@ export class EmailService {
     }
   }
 
+  static async sendNotificationEmail(email: string, payload: { title: string; message: string; details?: string[]; ctaUrl?: string; ctaLabel?: string }) {
+    const data = { ...payload, supportEmail, currentYear: new Date().getFullYear().toString() };
+    await send_mail.send(email, payload.title, "notification-event", data);
+  }
+
   static async sendOpsAlertEmail(email: string, payload: { title: string; details: string }) {
     const data = { ...payload, supportEmail, currentYear: new Date().getFullYear().toString() };
     await send_mail.send(email, `[QuickMedic alert] ${payload.title}`, "ops-alert", data);
