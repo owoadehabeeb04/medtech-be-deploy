@@ -80,8 +80,12 @@ export const applicationConfig = {
     senderEmail: process.env.BREVO_SENDER_EMAIL || "",
     senderName: process.env.BREVO_SENDER_NAME || "",
     baseUrl: process.env.BREVO_BASE_URL || "",
-    // Alphanumeric SMS sender name (11 characters at most). Must be registered with Brevo for Nigeria, or SMS fails.
-    smsSender: process.env.BREVO_SMS_SENDER || "",
+  },
+  twilio: {
+    accountSid: process.env.TWILIO_ACCOUNT_SID || "",
+    authToken: process.env.TWILIO_AUTH_TOKEN || "",
+    from: process.env.TWILIO_SMS_FROM || "",
+    messagingServiceSid: process.env.TWILIO_MESSAGING_SERVICE_SID || "",
   },
   
   aws: {

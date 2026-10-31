@@ -1,55 +1,60 @@
 import * as http from "http";
 import * as https from "https";
 
-export interface BrevoSmsConfig {
-  apiKey: string;
-  /** Alphanumeric sender name, at most 11 characters. Must be registered with Brevo for the destination country. */
-  sender: string;
+export interface TwilioSmsConfig {
+  accountSid: string;
+  authToken: string;
+  /** Twilio phone number or registered alphanumeric sender ID. */
+  from?: string;
+  /** Optional alternative to a fixed sender; uses the service's sender pool. */
+  messagingServiceSid?: string;
   baseUrl?: string;
   timeoutMs?: number;
 }
 
 /**
- * Transactional SMS through Brevo: POST /v3/transactionalSMS/send (the older /sms endpoint is deprecated).
- * Documented fields: sender (<= 11 alphanumeric characters), recipient (country code included, 6 to 15 digits),
- * content (over 160 characters is billed as several messages), type (defaults to transactional).
+ * Transactional SMS through Twilio's Messages API. A successful request means
+ * Twilio accepted the message; it does not confirm delivery to the handset.
  */
 export default class SendSms {
-  private readonly apiKey: string;
-  private readonly sender: string;
+  private readonly accountSid: string;
+  private readonly authToken: string;
+  private readonly from: string;
+  private readonly messagingServiceSid: string;
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
 
-  constructor(config: BrevoSmsConfig) {
-    this.apiKey = config.apiKey;
-    this.sender = config.sender;
-    this.baseUrl = config.baseUrl || "https://api.brevo.com";
+  constructor(config: TwilioSmsConfig) {
+    this.accountSid = config.accountSid.trim();
+    this.authToken = config.authToken.trim();
+    this.from = config.from?.trim() || "";
+    this.messagingServiceSid = config.messagingServiceSid?.trim() || "";
+    this.baseUrl = config.baseUrl || "https://api.twilio.com";
     this.timeoutMs = config.timeoutMs || 15000;
   }
 
   isConfigured(): boolean {
-    return Boolean(this.apiKey && this.sender);
+    return Boolean(this.accountSid && this.authToken && (this.from || this.messagingServiceSid));
   }
 
   /** Resolves on a 2xx answer, rejects otherwise. `recipient` is E.164 (e.g. +2348031234567). */
-  send(recipient: string, content: string, tag?: string): Promise<void> {
+  send(recipient: string, content: string): Promise<void> {
     if (!this.isConfigured()) {
-      return Promise.reject(new Error("Brevo SMS is not configured. Set BREVO_API_KEY and BREVO_SMS_SENDER."));
+      return Promise.reject(new Error("Twilio SMS is not configured. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_SMS_FROM or TWILIO_MESSAGING_SERVICE_SID."));
     }
-    const digits = String(recipient || "").replace(/\D/g, "");
-    if (digits.length < 6 || digits.length > 15) {
+    if (!/^\+[1-9]\d{5,14}$/.test(recipient)) {
       return Promise.reject(new Error("Invalid SMS recipient number."));
     }
 
-    const payload = JSON.stringify({
-      sender: this.sender,
-      recipient: "+" + digits,
-      content,
-      type: "transactional",
-      ...(tag ? { tag } : {}),
-    });
+    const payload = new URLSearchParams({
+      To: recipient,
+      Body: content,
+      ...(this.messagingServiceSid
+        ? { MessagingServiceSid: this.messagingServiceSid }
+        : { From: this.from }),
+    }).toString();
 
-    const url = new URL("/v3/transactionalSMS/send", this.baseUrl);
+    const url = new URL(`/2010-04-01/Accounts/${encodeURIComponent(this.accountSid)}/Messages.json`, this.baseUrl);
     const transport: typeof http | typeof https = url.protocol === "http:" ? http : https;
 
     return new Promise((resolve, reject) => {
@@ -60,9 +65,9 @@ export default class SendSms {
           port: url.port || (url.protocol === "https:" ? 443 : 80),
           path: url.pathname + url.search,
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "application/x-www-form-urlencoded",
             "Content-Length": Buffer.byteLength(payload),
-            "api-key": this.apiKey,
+            Authorization: "Basic " + Buffer.from(`${this.accountSid}:${this.authToken}`).toString("base64"),
             Accept: "application/json",
           },
         },
@@ -73,18 +78,20 @@ export default class SendSms {
           });
           response.on("end", () => {
             if (response.statusCode && response.statusCode >= 200 && response.statusCode < 300) return resolve();
-            let message = "Brevo SMS request failed (" + response.statusCode + ")";
+            let message = "Twilio SMS request failed (" + response.statusCode + ")";
             try {
               const parsed = JSON.parse(body);
-              message = parsed.message || parsed.code || message;
+              message = parsed.message ? `${message}: ${parsed.message}${parsed.code ? ` (code ${parsed.code})` : ""}` : message;
             } catch {
               if (body) message = body.slice(0, 200);
             }
             reject(new Error(message));
           });
+          response.on("error", reject);
+          response.on("aborted", () => reject(new Error("Twilio SMS response was interrupted")));
         }
       );
-      request.setTimeout(this.timeoutMs, () => request.destroy(new Error("Brevo SMS request timed out")));
+      request.setTimeout(this.timeoutMs, () => request.destroy(new Error("Twilio SMS request timed out")));
       request.on("error", reject);
       request.write(payload);
       request.end();

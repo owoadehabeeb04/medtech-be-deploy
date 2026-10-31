@@ -64,8 +64,8 @@ export const updateNotifications = async (
  *       (offlineSaleRecorded) and withdrawal results (payoutAlert, sent when a
  *       withdrawal completes or fails and is refunded). For web push, first set
  *       pushNotificationsEnabled to true. Email goes to the account owner's email
- *       address. SMS goes to the account owner's phone number through Brevo and needs
- *       a Brevo SMS sender name registered for Nigeria (BREVO_SMS_SENDER). Email and
+ *       address. SMS goes to the account owner's phone number through Twilio and needs
+ *       Twilio credentials and a sender configured for the destination country. Email and
  *       SMS are sent to the pharmacy owner only, not to staff. Omitted values are
  *       not changed.
  *     operationId: "merchant_patch_api_v1_merchant_settings_notifications"
