@@ -22,11 +22,7 @@ export interface NotifyInput {
   link?: string;
 }
 
-const sms = new SendSms({
-  apiKey: applicationConfig.brevo.apiKey,
-  sender: applicationConfig.brevo.smsSender,
-  baseUrl: applicationConfig.brevo.baseUrl || undefined,
-});
+const sms = new SendSms(applicationConfig.twilio);
 
 /** "NGN 12,500" for SMS (no naira sign), from kobo or naira. */
 export const smsMoney = (naira: number) => "NGN " + Number(naira).toLocaleString("en-NG", { maximumFractionDigits: 2 });
@@ -76,12 +72,12 @@ export class NotificationService {
 
     if (preference?.sms === true) {
       if (!sms.isConfigured()) {
-        console.warn(`[Notify] SMS is switched on for ${input.event} but BREVO_SMS_SENDER is not set; skipped`);
+        console.warn(`[Notify] SMS is switched on for ${input.event} but Twilio SMS credentials or sender are missing; skipped`);
       } else if (merchant.phoneNumber) {
         const phone = normalizePhone(merchant.phoneCountryCode, merchant.phoneNumber);
         tasks.push(
           sms
-            .send("+" + phone.countryCode + phone.national, input.smsText, input.event)
+            .send("+" + phone.countryCode + phone.national, input.smsText)
             .catch((error: any) => console.error(`[Notify] SMS not sent (${input.event}):`, error?.message || error))
         );
       }
