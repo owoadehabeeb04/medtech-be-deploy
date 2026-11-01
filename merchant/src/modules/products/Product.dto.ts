@@ -14,6 +14,7 @@ export interface CreateProductDTO {
   categoryId?: string;
   brand: string;
   sku?: string;
+  barcode?: string | null;
   price: number;
   vat: number;
   discountPercentage?: number;
@@ -31,6 +32,7 @@ export interface UpdateProductDTO {
   categoryId?: string;
   brand?: string;
   sku?: string;
+  barcode?: string | null;
   price?: number;
   vat?: number;
   discountPercentage?: number;

@@ -7,6 +7,7 @@ import {
   returnInStoreSaleSchema,
 } from "./InStoreSale.schema";
 import { InStoreSaleService } from "./InStoreSale.service";
+import { barcodeLookupSchema } from "../products/Product.schema";
 
 const getMerchantId = (req: Request): string => {
   const merchantId = String(req.context.user?.id || "").trim();
@@ -55,6 +56,51 @@ export const listInStoreSaleProducts = async (req: Request, res: Response, next:
     return next(error);
   }
 };
+
+/**
+ * @swagger
+ * /api/v1/merchant/in-store-sales/products/by-barcode:
+ *   get:
+ *     summary: Find a pharmacy product by its exact packaging barcode
+ *     description: Requires sales.create. Read-only lookup in the authenticated pharmacy; does not create a sale or change stock.
+ *     tags: [In-Store Sales]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: barcode
+ *         required: true
+ *         schema: { type: string, minLength: 1, maxLength: 100, pattern: '^[!-~]+$' }
+ *         description: Barcode text, including leading zeroes; encode query parameters normally.
+ *     responses:
+ *       200:
+ *         description: Matching active, in-stock product formatted for the sale picker
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/InStoreSaleBarcodeProductResponse'
+ *       400:
+ *         description: Missing or invalid barcode
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Missing sales.create permission
+ *       404:
+ *         description: Barcode not found in this pharmacy, or product was deleted
+ *       409:
+ *         description: Matching product is inactive or out of stock
+ */
+export const getInStoreSaleProductByBarcode = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { error, value } = barcodeLookupSchema.validate(req.query);
+    if (error) throw new HttpException(400, error.details[0].message);
+    const data = await InStoreSaleService.getProductByBarcode(getMerchantId(req), value.barcode);
+    sendData(res, "Barcode product retrieved successfully", data);
+    return next("router");
+  } catch (error) {
+    return next(error);
+  }
+};
 /**
  * @swagger
  * /api/v1/merchant/in-store-sales/products:
@@ -68,7 +114,7 @@ export const listInStoreSaleProducts = async (req: Request, res: Response, next:
  *         name: search
  *         schema:
  *           type: string
- *         description: Product name, brand, or SKU search text
+ *         description: Product name, brand, SKU search text, or an exact barcode
  *       - in: query
  *         name: limit
  *         schema:

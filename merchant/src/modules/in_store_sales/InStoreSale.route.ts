@@ -7,6 +7,7 @@ import {
   exportInStoreSalesCsv,
   getInStoreSaleById,
   listInStoreSaleProducts,
+  getInStoreSaleProductByBarcode,
   listInStoreSales,
   refundInStoreSale,
   returnInStoreSale,
@@ -17,6 +18,7 @@ const router = Router();
 // Static paths must be registered before /:orderId.
 
 router.get("/products", requirePermission("sales.create"), listInStoreSaleProducts);
+router.get("/products/by-barcode", requirePermission("sales.create"), getInStoreSaleProductByBarcode);
 
 router.get("/export.csv", requirePermission("sales.view", "data.export"), exportInStoreSalesCsv);
 

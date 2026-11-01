@@ -18,6 +18,7 @@
 		"start": "npm run start --workspace=merchant",
 		"start:combined": "node scripts/start-combined.mjs",
 		"test:combined": "node --test scripts/tests/combined-deployment.test.mjs",
+		"test:online-order-service-charge": "npm run build && node --test scripts/tests/online-order-service-charge.test.cjs",
 		"postinstall": "node -e \"if (process.env.RENDER === 'true') { require('child_process').execSync('npm run build', { stdio: 'inherit' }) }\""
 	},
 	"overrides": {

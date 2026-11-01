@@ -3,7 +3,7 @@ import * as path from "path";
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 export type Configuration = {
-	serverPort?: string | number;
+	serverPort?: number;
 	isProduction?: boolean;
 	db: {
 		sslEnabled: boolean;

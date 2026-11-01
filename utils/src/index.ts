@@ -496,3 +496,5 @@ export { default as SendEmail, type BrevoConfig } from "./SendEmail";
 export { default as SendSms, type TwilioSmsConfig } from "./SendSms";
 
 export * from "./paga";
+
+export { calculateOnlineOrderServiceCharge } from "./online-order-pricing";

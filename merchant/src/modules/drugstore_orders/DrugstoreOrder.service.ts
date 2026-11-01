@@ -1,4 +1,4 @@
-import { HttpException } from "@medtech/utils";
+import { HttpException, calculateOnlineOrderServiceCharge } from "@medtech/utils";
 import { randomUUID } from "crypto";
 import { Op, Transaction } from "sequelize";
 import { DrugstoreOrder } from "./DrugstoreOrder.model";
@@ -8,6 +8,7 @@ import { ProductCategory } from "../categories/ProductCategory.model";
 import { applicationConfig } from "../../config";
 import { ExperienceOneInternalClient } from "../drugstore_internal/ExperienceOneInternalClient";
 import { ProductStatus } from "../../constants/enums";
+import { calculateMerchantOrderEarnings } from "./merchant-earnings";
 
 type PaymentStatus = "pending" | "paid" | "failed";
 type DeliveryStatus = "pending" | "picked_up" | "in_transit" | "delivered" | "cancelled";
@@ -23,6 +24,11 @@ type AnalyticsOrderRow = {
   placedAt: Date | string;
   paymentStatus: PaymentStatus;
   totalAmount: string | number;
+  subtotal: string | number;
+  discountTotal: string | number;
+  deliveryFee: string | number;
+  vatTotal: string | number;
+  serviceCharge: string | number;
   sourceUserId: number | string;
   deliveryStatus: DeliveryStatus;
   isInstoreSales: boolean;
@@ -746,6 +752,11 @@ const fetchAnalyticsOrders = async (merchantId: string, start: Date, end: Date):
       "placedAt",
       "paymentStatus",
       "totalAmount",
+      "subtotal",
+      "discountTotal",
+      "deliveryFee",
+      "vatTotal",
+      "serviceCharge",
       "sourceUserId",
       "deliveryStatus",
       "isInstoreSales",
@@ -1085,7 +1096,8 @@ export class DrugstoreOrderService {
         const discountTotal = roundMoney(
           builtItems.reduce((sum, item) => sum + item.lineDiscountTotal, 0)
         );
-        const totalAmount = roundMoney(subtotal + vatTotal - discountTotal + blueprint.deliveryFee);
+        const serviceCharge = calculateOnlineOrderServiceCharge(subtotal);
+        const totalAmount = roundMoney(subtotal + vatTotal - discountTotal + blueprint.deliveryFee + serviceCharge);
         const paymentVerifiedAt =
           blueprint.paymentStatus === "paid"
             ? new Date(blueprint.placedAt.getTime() + 30 * 60 * 1000)
@@ -1111,6 +1123,7 @@ export class DrugstoreOrderService {
             vatTotal,
             discountTotal,
             deliveryFee: blueprint.deliveryFee,
+            serviceCharge,
             totalAmount,
             currency: "NGN",
             discountCode: null,
@@ -1205,6 +1218,12 @@ export class DrugstoreOrderService {
       "legacyStatus",
       "recipientName",
       "recipientPhone",
+      "subtotal",
+      "discountTotal",
+      "deliveryFee",
+      "vatTotal",
+      "serviceCharge",
+      "merchantEarnings",
       "totalAmount",
       "currency",
       "placedAt",
@@ -1222,6 +1241,12 @@ export class DrugstoreOrderService {
         row.status,
         row.recipientName,
         row.recipientPhone,
+        row.subtotal,
+        row.discountTotal,
+        row.deliveryFee,
+        row.vatTotal,
+        row.serviceCharge,
+        row.merchantEarnings,
         row.totalAmount,
         row.currency,
         toIsoString(row.placedAt),
@@ -1319,20 +1344,38 @@ export class DrugstoreOrderService {
     const currentTotalEarned = roundMoney(
       currentOrders.reduce((sum, row) => {
         if (row.paymentStatus !== "paid") return sum;
-        return sum + toNumber(row.totalAmount);
+        return sum + calculateMerchantOrderEarnings(row);
       }, 0)
     );
 
     const previousTotalEarned = roundMoney(
       previousOrders.reduce((sum, row) => {
         if (row.paymentStatus !== "paid") return sum;
-        return sum + toNumber(row.totalAmount);
+        return sum + calculateMerchantOrderEarnings(row);
       }, 0)
     );
 
     const commissionRate = applicationConfig.drugstoreAnalytics.commissionRate;
     const currentCommission = roundMoney(currentTotalEarned * commissionRate);
     const previousCommission = roundMoney(previousTotalEarned * commissionRate);
+
+    // Paid orders only, matching totalEarned. Keep customer charges available as
+    // separate lines so the frontend can explain why earnings differ from payments.
+    const earningsBreakdown = {
+      subtotal: 0,
+      discountTotal: 0,
+      deliveryFee: 0,
+      vatTotal: 0,
+      serviceCharge: 0,
+      totalAmount: 0,
+      merchantEarnings: currentTotalEarned,
+    };
+    const amountKeys = ["subtotal", "discountTotal", "deliveryFee", "vatTotal", "serviceCharge", "totalAmount"] as const;
+    for (const key of amountKeys) {
+      earningsBreakdown[key] = roundMoney(currentOrders.reduce(
+        (sum, row) => sum + (row.paymentStatus === "paid" ? toNumber(row[key]) : 0), 0
+      ));
+    }
 
     const currentTotalOrders = currentOrders.length;
     const previousTotalOrders = previousOrders.length;
@@ -1345,6 +1388,7 @@ export class DrugstoreOrderService {
       range: window.range,
       timeWindow: buildFilterSummary(window),
       commissionRate,
+      earningsBreakdown,
       metrics: {
         totalEarned: {
           value: currentTotalEarned,
@@ -1404,7 +1448,7 @@ export class DrugstoreOrderService {
         entry.uniqueUsers.add(String(row.sourceUserId));
       }
       if (row.paymentStatus === "paid") {
-        entry.salesAmount += toNumber(row.totalAmount);
+        entry.salesAmount += calculateMerchantOrderEarnings(row);
       }
     });
 
@@ -1649,6 +1693,7 @@ export class DrugstoreOrderService {
     return {
       filters: buildFilterSummary(window),
       kpis: kpis.metrics,
+      earningsBreakdown: kpis.earningsBreakdown,
       salesTrend,
       orderBreakdown,
       topSellingProducts,
