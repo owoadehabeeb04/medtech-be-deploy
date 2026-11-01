@@ -1,4 +1,5 @@
 import Joi from "joi";
+import { BARCODE_MAX_LENGTH, BARCODE_PATTERN } from "./barcode";
 import {
   PRODUCT_STATUSES,
 } from "../../constants/enums";
@@ -20,6 +21,10 @@ const productImageSchema = Joi.object({
 });
 
 // Create Product Schema
+export const barcodeValueSchema = Joi.string().trim().max(BARCODE_MAX_LENGTH).pattern(BARCODE_PATTERN);
+
+export const barcodeLookupSchema = Joi.object({ barcode: barcodeValueSchema.required() });
+
 export const createProductSchema = Joi.object({
   name: Joi.string().trim().min(2).max(255).required().messages({
     "string.min": "Product name must be at least 2 characters",
@@ -51,6 +56,7 @@ export const createProductSchema = Joi.object({
   }),
 
   sku: Joi.string().trim().max(100).optional(),
+  barcode: barcodeValueSchema.allow(null).optional(),
 
   price: Joi.number().min(0).required().messages({
     "number.min": "Price must be a positive number",
@@ -140,6 +146,7 @@ export const updateProductSchema = Joi.object({
   }),
   brand: Joi.string().trim().min(1).max(100).optional(),
   sku: Joi.string().trim().max(100).optional(),
+  barcode: barcodeValueSchema.allow(null).optional(),
   price: Joi.number().min(0).optional(),
   vat: Joi.number().min(0).optional(),
   discountPercentage: Joi.number().min(0).max(100).optional(),

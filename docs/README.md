@@ -1,5 +1,7 @@
 # Documentation
 
+- [Merchant USB barcode scanner — frontend handoff](./merchant-barcode-scanner-frontend.md)
+
 - [Monorepo Architecture](./monorepo-architecture.md)
 - [experience_1 Current State](./experience_1-current-state.md)
 - [experience_1 Postman Collection](./postman/experience_1/meditech-experience1.postman_collection.json)

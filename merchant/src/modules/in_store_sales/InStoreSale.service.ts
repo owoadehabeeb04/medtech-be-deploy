@@ -5,6 +5,7 @@ import { applicationConfig } from "../../config";
 import { MerchantSettings } from "../merchant_settings/MerchantSettings.model";
 import { NotificationService, smsMoney } from "../../service/Notifications/Notification.service";
 import { Product } from "../products/Product.model";
+import { normalizeBarcode } from "../products/barcode";
 import { ProductStatus } from "../../constants/enums";
 import { DrugstoreOrder } from "../drugstore_orders/DrugstoreOrder.model";
 import { DrugstoreOrderItem } from "../drugstore_orders/DrugstoreOrderItem.model";
@@ -298,6 +299,7 @@ const serializeOrder = (order: DrugstoreOrder) => {
     // remains “delivered” so it is compatible with the existing order flow.
     deliveryStatusLabel: deliveryStatus === "delivered" ? "Completed" : formatStatusLabel(deliveryStatus),
     totalAmount: toNumber(order.totalAmount),
+    merchantEarnings: order.merchantEarnings,
     subtotal: toNumber(order.subtotal),
     vatTotal: toNumber(order.vatTotal),
     discountTotal: toNumber(order.discountTotal),
@@ -633,6 +635,7 @@ export class InStoreSaleService {
         { name: { [Op.iLike]: like } },
         { brand: { [Op.iLike]: like } },
         { sku: { [Op.iLike]: like } },
+        { barcode: normalizedSearch },
       ];
     }
 
@@ -642,30 +645,45 @@ export class InStoreSaleService {
       limit: optionLimit,
     });
 
-    return products.map((product) => {
-      const price = roundMoney(toNumber(product.price));
-      const vat = roundMoney(toNumber(product.vat));
-      const discountPercentage = roundMoney(toNumber(product.discountPercentage));
-      const discountedSubtotal = roundMoney(price - (price * discountPercentage) / 100);
+    return products.map((product) => this.serializeProductOption(product));
+  }
 
-      return {
-        id: product.id,
-        productId: product.id,
-        name: product.name,
-        sku: product.sku,
-        brand: product.brand,
-        category: product.category,
-        imageUrl: getImageUrl(product),
-        unitPrice: price,
-        vat,
-        discountPercentage,
-        totalUnitPrice: roundMoney(discountedSubtotal + vat),
-        inventory: product.inventory,
-        minQuantity: product.minQuantity,
-        maxQuantity: product.maxQuantity,
-        requiresPrescription: product.requiresPrescription,
-      };
-    });
+  static async getProductByBarcode(merchantId: string, value: unknown) {
+    const barcode = normalizeBarcode(value);
+    if (!barcode) throw new HttpException(400, "Barcode is required");
+    const product = await Product.findOne({ where: { merchantId, barcode } });
+    if (!product) throw new HttpException(404, "No product with this barcode was found in your pharmacy");
+    if (!product.isActive || product.inventory <= 0 || product.status === ProductStatus.OUT_OF_STOCK) {
+      throw new HttpException(409, "This product is inactive or out of stock");
+    }
+    // This lookup is read-only. createSale rechecks price/stock and decrements inventory.
+    return this.serializeProductOption(product);
+  }
+
+  private static serializeProductOption(product: Product) {
+    const price = roundMoney(toNumber(product.price));
+    const vat = roundMoney(toNumber(product.vat));
+    const discountPercentage = roundMoney(toNumber(product.discountPercentage));
+    const discountedSubtotal = roundMoney(price - (price * discountPercentage) / 100);
+
+    return {
+      id: product.id,
+      productId: product.id,
+      name: product.name,
+      sku: product.sku,
+      barcode: product.barcode,
+      brand: product.brand,
+      category: product.category,
+      imageUrl: getImageUrl(product),
+      unitPrice: price,
+      vat,
+      discountPercentage,
+      totalUnitPrice: roundMoney(discountedSubtotal + vat),
+      inventory: product.inventory,
+      minQuantity: product.minQuantity,
+      maxQuantity: product.maxQuantity,
+      requiresPrescription: product.requiresPrescription,
+    };
   }
 
   static async createSale(merchantId: string, input: CreateInStoreSaleInput) {

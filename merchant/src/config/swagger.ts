@@ -198,6 +198,7 @@ const options: swaggerJsdoc.Options = {
             category: { type: "string", deprecated: true, description: "Legacy category name. Supported temporarily for existing clients; use categoryId for new product requests.", example: "Analgesics (Pain Relievers)" },
             brand: { type: "string", example: "Emzor" },
             sku: { type: "string", maxLength: 100, example: "PCM-500-001" },
+            barcode: { type: "string", nullable: true, minLength: 1, maxLength: 100, pattern: "^[!-~]+$", example: "0123456789012", description: "Optional packaging barcode; unique within this pharmacy's non-deleted products. Preserve leading zeroes." },
             price: { type: "number", minimum: 0, example: 1500 },
             vat: { type: "number", minimum: 0, example: 112.5 },
             discountPercentage: { type: "number", minimum: 0, maximum: 100, default: 0, example: 0 },
@@ -231,6 +232,7 @@ const options: swaggerJsdoc.Options = {
             category: { type: "string", deprecated: true, description: "Legacy category name; use categoryId." },
             brand: { type: "string" },
             sku: { type: "string", maxLength: 100 },
+            barcode: { type: "string", nullable: true, minLength: 1, maxLength: 100, pattern: "^[!-~]+$", description: "Send null to clear the barcode; omit to keep the existing value." },
             price: { type: "number", minimum: 0 },
             vat: { type: "number", minimum: 0 },
             discountPercentage: { type: "number", minimum: 0, maximum: 100 },
@@ -436,7 +438,7 @@ const options: swaggerJsdoc.Options = {
               type: "object",
               required: ["subtotal", "vatTotal", "discountTotal", "deliveryFee", "totalAmount", "currency"],
               properties: {
-                subtotal: { type: "number" }, vatTotal: { type: "number" }, discountTotal: { type: "number" }, deliveryFee: { type: "number" }, totalAmount: { type: "number" }, currency: { type: "string", example: "NGN" },
+                subtotal: { type: "number" }, vatTotal: { type: "number" }, discountTotal: { type: "number" }, deliveryFee: { type: "number" }, serviceCharge: { type: "number", default: 0, description: "Service charge snapshot from online checkout: 0.5% of subtotal, capped at NGN 250. Optional for legacy sync payloads." }, totalAmount: { type: "number" }, currency: { type: "string", example: "NGN" },
               },
             },
             delivery: {
@@ -1204,6 +1206,8 @@ const options: swaggerJsdoc.Options = {
             vatTotal: { type: "number" },
             discountTotal: { type: "number" },
             deliveryFee: { type: "number" },
+            serviceCharge: { type: "number", default: 0, description: "Online service charge in NGN; zero for historical orders and in-store sales." },
+            merchantEarnings: { type: "number", description: "Total amount less VAT and platform service charge. Includes the pharmacy's delivery fee; before any separately reported commission." },
             totalAmount: { type: "number" },
             currency: { type: "string", example: "NGN" },
             discountCode: { type: "string", nullable: true },
@@ -1298,6 +1302,19 @@ const options: swaggerJsdoc.Options = {
             growthPercentage: { type: "number", nullable: true, description: "Percentage change vs the equivalent prior period; null if the prior period had no baseline." },
           },
         },
+        MerchantEarningsBreakdown: {
+          type: "object",
+          description: "Paid orders in the selected period. Earnings include discounted item sales and pharmacy delivery fees; VAT and platform service charges are excluded. Commission is reported separately.",
+          properties: {
+            subtotal: { type: "number" },
+            discountTotal: { type: "number" },
+            deliveryFee: { type: "number" },
+            vatTotal: { type: "number" },
+            serviceCharge: { type: "number" },
+            totalAmount: { type: "number", description: "Full amount paid by customers, including VAT and platform service charges." },
+            merchantEarnings: { type: "number", description: "totalAmount - vatTotal - serviceCharge; before separate commission." },
+          },
+        },
         AnalyticsKpisResponse: {
           allOf: [
             { $ref: "#/components/schemas/SuccessResponse" },
@@ -1310,6 +1327,7 @@ const options: swaggerJsdoc.Options = {
                     range: { type: "string", nullable: true },
                     timeWindow: { $ref: "#/components/schemas/AnalyticsTimeWindow" },
                     commissionRate: { type: "number", description: "Fraction, e.g. 0.05 for 5%." },
+                    earningsBreakdown: { $ref: "#/components/schemas/MerchantEarningsBreakdown" },
                     metrics: {
                       type: "object",
                       properties: {
@@ -1483,6 +1501,7 @@ const options: swaggerJsdoc.Options = {
                   type: "object",
                   properties: {
                     filters: { $ref: "#/components/schemas/AnalyticsTimeWindow" },
+                    earningsBreakdown: { $ref: "#/components/schemas/MerchantEarningsBreakdown" },
                     kpis: {
                       type: "object",
                       properties: {
@@ -1621,6 +1640,7 @@ const options: swaggerJsdoc.Options = {
             vatTotal: { type: "number" },
             discountTotal: { type: "number" },
             deliveryFee: { type: "number", example: 0 },
+            merchantEarnings: { type: "number", description: "Customer total excluding VAT and platform service charge, before any separate commission." },
             currency: { type: "string", example: "NGN" },
             note: { type: "string", nullable: true },
             fulfillmentMethod: { type: "string", example: "pickup" },
@@ -1669,6 +1689,7 @@ const options: swaggerJsdoc.Options = {
             productId: { type: "string", format: "uuid", description: "Same value as id." },
             name: { type: "string" },
             sku: { type: "string", nullable: true },
+            barcode: { type: "string", nullable: true, description: "Packaging barcode, preserved as text." },
             brand: { type: "string" },
             category: { type: "string" },
             imageUrl: { type: "string", nullable: true },
@@ -1686,6 +1707,12 @@ const options: swaggerJsdoc.Options = {
           allOf: [
             { $ref: "#/components/schemas/SuccessResponse" },
             { type: "object", properties: { data: { type: "array", items: { $ref: "#/components/schemas/InStoreSaleProductOption" } } } },
+          ],
+        },
+        InStoreSaleBarcodeProductResponse: {
+          allOf: [
+            { $ref: "#/components/schemas/SuccessResponse" },
+            { type: "object", properties: { data: { $ref: "#/components/schemas/InStoreSaleProductOption" } } },
           ],
         },
         Wallet: {
@@ -2215,6 +2242,7 @@ const options: swaggerJsdoc.Options = {
             categoryReviewRequired: { type: "boolean", description: "True when an existing legacy category name could not be mapped unambiguously to the global taxonomy. Send categoryId to resolve it." },
             brand: { type: "string", example: "GSK" },
             sku: { type: "string", nullable: true },
+            barcode: { type: "string", nullable: true, example: "0123456789012" },
             price: { type: "number", example: 1500.0 },
             vat: { type: "number", example: 112.5 },
             discountPercentage: { type: "number", example: 0 },

@@ -35,6 +35,7 @@ interface ProductImage {
     { fields: ["status"] },
     { fields: ["is_active"] },
     { fields: ["deleted_at"] },
+    { name: "products_merchant_barcode_unique", fields: ["merchant_id", "barcode"], unique: true, where: { deleted_at: null } },
   ],
 })
 export class Product extends Model<Product> {
@@ -89,6 +90,10 @@ export class Product extends Model<Product> {
   @Index
   @Column(DataType.STRING(100))
   declare sku: string; // Optional merchant SKU
+
+  @AllowNull(true)
+  @Column(DataType.STRING(100))
+  declare barcode: string | null;
 
   // Pricing
   @AllowNull(false)

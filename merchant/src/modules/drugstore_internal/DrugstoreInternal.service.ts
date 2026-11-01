@@ -46,6 +46,7 @@ type ReflectOrderPayload = {
     vatTotal: number;
     discountTotal: number;
     deliveryFee: number;
+    serviceCharge?: number;
     totalAmount: number;
     currency: string;
   };
@@ -598,6 +599,7 @@ export class DrugstoreInternalService {
             vatTotal: toNumber(payload.amounts?.vatTotal),
             discountTotal: toNumber(payload.amounts?.discountTotal),
             deliveryFee: toNumber(payload.amounts?.deliveryFee),
+            serviceCharge: toNumber(payload.amounts?.serviceCharge),
             totalAmount: toNumber(payload.amounts?.totalAmount),
             currency: payload.amounts?.currency || "NGN",
             discountCode: payload.discount?.code || null,

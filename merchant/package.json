@@ -6,6 +6,7 @@
 		"dev": "nodemon --exec ts-node --project tsconfig.json src/app.ts",
 		"build": "tsc --build && copyfiles \"src/view/emails/**/*\" dist/",
 		"build:watch": "tsc --watch",
+		"test:barcode": "npm run build && node --test tests/barcode.test.cjs",
 		"seed": "ts-node --project tsconfig.json src/scripts/seed.ts",
 		"migrate:bank-codes": "ts-node --project tsconfig.json src/scripts/migrateBankCodes.ts",
 		"check:route-guards": "ts-node --files --project tsconfig.json src/scripts/check-route-guards.ts",

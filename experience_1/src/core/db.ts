@@ -38,6 +38,7 @@ import { DrugstoreWalletTransaction } from "../modules/drugstore/DrugstoreWallet
 import { DrugstoreSavedCard } from "../modules/drugstore/DrugstoreSavedCard.model";
 import { ensureSpecialitySeedData } from "../modules/speciality/Speciality.seed";
 import { applicationConfig } from "../config";
+import { ensureOrderServiceChargeColumn } from "./migrations";
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 const connection = async () => {
@@ -93,6 +94,7 @@ const connection = async () => {
 
 	try {
 		await sequelize.authenticate();
+		await ensureOrderServiceChargeColumn(sequelize);
 		if ((process.env.APP_ENV || process.env.NODE_ENV) !== "production" || process.env.FORCE_SYNC === "true") {
 			await sequelize.sync({ alter: true });
 		}

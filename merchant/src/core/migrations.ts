@@ -10,10 +10,12 @@ export async function runMigrations(sequelize: Sequelize): Promise<void> {
   await ensureProductCategoriesTable(queryInterface);
   await addProductCategoryIdColumn(queryInterface);
   await addProductCategoryReviewColumn(queryInterface);
+  await ensureProductBarcode(sequelize);
   await addDiscountCategoryIdsColumn(queryInterface);
   await removeTermsAcceptedColumn(queryInterface);
   await addDrugstoreOrderFlowColumns(queryInterface);
   await addInStoreSalesFlag(queryInterface);
+  await addOrderServiceChargeColumn(queryInterface);
   await addMerchantDeviceTokensTable(queryInterface);
   await addMerchantPushPreferenceDefaults(queryInterface);
   await shiftOnboardingSteps(sequelize);
@@ -27,6 +29,20 @@ export async function runMigrations(sequelize: Sequelize): Promise<void> {
   await addProviderColumnsToTransactions(queryInterface);
   await addBankCodeProviderColumn(queryInterface);
   await addDataMigrationsTable(queryInterface);
+}
+
+/** Schema only: no product data backfill. The model creates this index on new databases. */
+export async function ensureProductBarcode(sequelize: Sequelize): Promise<void> {
+  try {
+    await sequelize.getQueryInterface().describeTable("products");
+  } catch (error) {
+    if (isMissingTable(error)) return;
+    throw error;
+  }
+  await sequelize.query('ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "barcode" VARCHAR(100)');
+  await sequelize.query(
+    'CREATE UNIQUE INDEX IF NOT EXISTS "products_merchant_barcode_unique" ON "products" ("merchant_id", "barcode") WHERE "deleted_at" IS NULL'
+  );
 }
 
 async function ensureProductCategoriesTable(queryInterface: any): Promise<void> {
@@ -840,6 +856,23 @@ async function addDataMigrationsTable(queryInterface: any): Promise<void> {
     );
   } catch (error: any) {
     console.error("[Migration] Error creating data_migrations table:", error.message);
+    throw error;
+  }
+}
+
+// Existing online orders and in-store sales retain their original amounts.
+export async function addOrderServiceChargeColumn(queryInterface: any): Promise<void> {
+  try {
+    const columns = await queryInterface.describeTable("merchant_drugstore_orders");
+    if (!columns.service_charge) {
+      await queryInterface.addColumn("merchant_drugstore_orders", "service_charge", {
+        type: DataTypes.DECIMAL(12, 2),
+        allowNull: false,
+        defaultValue: 0,
+      });
+    }
+  } catch (error: any) {
+    if (isMissingTable(error)) return;
     throw error;
   }
 }
