@@ -89,7 +89,7 @@ const mockTeam = {
     return state.staffSession;
   },
 };
-const { MerchantAuthService } = loadWithMocks('../../merchant/dist/src/modules/merchant_auth/MerchantAuth.service', {
+const { MerchantAuthService } = loadWithMocks('../../merchant/dist/modules/merchant_auth/MerchantAuth.service', {
   '@medtech/utils': {
     ...utils, FirebaseGoogleAuth: firebase,
     hashPassword: async password => { state.generatedPasswords.push(password); return 'unusable-random-hash'; },
@@ -114,7 +114,7 @@ const { MerchantAuthService } = loadWithMocks('../../merchant/dist/src/modules/m
   '../../service/Email/Email.service': { EmailService: {} },
 });
 
-const { TeamAuthService } = loadWithMocks('../../merchant/dist/src/modules/team/TeamAuth.service', {
+const { TeamAuthService } = loadWithMocks('../../merchant/dist/modules/team/TeamAuth.service', {
   '@medtech/utils': { ...utils, verifyPassword: async () => { state.passwordChecks++; return state.passwordValid; } },
   './StaffAccount.model': { StaffAccount: { findOne: async () => state.staff } },
   './Access.service': { AccessService: { listPharmacies: async () => state.staffPharmacies } },
@@ -305,7 +305,7 @@ test('the password login still requires password verification after session reus
 
 test('Google request schemas reject email/identity overrides, admin roles and incomplete signup details', () => {
   const experience = require('../../experience_1/dist/modules/user_auth/UserAuth.schema').GoogleLoginSchema;
-  const merchant = require('../../merchant/dist/src/modules/merchant_auth/MerchantAuth.schema').GoogleLoginSchema;
+  const merchant = require('../../merchant/dist/modules/merchant_auth/MerchantAuth.schema').GoogleLoginSchema;
   for (const body of [{ idToken: 'token', role: 'consumer', email: 'victim@example.com' }, { idToken: 'token', role: 'admin' }, { idToken: 'token', role: 'consumer', registration: {} }]) {
     assert.ok(experience.validate(body).error);
   }
