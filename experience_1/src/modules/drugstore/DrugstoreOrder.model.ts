@@ -166,6 +166,11 @@ export class DrugstoreOrder extends Model<DrugstoreOrder> {
 	declare deliveryFee: number;
 
 	@AllowNull(false)
+	@Default(0)
+	@Column(DataType.DECIMAL(12, 2))
+	declare serviceCharge: number;
+
+	@AllowNull(false)
 	@Column(DataType.DECIMAL(12, 2))
 	declare totalAmount: number;
 

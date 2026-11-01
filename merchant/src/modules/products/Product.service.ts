@@ -7,6 +7,7 @@ import { ProductStatus } from "../../constants/enums";
 import { Op } from "sequelize";
 import { HttpException } from "@medtech/utils";
 import { ProductCategoryService } from "../categories/ProductCategory.service";
+import { normalizeBarcode, rethrowBarcodeConflict } from "./barcode";
 
 export class ProductService {
   /**
@@ -46,6 +47,7 @@ export class ProductService {
         { name: { [Op.iLike]: `%${search}%` } },
         { brand: { [Op.iLike]: `%${search}%` } },
         { sku: { [Op.iLike]: `%${search}%` } },
+        { barcode: search.trim() },
       ];
     }
 
@@ -105,6 +107,7 @@ export class ProductService {
    * Create a new product
    */
   static async createProduct(merchantId: string, data: CreateProductDTO) {
+    const barcode = normalizeBarcode(data.barcode);
     // Enforce plan product listing limits
     const subscription = await Subscription.findOne({
       where: { merchantId },
@@ -144,13 +147,11 @@ export class ProductService {
       }
     }
 
-    const product = await Product.create({
-      ...data,
-      merchantId,
-      status,
-    });
-
-    return product;
+    try {
+      return await Product.create({ ...data, barcode, merchantId, status });
+    } catch (error) {
+      rethrowBarcodeConflict(error);
+    }
   }
 
   /**
@@ -162,6 +163,8 @@ export class ProductService {
     data: UpdateProductDTO
   ) {
     const product = await this.getProductById(merchantId, productId);
+
+    if (data.barcode !== undefined) data.barcode = normalizeBarcode(data.barcode);
 
     // If images are being updated, ensure first is marked as main
     if (data.images && data.images.length > 0) {
@@ -185,11 +188,15 @@ export class ProductService {
       }
     }
 
-    await product.update(
-      data.categoryId !== undefined
-        ? { ...data, categoryReviewRequired: false }
-        : data
-    );
+    try {
+      await product.update(
+        data.categoryId !== undefined
+          ? { ...data, categoryReviewRequired: false }
+          : data
+      );
+    } catch (error) {
+      rethrowBarcodeConflict(error);
+    }
     return product;
   }
 
@@ -290,7 +297,11 @@ export class ProductService {
       throw new HttpException(400, "Product is not deleted");
     }
 
-    await product.restore();
+    try {
+      await product.restore();
+    } catch (error) {
+      rethrowBarcodeConflict(error);
+    }
     return product;
   }
 

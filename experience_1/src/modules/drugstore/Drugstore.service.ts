@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { calculateOnlineOrderServiceCharge } from "@medtech/utils";
 import { Op, Transaction } from "sequelize";
 import { AUTH_ROLE } from "../../constants/constant";
 import { RESPONSE_MESSAGES } from "../../constants/response";
@@ -335,6 +336,7 @@ export class DrugstoreService {
 				vatTotal: order.vatTotal,
 				discountTotal: order.discountTotal,
 				deliveryFee: order.deliveryFee,
+				serviceCharge: toNumber(order.serviceCharge),
 				totalAmount: order.totalAmount,
 				currency: order.currency,
 			},
@@ -531,6 +533,13 @@ export class DrugstoreService {
 		};
 	}
 
+	private static serializeCart(cart: DrugstoreCart) {
+		const serviceCharge = calculateOnlineOrderServiceCharge(toNumber(cart.subtotal));
+		// The stored cart grandTotal is the item total. Add the fee only to the API view;
+		// checkout independently recalculates all amounts from current product prices.
+		return { ...cart.toJSON(), serviceCharge, grandTotal: roundMoney(toNumber(cart.grandTotal) + serviceCharge) };
+	}
+
 	/**
 	 * Adds a live `available`/`availabilityReason` per item (not persisted) by re-checking stock
 	 * against the merchant service, mirroring checkProductAvailability's rules. A cart item's
@@ -559,7 +568,7 @@ export class DrugstoreService {
 			})
 		);
 
-		return { ...cart.toJSON(), items: annotatedItems };
+		return { ...this.serializeCart(cart), items: annotatedItems };
 	}
 
 	static async getCart(userId: number, merchantId?: string): Promise<ApiResponse> {
@@ -688,7 +697,7 @@ export class DrugstoreService {
 			status: true,
 			code: 200,
 			message: RESPONSE_MESSAGES.SUCCESSS,
-			data: updatedCart,
+			data: this.serializeCart(updatedCart),
 		};
 	}
 
@@ -732,7 +741,7 @@ export class DrugstoreService {
 			status: true,
 			code: 200,
 			message: RESPONSE_MESSAGES.SUCCESSS,
-			data: updatedCart,
+			data: this.serializeCart(updatedCart),
 		};
 	}
 
@@ -749,7 +758,7 @@ export class DrugstoreService {
 			status: true,
 			code: 200,
 			message: RESPONSE_MESSAGES.SUCCESSS,
-			data: updatedCart,
+			data: this.serializeCart(updatedCart),
 		};
 	}
 
@@ -905,7 +914,8 @@ export class DrugstoreService {
 			}
 
 			const deliveryFee = isPickup ? 0 : await this.calculateDeliveryFee(cart.merchantId);
-			const totalAmount = roundMoney(subtotal + vatTotal - discountTotal + deliveryFee);
+			const serviceCharge = calculateOnlineOrderServiceCharge(subtotal);
+			const totalAmount = roundMoney(subtotal + vatTotal - discountTotal + deliveryFee + serviceCharge);
 			const user = await User.findByPk(userId);
 			const isPayInStore = payload.paymentMethod === "pay_in_store";
 			if (!user?.email && !isPayInStore) {
@@ -973,6 +983,7 @@ export class DrugstoreService {
 					vatTotal,
 					discountTotal,
 					deliveryFee,
+					serviceCharge,
 					totalAmount,
 					currency: "NGN",
 					recipientName: address?.recipientName || null,
