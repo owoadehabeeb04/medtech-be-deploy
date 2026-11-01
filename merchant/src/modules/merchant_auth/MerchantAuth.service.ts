@@ -1,4 +1,5 @@
 import { Request } from "express";
+import { randomBytes } from "crypto";
 import { Merchant } from "../merchant/Merchant.model";
 import { StoreDetails } from "../store_details/StoreDetails.model";
 import { PaymentDetails } from "../payment_details/PaymentDetails.model";
@@ -19,6 +20,7 @@ import {
   ResetPasswordDTO,
   ResendOtpDTO,
   CheckPhoneDTO,
+  GoogleLoginDTO,
 } from "./MerchantAuth.dto";
 import {
   generateOTP,
@@ -27,6 +29,8 @@ import {
   hashPassword,
   verifyPassword,
   generateToken,
+  FirebaseGoogleAuth,
+  FirebaseGoogleAuthError,
 } from "@medtech/utils";
 import { applicationConfig } from "../../config";
 import { TeamAuthService } from "../team/TeamAuth.service";
@@ -375,12 +379,16 @@ export class MerchantAuthService {
       };
     }
 
+    return this.openOwnerSession(merchant, data.pharmacyCode, req);
+  }
+
+  private static async openOwnerSession(merchant: Merchant, pharmacyCode?: string, req?: Request): Promise<ApiResponse> {
     // An owner who was invited to another pharmacy can sign in there with that pharmacy's code
-    if (data.pharmacyCode && data.pharmacyCode.trim()) {
+    if (pharmacyCode && pharmacyCode.trim()) {
       try {
         const memberSession = await TeamAuthService.loginWithPharmacyCode(
           { kind: "owner", id: merchant.id },
-          data.pharmacyCode,
+          pharmacyCode,
           req
         );
         if (memberSession) {
@@ -448,6 +456,74 @@ export class MerchantAuthService {
         },
       },
     };
+  }
+
+  static async googleLogin(data: GoogleLoginDTO, req?: Request): Promise<ApiResponse> {
+    try {
+      const identity = await FirebaseGoogleAuth.verify(data.idToken);
+      const matches = await Merchant.findAll({
+        where: sqlWhere(fn("lower", col("Merchant.email")), identity.email),
+        include: [
+          { model: StoreDetails, as: "storeDetails" },
+          { model: PaymentDetails, as: "paymentDetails" },
+          { model: MerchantSettings, as: "settings" },
+        ],
+        limit: 2,
+      });
+      if (matches.length > 1) return { status: false, code: 409, message: "Duplicate email accounts need attention. Please contact support." };
+      if (matches[0]) {
+        if (!matches[0].isActive) return { status: false, code: 403, message: "Your account has been deactivated. Please contact support." };
+        if (!matches[0].isVerified) return { status: false, code: 403, message: "Please complete your account verification first." };
+        return this.openOwnerSession(matches[0], data.pharmacyCode, req);
+      }
+      const staff = await StaffAccount.findOne({ where: sqlWhere(fn("lower", col("email")), identity.email) });
+      if (staff) {
+        const session = await TeamAuthService.sessionForVerifiedStaff(staff, data.pharmacyCode, req);
+        return { status: true, code: 200, message: "requiresPharmacySelection" in session ? "Select a pharmacy to continue" : "Login successful", data: session };
+      }
+      if (!data.registration) {
+        return { status: true, code: 200, message: "Complete your pharmacy registration to continue", data: { requiresRegistration: true, email: identity.email } };
+      }
+      if (data.pharmacyCode?.trim()) {
+        return { status: false, code: 403, message: "Accept your pharmacy invitation before signing in as a team member." };
+      }
+      const registration = data.registration;
+      if (await isPhoneNumberTaken(registration.phoneCountryCode, registration.phoneNumber)) {
+        return { status: false, code: 409, message: PHONE_TAKEN_MESSAGE };
+      }
+      const password = await hashPassword(randomBytes(48).toString("base64url"));
+      const [firstName = "", ...lastNames] = (identity.name || "").trim().split(/\s+/);
+      const account = await Merchant.sequelize!.transaction(async (transaction) => {
+        const account = await Merchant.create({
+          email: identity.email, firstName, lastName: lastNames.join(" "), password,
+          phoneNumber: registration.phoneNumber,
+          ...(registration.phoneCountryCode ? { phoneCountryCode: registration.phoneCountryCode } : {}),
+          isVerified: true, isActive: true,
+        }, { transaction });
+        await StoreDetails.create({ merchantId: account.id, businessName: registration.businessName, licenseUrl: registration.licenseUrl || "" }, { transaction });
+        await PaymentDetails.create({ merchantId: account.id }, { transaction });
+        await MerchantSettings.create({ merchantId: account.id }, { transaction });
+        await Wallet.create({ merchantId: account.id }, { transaction });
+        const freePlan = await Plan.findOne({ where: { name: PlanTier.FREE }, transaction });
+        if (freePlan) await Subscription.create({ merchantId: account.id, planId: freePlan.id, status: SubscriptionStatus.ACTIVE, autoRenew: false }, { transaction });
+        return account;
+      });
+      const merchant = await Merchant.findOne({
+        where: { id: account.id },
+        include: [{ model: StoreDetails, as: "storeDetails" }, { model: PaymentDetails, as: "paymentDetails" }, { model: MerchantSettings, as: "settings" }],
+      });
+      if (!merchant) throw new Error("Merchant account could not be loaded");
+      const result = await this.openOwnerSession(merchant, undefined, req);
+      return { ...result, code: 201, message: "Merchant registered successfully" };
+    } catch (error: any) {
+      if (error instanceof FirebaseGoogleAuthError || error?.statusCode) {
+        return { status: false, code: error.statusCode, message: error.message };
+      }
+      if (error?.name === "SequelizeUniqueConstraintError") {
+        return { status: false, code: 409, message: "Account details already registered. Sign in again or check your phone number." };
+      }
+      throw error;
+    }
   }
 
   static async forgotPassword(data: ForgotPasswordDTO, req: Request): Promise<ApiResponse> {

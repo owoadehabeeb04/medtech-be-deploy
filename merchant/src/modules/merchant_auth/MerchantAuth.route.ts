@@ -7,6 +7,7 @@ import { acceptInvitation, previewInvitation, selectPharmacy } from "../team/Tea
 import { verifyOtp } from "./controllers/VerifyOtp.controller";
 import { completeSignup } from "./controllers/CompleteSignup.controller";
 import { login } from "./controllers/Login.controller";
+import { googleLogin } from "./controllers/GoogleLogin.controller";
 import { forgotPassword } from "./controllers/ForgotPassword.controller";
 import { verifyResetOtp } from "./controllers/VerifyResetOtp.controller";
 import { resetPassword } from "./controllers/ResetPassword.controller";
@@ -59,6 +60,7 @@ router.post("/complete-signup", completeSignup);
 
 // Login
 router.post("/login", login);
+router.post("/google", rateLimit({ windowMs: 15 * 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false }), googleLogin);
 // Team members: choose a pharmacy after login, and accept an invitation
 router.post("/select-pharmacy", selectPharmacy);
 router.get("/invitations/:token", checkPhoneRateLimiter, previewInvitation);

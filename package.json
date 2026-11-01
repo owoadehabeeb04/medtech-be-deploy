@@ -14,6 +14,7 @@
 		"build": "npm run build --workspace=utils && npm run build --workspace=merchant && npm run build --workspace=experience_1",
 		"start:combined": "node scripts/start-combined.mjs",
 		"test:combined": "node --test scripts/tests/combined-deployment.test.mjs",
+		"test:google-auth": "npm run build && node --test utils/tests/firebase-google-auth.test.cjs scripts/tests/firebase-google-login.test.cjs",
 		"test:online-order-service-charge": "npm run build && node --test scripts/tests/online-order-service-charge.test.cjs",
 		"build:utils": "npm run build --workspace=utils",
 		"build:merchant": "npm run build --workspace=merchant",

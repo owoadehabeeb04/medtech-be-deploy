@@ -1,4 +1,5 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
 import Auth from "../../middlewares/Auth.Middleware";
 import { AUTH_ROLE } from "../../constants/constant";
 import { requireRole } from "../../middlewares/role.middleware";
@@ -6,6 +7,7 @@ import {
 	changePassword,
 	completeSignup,
 	login,
+	googleLogin,
 	logout,
 	me,
 	refreshToken,
@@ -28,6 +30,7 @@ router.post("/signup/verify-otp", verifySignupOtp);
 router.post("/signup/resend-otp", resendSignupOtp);
 router.post("/signup/complete", completeSignup);
 router.post("/login", login);
+router.post("/google", rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: true, legacyHeaders: false }), googleLogin);
 router.post("/refresh-token", refreshToken);
 router.post("/forgot-password/request-otp", requestForgotPasswordOtp);
 router.post("/forgot-password/verify-otp", verifyForgotPasswordOtp);

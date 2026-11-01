@@ -1,5 +1,7 @@
 # Documentation
 
+- [Firebase Google sign-in — frontend and deployment handoff](./firebase-google-auth.md)
+
 - [Merchant USB barcode scanner — frontend handoff](./merchant-barcode-scanner-frontend.md)
 
 - [Monorepo Architecture](./monorepo-architecture.md)
