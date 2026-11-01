@@ -107,6 +107,14 @@ export class TeamAuthService {
       throw new HttpException(401, "Invalid password. Please check your password and try again.");
     }
 
+    return this.sessionForVerifiedStaff(staff, pharmacyCode, req);
+  }
+
+  /** Only call after authenticating the staff account (password or verified Firebase identity). */
+  static async sessionForVerifiedStaff(staff: StaffAccount, pharmacyCode: string | undefined, req?: Request) {
+    if (!staff.isActive) {
+      throw new HttpException(403, "Your account has been deactivated. Please contact your pharmacy.");
+    }
     const pharmacies = await AccessService.listPharmacies({ kind: "staff", id: staff.id });
     if (pharmacies.length === 0) {
       throw new HttpException(403, "You haven't been added to any pharmacy yet, or your access was removed.");
