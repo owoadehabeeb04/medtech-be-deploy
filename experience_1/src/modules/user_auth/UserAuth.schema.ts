@@ -67,6 +67,17 @@ export const LoginSchema = Joi.object({
 	role: roleSchema,
 });
 
+export const GoogleLoginSchema = Joi.object({
+	idToken: Joi.string().trim().max(16384).required(),
+	role: roleSchema,
+	registration: Joi.object({
+		firstName: Joi.string().trim().min(2).max(40).required(),
+		lastName: Joi.string().trim().min(2).max(40).required(),
+		phoneNumber: Joi.string().trim().min(7).max(20).required(),
+		medicalLicenseNumber: Joi.string().trim().min(3).max(100).optional(),
+	}).unknown(false).optional(),
+}).unknown(false);
+
 export const ForgotPasswordRequestOtpSchema = Joi.object({
 	email: Joi.string().email().required(),
 });

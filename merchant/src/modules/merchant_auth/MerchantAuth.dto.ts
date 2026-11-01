@@ -45,3 +45,14 @@ export interface ResetPasswordDTO {
   newPassword: string;
   confirmPassword: string;
 }
+
+export interface GoogleLoginDTO {
+  idToken: string;
+  pharmacyCode?: string;
+  registration?: {
+    businessName: string;
+    phoneNumber: string;
+    phoneCountryCode?: string;
+    licenseUrl?: string;
+  };
+}

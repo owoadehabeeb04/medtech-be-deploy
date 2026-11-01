@@ -36,6 +36,17 @@ export const LoginSchema = Joi.object({
   pharmacyCode: Joi.string().trim().max(20).allow("").optional(),
 });
 
+export const GoogleLoginSchema = Joi.object({
+  idToken: Joi.string().trim().max(16384).required(),
+  pharmacyCode: Joi.string().trim().max(20).allow("").optional(),
+  registration: Joi.object({
+    businessName: Joi.string().trim().min(2).max(200).required(),
+    phoneNumber: Joi.string().trim().min(10).max(15).required(),
+    phoneCountryCode: Joi.string().trim().pattern(/^\+?\d{1,4}$/).optional(),
+    licenseUrl: Joi.string().uri().optional(),
+  }).unknown(false).optional(),
+}).unknown(false);
+
 export const ForgotPasswordSchema = Joi.object({
   email: Joi.string().email().required(),
 });

@@ -1,5 +1,16 @@
 import { OAUTH_PROVIDERS } from "../../constants/constant";
 
+export interface GoogleLoginDTO {
+	idToken: string;
+	role: string;
+	registration?: {
+		firstName: string;
+		lastName: string;
+		phoneNumber: string;
+		medicalLicenseNumber?: string;
+	};
+}
+
 export interface LoginDTO {
 	email: string;
 	password: string;

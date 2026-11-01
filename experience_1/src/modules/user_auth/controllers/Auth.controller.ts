@@ -7,6 +7,7 @@ import {
 	CompleteSignupSchema,
 	ForgotPasswordRequestOtpSchema,
 	LoginSchema,
+	GoogleLoginSchema,
 	LogoutSchema,
 	RefreshTokenSchema,
 	ResendOtpSchema,
@@ -54,6 +55,50 @@ const handleAuthResponse = async (
 	};
 
 	return next();
+};
+
+/**
+ * @swagger
+ * /api/v1/main/auth/google:
+ *   post:
+ *     summary: Sign in or register using Firebase Google authentication
+ *     description: Send Firebase user.getIdToken() after Google sign-in. Existing users receive the usual accessToken, refreshToken and profile status. Unknown users receive requiresRegistration until registration is supplied. Doctors still need a medicalLicenseNumber and must complete doctor onboarding. The verified Google email identifies the local account; email and permissions cannot be supplied in the body.
+ *     tags: [Authentication]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [idToken, role]
+ *             additionalProperties: false
+ *             properties:
+ *               idToken: { type: string, maxLength: 16384, description: Firebase ID token, not a Google access token }
+ *               role: { type: string, enum: [consumer, customer, doctor, medic] }
+ *               registration:
+ *                 type: object
+ *                 required: [firstName, lastName, phoneNumber]
+ *                 additionalProperties: false
+ *                 properties:
+ *                   firstName: { type: string, minLength: 2, maxLength: 40 }
+ *                   lastName: { type: string, minLength: 2, maxLength: 40 }
+ *                   phoneNumber: { type: string, minLength: 7, maxLength: 20 }
+ *                   medicalLicenseNumber: { type: string, minLength: 3, maxLength: 100, description: Required for new doctor accounts }
+ *     responses:
+ *       200: { description: Usual authentication response or requiresRegistration with verified email and role }
+ *       201: { description: Account registered; usual authentication response with incomplete onboarding }
+ *       400: { description: Invalid request or missing doctor medical license number }
+ *       401: { description: Invalid, expired, revoked, disabled, unverified, non-Google token or incorrect local role }
+ *       403: { description: Local account inactive or suspended }
+ *       409: { description: Account email or phone conflicts }
+ *       429: { description: Too many sign-in requests }
+ *       503: { description: Firebase Admin configuration missing or unavailable }
+ */
+export const googleLogin: RequestHandler = async (req, res, next) => {
+	const payload = req.context.validateSchema(GoogleLoginSchema, req.body, next);
+	if (!payload) return;
+	return handleAuthResponse(req, res, next, UserAuthService.googleLogin(payload), "316");
 };
 
 /**

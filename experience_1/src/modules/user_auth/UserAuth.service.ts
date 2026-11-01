@@ -1,4 +1,6 @@
 import jwt from "jsonwebtoken";
+import { randomBytes } from "crypto";
+import { FirebaseGoogleAuth, FirebaseGoogleAuthError } from "@medtech/utils";
 import { Request } from "express";
 import { Op } from "sequelize";
 import { applicationConfig } from "../../config";
@@ -18,6 +20,7 @@ import { UserSpeciality } from "../user_specialities/UserSpecialities.model";
 import { ApiResponse } from "../../utils/common.dto";
 import {
 	ChangePasswordDTO,
+	GoogleLoginDTO,
 	CompleteSignupDTO,
 	RegisterDTO,
 	ForgotPasswordRequestOtpDTO,
@@ -563,6 +566,81 @@ export class UserAuthService {
 				...responseData,
 			},
 		};
+	}
+
+	static async googleLogin(data: GoogleLoginDTO): Promise<ApiResponse> {
+		try {
+			const identity = await FirebaseGoogleAuth.verify(data.idToken);
+			const role = this.normalizeRole(data.role);
+			let user = await this.findUserByEmail(identity.email);
+			let created = false;
+			if (!user) {
+				if (!data.registration) {
+					return {
+						status: true, code: 200, message: "Complete your registration to continue",
+						data: { requiresRegistration: true, email: identity.email, role },
+					};
+				}
+				const registration = data.registration;
+				if (role === AUTH_ROLE.DOCTOR && !registration.medicalLicenseNumber) {
+					return { status: false, code: 400, message: "Medical license number is required for doctor registration" };
+				}
+				if (await User.findOne({ where: { phoneNumber: registration.phoneNumber } })) {
+					return { status: false, code: 409, message: RESPONSE_MESSAGES.PHONE_ALREADY_REGISTERED };
+				}
+				await this.ensureUserType(role);
+				// There is no user-chosen local password. Password recovery can establish one later.
+				const password = await UserAuth.encryptPassword(randomBytes(48).toString("base64url"));
+				const account = await User.sequelize!.transaction(async (transaction) => {
+					const account = await User.create({
+						firstName: registration.firstName.toLowerCase(), lastName: registration.lastName.toLowerCase(),
+						email: identity.email, phoneNumber: registration.phoneNumber, userType: role,
+						...(role === AUTH_ROLE.DOCTOR ? {
+							medicalLicenseNumber: registration.medicalLicenseNumber,
+							verificationNumber: registration.medicalLicenseNumber,
+						} : {}),
+					}, { transaction });
+					await UserAuth.new({ userId: account.id, identifier: identity.email, password, emailVerified: true }, transaction);
+					if (role === AUTH_ROLE.CONSUMER) {
+						await UserProfile.createProfile(account.id, {
+							phoneNumber: registration.phoneNumber, profileCompleted: false, onboardingSkipped: false,
+						}, transaction);
+					} else {
+						await DoctorProfile.create({
+							userId: account.id, phoneNumber: registration.phoneNumber,
+							medicalLicenseNumber: registration.medicalLicenseNumber, onboardingCompleted: false, onboardingStep: 1,
+						}, { transaction });
+					}
+					return account;
+				});
+				user = await User.findById(account.id);
+				created = true;
+			}
+			if (!user) throw new Error(RESPONSE_MESSAGES.USER_NOT_FOUND);
+			if (this.normalizeRole(user.userType) !== role) {
+				return { status: false, code: 401, message: RESPONSE_MESSAGES.INVALID_CREDENTIALS };
+			}
+			if (!user.isActive || user.status !== USER_STATUS.ACTIVE) {
+				return { status: false, code: 403, message: RESPONSE_MESSAGES.INACTIVE_USER };
+			}
+			if (!await UserAuth.findByUserId(user.id)) {
+				return { status: false, code: 409, message: "Your login record needs attention. Please contact support." };
+			}
+			const tokens = await this.issueSession(user);
+			return {
+				status: true, code: created ? 201 : 200,
+				message: created ? RESPONSE_MESSAGES.USER_REGISTERED : RESPONSE_MESSAGES.LOGIN_SUCCESSFUL,
+				data: { ...tokens, ...await this.getUserResponse(user.id) },
+			};
+		} catch (error: any) {
+			if (error instanceof FirebaseGoogleAuthError) {
+				return { status: false, code: error.statusCode, message: error.message };
+			}
+			if (error?.name === "SequelizeUniqueConstraintError") {
+				return { status: false, code: 409, message: "Account details already registered. Sign in again or check your phone number." };
+			}
+			throw error;
+		}
 	}
 
 	static async login(data: LoginDTO): Promise<ApiResponse> {

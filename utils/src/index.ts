@@ -1,3 +1,4 @@
+export { FirebaseGoogleAuth, FirebaseGoogleAuthError, FirebaseGoogleIdentity } from "./FirebaseGoogleAuth";
 import * as handlebars from "handlebars";
 import moment from "moment";
 import bcrypt from "bcryptjs";
